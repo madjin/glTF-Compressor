@@ -73,7 +73,7 @@ function fromMat4(out, a) {
  * @returns {mat3} out
  */
 
-function multiply$1(out, a, b) {
+function multiply$2(out, a, b) {
   var a00 = a[0],
       a01 = a[1],
       a02 = a[2];
@@ -353,7 +353,7 @@ function determinant(a) {
  * @returns {mat4} out
  */
 
-function multiply(out, a, b) {
+function multiply$1(out, a, b) {
   var a00 = a[0],
       a01 = a[1],
       a02 = a[2],
@@ -810,7 +810,7 @@ function lookAt(out, eye, center, up) {
  * @function
  */
 
-var mul = multiply;
+var mul = multiply$1;
 
 /**
  * 3 Dimensional Vector
@@ -878,6 +878,20 @@ function fromValues$3(x, y, z) {
   return out;
 }
 /**
+ * Copy the values from one vec3 to another
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a the source vector
+ * @returns {vec3} out
+ */
+
+function copy(out, a) {
+  out[0] = a[0];
+  out[1] = a[1];
+  out[2] = a[2];
+  return out;
+}
+/**
  * Adds two vec3's
  *
  * @param {vec3} out the receiving vector
@@ -908,6 +922,21 @@ function subtract(out, a, b) {
   return out;
 }
 /**
+ * Multiplies two vec3's
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a the first operand
+ * @param {ReadonlyVec3} b the second operand
+ * @returns {vec3} out
+ */
+
+function multiply(out, a, b) {
+  out[0] = a[0] * b[0];
+  out[1] = a[1] * b[1];
+  out[2] = a[2] * b[2];
+  return out;
+}
+/**
  * Scales a vec3 by a scalar number
  *
  * @param {vec3} out the receiving vector
@@ -935,6 +964,20 @@ function distance$1(a, b) {
   var y = b[1] - a[1];
   var z = b[2] - a[2];
   return Math.hypot(x, y, z);
+}
+/**
+ * Negates the components of a vec3
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a vector to negate
+ * @returns {vec3} out
+ */
+
+function negate$1(out, a) {
+  out[0] = -a[0];
+  out[1] = -a[1];
+  out[2] = -a[2];
+  return out;
 }
 /**
  * Normalize a vec3
@@ -1530,6 +1573,19 @@ function distance(a, b) {
   return Math.hypot(x, y);
 }
 /**
+ * Negates the components of a vec2
+ *
+ * @param {vec2} out the receiving vector
+ * @param {ReadonlyVec2} a vector to negate
+ * @returns {vec2} out
+ */
+
+function negate(out, a) {
+  out[0] = -a[0];
+  out[1] = -a[1];
+  return out;
+}
+/**
  * Alias for {@link vec2.distance}
  * @function
  */
@@ -1660,7 +1716,7 @@ function stringHash(str, seed = 0) {
     return hash;
 }
 
-function clamp(number, min, max) {
+function clamp$1(number, min, max) {
     return Math.min(Math.max(number, min), max);
 }
 
@@ -1834,7 +1890,7 @@ class gltfCamera extends GltfObject
         for (const drawable of drawables)
         {
             const modelView = create$4();
-            multiply(modelView, this.getViewMatrix(gltf), drawable.node.worldTransform);
+            multiply$1(modelView, this.getViewMatrix(gltf), drawable.node.worldTransform);
 
             // Transform primitive centroid to find the primitive's depth.
             const pos = transformMat4(create$3(), clone(drawable.primitive.centroid), modelView);
@@ -2224,7 +2280,7 @@ class UserCamera extends gltfCamera
         fromYRotation(mat4y, yaw);
         this.transform = mat4y;
         this.setPosition(tmpPos);
-        multiply(this.transform, this.transform, mat4x);
+        multiply$1(this.transform, this.transform, mat4x);
     }
 
     /**
@@ -2277,7 +2333,7 @@ class UserCamera extends gltfCamera
         const rotAroundXMax = Math.PI / 2 - 0.01;
         this.rotAroundY += (-x * this.orbitSpeed);
         this.rotAroundX += (-y * this.orbitSpeed);
-        this.rotAroundX = clamp(this.rotAroundX, -rotAroundXMax, rotAroundXMax);
+        this.rotAroundX = clamp$1(this.rotAroundX, -rotAroundXMax, rotAroundXMax);
         this.setRotation(this.rotAroundY, this.rotAroundX);
         this.setDistanceFromTarget(this.distance, target);
     }
@@ -2436,6 +2492,8 @@ class GltfState
                 KHR_materials_specular: true,
                 /** KHR_materials_iridescence adds a thin-film iridescence effect */
                 KHR_materials_iridescence: true,
+                /** KHR_materials_anisotropy defines microfacet grooves in the surface, stretching the specular reflection on the surface */
+                KHR_materials_anisotropy: true,
                 KHR_materials_emissive_strength: true,
             },
             /** clear color expressed as list of ints in the range [0, 255] */
@@ -2497,7 +2555,7 @@ class GltfState
             compressionQualityWEBP: 80.0,
 
             /** Set the compression encoding KTX2 */
-            compressionEncoding: "UASTC",
+            compressionTextureEncoding: "UASTC",
 
             /** Set the compression quality KTX2 - UASTC */
             compressionUASTC_Flags: "DEFAULT",
@@ -2520,14 +2578,51 @@ class GltfState
             compressionETC1S_NoEndpointRdo: false,
             compressionETC1S_NoSelectorRdo: false,
 
-            /** Set the compression type */
-            compressionType: "KTX2",
+            /** Set the compression quality Mesh Quantization */
+            compressionQuantizationPositionType: "NONE",
+            compressionQuantizationNormalType: "NONE",
+            compressionQuantizationTangentType: "NONE",
+            compressionQuantizationTexCoords0Type: "NONE",
+            compressionQuantizationTexCoords1Type: "NONE",
+
+            /** Set the compression quality Mesh Draco */
+            compressionDracoEncodingMethod: "EDGEBREAKER",
+            compressionLevelDraco: 7,
+            compressionDracoQuantizationPositionQuantBits: 16,
+            compressionDracoQuantizationNormalQuantBits: 10,
+            compressionDracoQuantizationColorQuantBits: 16,
+            compressionDracoQuantizationTexcoordQuantBits: 11,
+            compressionDracoQuantizationGenericQuantBits: 32,
+
+            /** Set the compression quality Mesh Optimizer */
+            compressionMeshOptFilterMethod: "NONE",
+            compressionMeshOptFilterMode: "Seperate",
+            compressionMeshOptReorder: false,
+            compressionMeshOptQuantizationPositionQuantBits: 16,
+            compressionMeshOptQuantizationNormalQuantBits: 8,
+            compressionMeshOptQuantizationColorQuantBits: 16,
+            compressionMeshOptQuantizationTexcoordQuantBits: 12,
+
+            /** Set the texture compression type */
+            compressionTextureType: "KTX2",
+
+            /** Set the geometry compression type */
+            compressionGeometryType: "Draco",
 
             /** Set the selected images */
             selectedImages: [],
 
             /** Set the active processed images */
-            processedImages: []
+            processedImages: [],
+
+            /** Set the selected mesh nodes */
+            selectedMeshes: [],
+
+            /** Set the active processed meshes */
+            processedMeshes: [],
+
+            /** Set Mesh Highlighting */
+            meshHighlighing: true,
         };
 
         // retain a reference to the view with which the state was created, so that it can be validated
@@ -2636,7 +2731,7 @@ GltfState.DebugOutput = {
         VOLUME_THICKNESS: "Volume Thickness",
     },
 
-    /** output tranmission lighting */
+    /** output iridescence */
     iridescence: {
         /** output the combined iridescence */
         IRIDESCENCE: "Iridescence",
@@ -2644,6 +2739,14 @@ GltfState.DebugOutput = {
         IRIDESCENCE_FACTOR: "Iridescence Factor",
         /** output the iridescence thickness*/
         IRIDESCENCE_THICKNESS: "Iridescence Thickness",
+    },
+
+    /** output anisotropy */
+    anisotropy: {
+        /** output the anisotropic strength*/
+        ANISOTROPIC_STRENGTH: "Anisotropic Strength",
+        /** output final direction as defined by the anisotropyTexture and rotation*/
+        ANISOTROPIC_DIRECTION: "Anisotropic Direction",
     },
 };
 
@@ -2690,7 +2793,7 @@ class gltfWebGl
 
     setTexture(loc, gltf, textureInfo, texSlot, bindCompressed = false)
     {
-        if (loc === -1)
+        if (loc === null)
         {
             return false;
         }
@@ -2699,14 +2802,12 @@ class gltfWebGl
 
         if (gltfTex === undefined)
         {
-            console.warn("Texture is undefined: " + textureInfo.index);
             return false;
         }
 
         const image = gltf.images[gltfTex.source];
         if (image === undefined)
         {
-            console.warn("Image is undefined for texture: " + gltfTex.source);
             return false;
         }
 
@@ -2753,7 +2854,8 @@ class gltfWebGl
                 gltfTex.compressedGLTexture = this.context.createTexture();
             }
         }
-
+        image.glTexture = gltfTex.glTexture;
+        
         this.context.activeTexture(GL.TEXTURE0 + texSlot);
         this.context.bindTexture(gltfTex.type, bindCompressed? gltfTex.compressedGLTexture : gltfTex.glTexture);
 
@@ -2873,7 +2975,7 @@ class gltfWebGl
 
     enableAttribute(gltf, attributeLocation, gltfAccessor)
     {
-        if (attributeLocation === -1)
+        if (attributeLocation === null)
         {
             console.warn("Tried to access unknown attribute");
             return false;
@@ -3073,7 +3175,7 @@ class gltfShader
             {
                 this.unknownUniforms.push(name);
             }
-            return -1;
+            return null;
         }
         return uniform.loc;
     }
@@ -3483,6 +3585,26 @@ class gltfTextureInfo
     {
         fromKeys(this, jsonTextureInfo);
     }
+
+    static createCopy(original)
+    {
+        if(original === undefined)
+            return undefined;
+        if(original === null)
+            return null;
+        const text = new gltfTextureInfo();
+        text.index = original.index; // reference to gltfTexture
+        text.texCoord = original.texCoord; // which UV set to use
+        text.linear = original.linear;
+        text.samplerName = original.samplerName;
+        text.strength = original.strength;
+        text.scale = original.scale;
+        text.generateMips = original.generateMips;
+
+        text.extensions = original.extensions;
+
+        return text;
+    }
 }
 
 const ImageType = {COLOR: "color" /*sRGB*/, NONCOLOR: "noncolor" /*linear*/, NORMAL: "normal" /*linear*/};
@@ -3555,21 +3677,21 @@ class ImagePreviewRenderer
     }
 }
 
-var pbrShader = "//\n// This fragment shader defines a reference implementation for Physically Based Shading of\n// a microfacet surface material defined by a glTF model.\n//\n// References:\n// [1] Real Shading in Unreal Engine 4\n//     http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf\n// [2] Physically Based Shading at Disney\n//     http://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf\n// [3] README.md - Environment Maps\n//     https://github.com/KhronosGroup/glTF-WebGL-PBR/#environment-maps\n// [4] \"An Inexpensive BRDF Model for Physically based Rendering\" by Christophe Schlick\n//     https://www.cs.virginia.edu/~jdl/bib/appearance/analytic%20models/schlick94b.pdf\n// [5] \"KHR_materials_clearcoat\"\n//     https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat\n\nprecision highp float;\n#define GLSLIFY 1\n\n#include <tonemapping.glsl>\n#include <textures.glsl>\n#include <functions.glsl>\n#include <brdf.glsl>\n#include <punctual.glsl>\n#include <ibl.glsl>\n#include <material_info.glsl>\n\n#ifdef MATERIAL_IRIDESCENCE\n#include <iridescence.glsl>\n#endif\n\nout vec4 g_finalColor;\n\nvoid main()\n{\n    vec4 baseColor = getBaseColor();\n\n#if ALPHAMODE == ALPHAMODE_OPAQUE\n    baseColor.a = 1.0;\n#endif\n\n    vec3 v = normalize(u_Camera - v_Position);\n    NormalInfo normalInfo = getNormalInfo(v);\n    vec3 n = normalInfo.n;\n    vec3 t = normalInfo.t;\n    vec3 b = normalInfo.b;\n\n    float NdotV = clampedDot(n, v);\n    float TdotV = clampedDot(t, v);\n    float BdotV = clampedDot(b, v);\n\n    MaterialInfo materialInfo;\n    materialInfo.baseColor = baseColor.rgb;\n    \n    // The default index of refraction of 1.5 yields a dielectric normal incidence reflectance of 0.04.\n    materialInfo.ior = 1.5;\n    materialInfo.f0 = vec3(0.04);\n    materialInfo.specularWeight = 1.0;\n\n    // If the MR debug output is selected, we have to enforce evaluation of the non-iridescence BRDF functions.\n#if DEBUG == DEBUG_METALLIC_ROUGHNESS\n#undef MATERIAL_IRIDESCENCE\n#endif\n\n#ifdef MATERIAL_IOR\n    materialInfo = getIorInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\n    materialInfo = getSpecularGlossinessInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_METALLICROUGHNESS\n    materialInfo = getMetallicRoughnessInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_SHEEN\n    materialInfo = getSheenInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n    materialInfo = getClearCoatInfo(materialInfo, normalInfo);\n#endif\n\n#ifdef MATERIAL_SPECULAR\n    materialInfo = getSpecularInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\n    materialInfo = getTransmissionInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_VOLUME\n    materialInfo = getVolumeInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_IRIDESCENCE\n    materialInfo = getIridescenceInfo(materialInfo);\n#endif\n\n    materialInfo.perceptualRoughness = clamp(materialInfo.perceptualRoughness, 0.0, 1.0);\n    materialInfo.metallic = clamp(materialInfo.metallic, 0.0, 1.0);\n\n    // Roughness is authored as perceptual roughness; as is convention,\n    // convert to material roughness by squaring the perceptual roughness.\n    materialInfo.alphaRoughness = materialInfo.perceptualRoughness * materialInfo.perceptualRoughness;\n\n    // Compute reflectance.\n    float reflectance = max(max(materialInfo.f0.r, materialInfo.f0.g), materialInfo.f0.b);\n\n    // Anything less than 2% is physically impossible and is instead considered to be shadowing. Compare to \"Real-Time-Rendering\" 4th editon on page 325.\n    materialInfo.f90 = vec3(1.0);\n\n    // LIGHTING\n    vec3 f_specular = vec3(0.0);\n    vec3 f_diffuse = vec3(0.0);\n    vec3 f_emissive = vec3(0.0);\n    vec3 f_clearcoat = vec3(0.0);\n    vec3 f_sheen = vec3(0.0);\n    vec3 f_transmission = vec3(0.0);\n\n    float albedoSheenScaling = 1.0;\n\n#ifdef MATERIAL_IRIDESCENCE\n    vec3 iridescenceFresnel = materialInfo.f0;\n    vec3 iridescenceF0 = materialInfo.f0;\n\n    if (materialInfo.iridescenceThickness == 0.0) {\n        materialInfo.iridescenceFactor = 0.0;\n    }\n\n    if (materialInfo.iridescenceFactor > 0.0) {\n        iridescenceFresnel = evalIridescence(1.0, materialInfo.iridescenceIor, NdotV, materialInfo.iridescenceThickness, materialInfo.f0);\n        iridescenceF0 = Schlick_to_F0(iridescenceFresnel, NdotV);\n    }\n#endif\n\n    // Calculate lighting contribution from image based lighting source (IBL)\n#ifdef USE_IBL\n#ifdef MATERIAL_IRIDESCENCE\n    f_specular += getIBLRadianceGGXIridescence(n, v, materialInfo.perceptualRoughness, materialInfo.f0, iridescenceFresnel, materialInfo.iridescenceFactor, materialInfo.specularWeight);\n    f_diffuse += getIBLRadianceLambertianIridescence(n, v, materialInfo.perceptualRoughness, materialInfo.c_diff, materialInfo.f0, iridescenceF0, materialInfo.iridescenceFactor, materialInfo.specularWeight);\n#else\n    f_specular += getIBLRadianceGGX(n, v, materialInfo.perceptualRoughness, materialInfo.f0, materialInfo.specularWeight);\n    f_diffuse += getIBLRadianceLambertian(n, v, materialInfo.perceptualRoughness, materialInfo.c_diff, materialInfo.f0, materialInfo.specularWeight);\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n    f_clearcoat += getIBLRadianceGGX(materialInfo.clearcoatNormal, v, materialInfo.clearcoatRoughness, materialInfo.clearcoatF0, 1.0);\n#endif\n\n#ifdef MATERIAL_SHEEN\n    f_sheen += getIBLRadianceCharlie(n, v, materialInfo.sheenRoughnessFactor, materialInfo.sheenColorFactor);\n#endif\n#endif\n\n#if defined(MATERIAL_TRANSMISSION) && defined(USE_IBL)\n    f_transmission += getIBLVolumeRefraction(\n        n, v,\n        materialInfo.perceptualRoughness,\n        materialInfo.c_diff, materialInfo.f0, materialInfo.f90,\n        v_Position, u_ModelMatrix, u_ViewMatrix, u_ProjectionMatrix,\n        materialInfo.ior, materialInfo.thickness, materialInfo.attenuationColor, materialInfo.attenuationDistance);\n#endif\n\n    float ao = 1.0;\n    // Apply optional PBR terms for additional (optional) shading\n#ifdef HAS_OCCLUSION_MAP\n    ao = texture(u_OcclusionSampler,  getOcclusionUV()).r;\n    f_diffuse = mix(f_diffuse, f_diffuse * ao, u_OcclusionStrength);\n    // apply ambient occlusion to all lighting that is not punctual\n    f_specular = mix(f_specular, f_specular * ao, u_OcclusionStrength);\n    f_sheen = mix(f_sheen, f_sheen * ao, u_OcclusionStrength);\n    f_clearcoat = mix(f_clearcoat, f_clearcoat * ao, u_OcclusionStrength);\n#endif\n\n#ifdef USE_PUNCTUAL\n    for (int i = 0; i < LIGHT_COUNT; ++i)\n    {\n        Light light = u_Lights[i];\n\n        vec3 pointToLight;\n        if (light.type != LightType_Directional)\n        {\n            pointToLight = light.position - v_Position;\n        }\n        else\n        {\n            pointToLight = -light.direction;\n        }\n\n        // BSTF\n        vec3 l = normalize(pointToLight);   // Direction from surface point to light\n        vec3 h = normalize(l + v);          // Direction of the vector between l and v, called halfway vector\n        float NdotL = clampedDot(n, l);\n        float NdotV = clampedDot(n, v);\n        float NdotH = clampedDot(n, h);\n        float LdotH = clampedDot(l, h);\n        float VdotH = clampedDot(v, h);\n        if (NdotL > 0.0 || NdotV > 0.0)\n        {\n            // Calculation of analytical light\n            // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\n            vec3 intensity = getLighIntensity(light, pointToLight);\n#ifdef MATERIAL_IRIDESCENCE\n            f_diffuse += intensity * NdotL *  BRDF_lambertianIridescence(materialInfo.f0, materialInfo.f90, iridescenceFresnel, materialInfo.iridescenceFactor, materialInfo.c_diff, materialInfo.specularWeight, VdotH);\n            f_specular += intensity * NdotL * BRDF_specularGGXIridescence(materialInfo.f0, materialInfo.f90, iridescenceFresnel, materialInfo.alphaRoughness, materialInfo.iridescenceFactor, materialInfo.specularWeight, VdotH, NdotL, NdotV, NdotH);\n#else\n            f_diffuse += intensity * NdotL *  BRDF_lambertian(materialInfo.f0, materialInfo.f90, materialInfo.c_diff, materialInfo.specularWeight, VdotH);\n            f_specular += intensity * NdotL * BRDF_specularGGX(materialInfo.f0, materialInfo.f90, materialInfo.alphaRoughness, materialInfo.specularWeight, VdotH, NdotL, NdotV, NdotH);\n#endif\n\n#ifdef MATERIAL_SHEEN\n            f_sheen += intensity * getPunctualRadianceSheen(materialInfo.sheenColorFactor, materialInfo.sheenRoughnessFactor, NdotL, NdotV, NdotH);\n            albedoSheenScaling = min(1.0 - max3(materialInfo.sheenColorFactor) * albedoSheenScalingLUT(NdotV, materialInfo.sheenRoughnessFactor),\n                1.0 - max3(materialInfo.sheenColorFactor) * albedoSheenScalingLUT(NdotL, materialInfo.sheenRoughnessFactor));\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n            f_clearcoat += intensity * getPunctualRadianceClearCoat(materialInfo.clearcoatNormal, v, l, h, VdotH,\n                materialInfo.clearcoatF0, materialInfo.clearcoatF90, materialInfo.clearcoatRoughness);\n#endif\n        }\n\n        // BDTF\n#ifdef MATERIAL_TRANSMISSION\n        // If the light ray travels through the geometry, use the point it exits the geometry again.\n        // That will change the angle to the light source, if the material refracts the light ray.\n        vec3 transmissionRay = getVolumeTransmissionRay(n, v, materialInfo.thickness, materialInfo.ior, u_ModelMatrix);\n        pointToLight -= transmissionRay;\n        l = normalize(pointToLight);\n\n        vec3 intensity = getLighIntensity(light, pointToLight);\n        vec3 transmittedLight = intensity * getPunctualRadianceTransmission(n, v, l, materialInfo.alphaRoughness, materialInfo.f0, materialInfo.f90, materialInfo.c_diff, materialInfo.ior);\n\n#ifdef MATERIAL_VOLUME\n        transmittedLight = applyVolumeAttenuation(transmittedLight, length(transmissionRay), materialInfo.attenuationColor, materialInfo.attenuationDistance);\n#endif\n\n        f_transmission += transmittedLight;\n#endif\n    }\n#endif\n\n    f_emissive = u_EmissiveFactor;\n#ifdef MATERIAL_EMISSIVE_STRENGTH\n    f_emissive *= u_EmissiveStrength;\n#endif\n#ifdef HAS_EMISSIVE_MAP\n    f_emissive *= texture(u_EmissiveSampler, getEmissiveUV()).rgb;\n#endif\n\n    // Layer blending\n\n    float clearcoatFactor = 0.0;\n    vec3 clearcoatFresnel = vec3(0);\n\n#ifdef MATERIAL_CLEARCOAT\n    clearcoatFactor = materialInfo.clearcoatFactor;\n    clearcoatFresnel = F_Schlick(materialInfo.clearcoatF0, materialInfo.clearcoatF90, clampedDot(materialInfo.clearcoatNormal, v));\n    f_clearcoat = f_clearcoat * clearcoatFactor;\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\n    vec3 diffuse = mix(f_diffuse, f_transmission, materialInfo.transmissionFactor);\n#else\n    vec3 diffuse = f_diffuse;\n#endif\n\n    vec3 color = vec3(0);\n#ifdef MATERIAL_UNLIT\n    color = baseColor.rgb;\n#else\n    color = f_emissive + diffuse + f_specular;\n    color = f_sheen + color * albedoSheenScaling;\n    color = color * (1.0 - clearcoatFactor * clearcoatFresnel) + f_clearcoat;\n#endif\n\n#if DEBUG == DEBUG_NONE\n\n#if ALPHAMODE == ALPHAMODE_MASK\n    // Late discard to avoid samplig artifacts. See https://github.com/KhronosGroup/glTF-Sample-Viewer/issues/267\n    if (baseColor.a < u_AlphaCutoff)\n    {\n        discard;\n    }\n    baseColor.a = 1.0;\n#endif\n\n#ifdef LINEAR_OUTPUT\n    g_finalColor = vec4(color.rgb, baseColor.a);\n#else\n    g_finalColor = vec4(toneMap(color), baseColor.a);\n#endif\n\n#else\n    // In case of missing data for a debug view, render a checkerboard.\n    g_finalColor = vec4(1.0);\n    {\n        float frequency = 0.02;\n        float gray = 0.9;\n\n        vec2 v1 = step(0.5, fract(frequency * gl_FragCoord.xy));\n        vec2 v2 = step(0.5, vec2(1.0) - fract(frequency * gl_FragCoord.xy));\n        g_finalColor.rgb *= gray + v1.x * v1.y + v2.x * v2.y;\n    }\n#endif\n\n    // Debug views:\n\n    // Generic:\n#if DEBUG == DEBUG_UV_0 && defined(HAS_TEXCOORD_0_VEC2)\n    g_finalColor.rgb = vec3(v_texcoord_0, 0);\n#endif\n#if DEBUG == DEBUG_UV_1 && defined(HAS_TEXCOORD_1_VEC2)\n    g_finalColor.rgb = vec3(v_texcoord_1, 0);\n#endif\n#if DEBUG == DEBUG_NORMAL_TEXTURE && defined(HAS_NORMAL_MAP)\n    g_finalColor.rgb = (normalInfo.ntex + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_NORMAL_SHADING\n    g_finalColor.rgb = (n + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_NORMAL_GEOMETRY\n    g_finalColor.rgb = (normalInfo.ng + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_TANGENT\n    g_finalColor.rgb = (normalInfo.t + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_BITANGENT\n    g_finalColor.rgb = (normalInfo.b + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_ALPHA\n    g_finalColor.rgb = vec3(baseColor.a);\n#endif\n#if DEBUG == DEBUG_OCCLUSION && defined(HAS_OCCLUSION_MAP)\n    g_finalColor.rgb = vec3(ao);\n#endif\n#if DEBUG == DEBUG_EMISSIVE\n    g_finalColor.rgb = linearTosRGB(f_emissive);\n#endif\n\n    // MR:\n#ifdef MATERIAL_METALLICROUGHNESS\n#if DEBUG == DEBUG_METALLIC_ROUGHNESS\n    g_finalColor.rgb = linearTosRGB(f_diffuse + f_specular);\n#endif\n#if DEBUG == DEBUG_METALLIC\n    g_finalColor.rgb = vec3(materialInfo.metallic);\n#endif\n#if DEBUG == DEBUG_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.perceptualRoughness);\n#endif\n#if DEBUG == DEBUG_BASE_COLOR\n    g_finalColor.rgb = linearTosRGB(materialInfo.baseColor);\n#endif\n#endif\n\n    // Clearcoat:\n#ifdef MATERIAL_CLEARCOAT\n#if DEBUG == DEBUG_CLEARCOAT\n    g_finalColor.rgb = linearTosRGB(f_clearcoat);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.clearcoatFactor);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.clearcoatRoughness);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_NORMAL\n    g_finalColor.rgb = (materialInfo.clearcoatNormal + vec3(1)) / 2.0;\n#endif\n#endif\n\n    // Sheen:\n#ifdef MATERIAL_SHEEN\n#if DEBUG == DEBUG_SHEEN\n    g_finalColor.rgb = linearTosRGB(f_sheen);\n#endif\n#if DEBUG == DEBUG_SHEEN_COLOR\n    g_finalColor.rgb = materialInfo.sheenColorFactor;\n#endif\n#if DEBUG == DEBUG_SHEEN_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.sheenRoughnessFactor);\n#endif\n#endif\n\n    // Specular:\n#ifdef MATERIAL_SPECULAR\n#if DEBUG == DEBUG_SPECULAR\n    g_finalColor.rgb = linearTosRGB(f_specular);\n#endif\n#if DEBUG == DEBUG_SPECULAR_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.specularWeight);\n#endif\n\n#if DEBUG == DEBUG_SPECULAR_COLOR\nvec3 specularTexture = vec3(1.0);\n#ifdef HAS_SPECULAR_COLOR_MAP\n    specularTexture.rgb = texture(u_SpecularColorSampler, getSpecularColorUV()).rgb;\n#endif\n    g_finalColor.rgb = u_KHR_materials_specular_specularColorFactor * specularTexture.rgb;\n#endif\n#endif\n\n    // Transmission, Volume:\n#ifdef MATERIAL_TRANSMISSION\n#if DEBUG == DEBUG_TRANSMISSION_VOLUME\n    g_finalColor.rgb = linearTosRGB(f_transmission);\n#endif\n#if DEBUG == DEBUG_TRANSMISSION_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.transmissionFactor);\n#endif\n#endif\n#ifdef MATERIAL_VOLUME\n#if DEBUG == DEBUG_VOLUME_THICKNESS\n    g_finalColor.rgb = vec3(materialInfo.thickness);\n#endif\n#endif\n\n    // Iridescence:\n#ifdef MATERIAL_IRIDESCENCE\n#if DEBUG == DEBUG_IRIDESCENCE\n    g_finalColor.rgb = iridescenceFresnel;\n#endif\n#if DEBUG == DEBUG_IRIDESCENCE_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.iridescenceFactor);\n#endif\n#if DEBUG == DEBUG_IRIDESCENCE_THICKNESS\n    g_finalColor.rgb = vec3(materialInfo.iridescenceThickness / 1200.0);\n#endif\n#endif\n}\n"; // eslint-disable-line
+var pbrShader = "//\n// This fragment shader defines a reference implementation for Physically Based Shading of\n// a microfacet surface material defined by a glTF model.\n//\n// References:\n// [1] Real Shading in Unreal Engine 4\n//     http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf\n// [2] Physically Based Shading at Disney\n//     http://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf\n// [3] README.md - Environment Maps\n//     https://github.com/KhronosGroup/glTF-WebGL-PBR/#environment-maps\n// [4] \"An Inexpensive BRDF Model for Physically based Rendering\" by Christophe Schlick\n//     https://www.cs.virginia.edu/~jdl/bib/appearance/analytic%20models/schlick94b.pdf\n// [5] \"KHR_materials_clearcoat\"\n//     https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat\n\nprecision highp float;\n#define GLSLIFY 1\n\n#include <tonemapping.glsl>\n#include <textures.glsl>\n#include <functions.glsl>\n#include <brdf.glsl>\n#include <punctual.glsl>\n#include <ibl.glsl>\n#include <material_info.glsl>\n\n#ifdef MATERIAL_IRIDESCENCE\n#include <iridescence.glsl>\n#endif\n\nout vec4 g_finalColor;\n\nvoid main()\n{\n    vec4 baseColor = getBaseColor();\n\n#if ALPHAMODE == ALPHAMODE_OPAQUE\n    baseColor.a = 1.0;\n#endif\n\n    vec3 v = normalize(u_Camera - v_Position);\n    NormalInfo normalInfo = getNormalInfo(v);\n    vec3 n = normalInfo.n;\n    vec3 t = normalInfo.t;\n    vec3 b = normalInfo.b;\n\n    float NdotV = clampedDot(n, v);\n    float TdotV = clampedDot(t, v);\n    float BdotV = clampedDot(b, v);\n\n    MaterialInfo materialInfo;\n    materialInfo.baseColor = baseColor.rgb;\n    \n    // The default index of refraction of 1.5 yields a dielectric normal incidence reflectance of 0.04.\n    materialInfo.ior = 1.5;\n    materialInfo.f0 = vec3(0.04);\n    materialInfo.specularWeight = 1.0;\n\n    // If the MR debug output is selected, we have to enforce evaluation of the non-iridescence BRDF functions.\n#if DEBUG == DEBUG_METALLIC_ROUGHNESS\n#undef MATERIAL_IRIDESCENCE\n#endif\n\n#ifdef MATERIAL_IOR\n    materialInfo = getIorInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\n    materialInfo = getSpecularGlossinessInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_METALLICROUGHNESS\n    materialInfo = getMetallicRoughnessInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_SHEEN\n    materialInfo = getSheenInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n    materialInfo = getClearCoatInfo(materialInfo, normalInfo);\n#endif\n\n#ifdef MATERIAL_SPECULAR\n    materialInfo = getSpecularInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\n    materialInfo = getTransmissionInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_VOLUME\n    materialInfo = getVolumeInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_IRIDESCENCE\n    materialInfo = getIridescenceInfo(materialInfo);\n#endif\n\n#ifdef MATERIAL_ANISOTROPY\n    materialInfo = getAnisotropyInfo(materialInfo, normalInfo);\n#endif\n\n    materialInfo.perceptualRoughness = clamp(materialInfo.perceptualRoughness, 0.0, 1.0);\n    materialInfo.metallic = clamp(materialInfo.metallic, 0.0, 1.0);\n\n    // Roughness is authored as perceptual roughness; as is convention,\n    // convert to material roughness by squaring the perceptual roughness.\n    materialInfo.alphaRoughness = materialInfo.perceptualRoughness * materialInfo.perceptualRoughness;\n\n    // Compute reflectance.\n    float reflectance = max(max(materialInfo.f0.r, materialInfo.f0.g), materialInfo.f0.b);\n\n    // Anything less than 2% is physically impossible and is instead considered to be shadowing. Compare to \"Real-Time-Rendering\" 4th editon on page 325.\n    materialInfo.f90 = vec3(1.0);\n\n    // LIGHTING\n    vec3 f_specular = vec3(0.0);\n    vec3 f_diffuse = vec3(0.0);\n    vec3 f_emissive = vec3(0.0);\n    vec3 f_clearcoat = vec3(0.0);\n    vec3 f_sheen = vec3(0.0);\n    vec3 f_transmission = vec3(0.0);\n\n    float albedoSheenScaling = 1.0;\n\n#ifdef MATERIAL_IRIDESCENCE\n    vec3 iridescenceFresnel = evalIridescence(1.0, materialInfo.iridescenceIor, NdotV, materialInfo.iridescenceThickness, materialInfo.f0);\n    vec3 iridescenceF0 = Schlick_to_F0(iridescenceFresnel, NdotV);\n\n    if (materialInfo.iridescenceThickness == 0.0) {\n        materialInfo.iridescenceFactor = 0.0;\n    }\n#endif\n\n    // Calculate lighting contribution from image based lighting source (IBL)\n#ifdef USE_IBL\n#ifdef MATERIAL_IRIDESCENCE\n    f_specular += getIBLRadianceGGXIridescence(n, v, materialInfo.perceptualRoughness, materialInfo.f0, iridescenceFresnel, materialInfo.iridescenceFactor, materialInfo.specularWeight);\n    f_diffuse += getIBLRadianceLambertianIridescence(n, v, materialInfo.perceptualRoughness, materialInfo.c_diff, materialInfo.f0, iridescenceF0, materialInfo.iridescenceFactor, materialInfo.specularWeight);\n#elif defined(MATERIAL_ANISOTROPY)\n    f_specular += getIBLRadianceAnisotropy(n, v, materialInfo.perceptualRoughness, materialInfo.anisotropyStrength, materialInfo.anisotropicB, materialInfo.f0, materialInfo.specularWeight);\n    f_diffuse += getIBLRadianceLambertian(n, v, materialInfo.perceptualRoughness, materialInfo.c_diff, materialInfo.f0, materialInfo.specularWeight);\n#else\n    f_specular += getIBLRadianceGGX(n, v, materialInfo.perceptualRoughness, materialInfo.f0, materialInfo.specularWeight);\n    f_diffuse += getIBLRadianceLambertian(n, v, materialInfo.perceptualRoughness, materialInfo.c_diff, materialInfo.f0, materialInfo.specularWeight);\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n    f_clearcoat += getIBLRadianceGGX(materialInfo.clearcoatNormal, v, materialInfo.clearcoatRoughness, materialInfo.clearcoatF0, 1.0);\n#endif\n\n#ifdef MATERIAL_SHEEN\n    f_sheen += getIBLRadianceCharlie(n, v, materialInfo.sheenRoughnessFactor, materialInfo.sheenColorFactor);\n#endif\n#endif\n\n#if defined(MATERIAL_TRANSMISSION) && defined(USE_IBL)\n    f_transmission += getIBLVolumeRefraction(\n        n, v,\n        materialInfo.perceptualRoughness,\n        materialInfo.c_diff, materialInfo.f0, materialInfo.f90,\n        v_Position, u_ModelMatrix, u_ViewMatrix, u_ProjectionMatrix,\n        materialInfo.ior, materialInfo.thickness, materialInfo.attenuationColor, materialInfo.attenuationDistance);\n#endif\n\n    vec3 f_diffuse_ibl = f_diffuse;\n    vec3 f_specular_ibl = f_specular;\n    vec3 f_sheen_ibl = f_sheen;\n    vec3 f_clearcoat_ibl = f_clearcoat;\n    f_diffuse = vec3(0.0);\n    f_specular = vec3(0.0);\n    f_sheen = vec3(0.0);\n    f_clearcoat = vec3(0.0);\n\n#ifdef USE_PUNCTUAL\n    for (int i = 0; i < LIGHT_COUNT; ++i)\n    {\n        Light light = u_Lights[i];\n\n        vec3 pointToLight;\n        if (light.type != LightType_Directional)\n        {\n            pointToLight = light.position - v_Position;\n        }\n        else\n        {\n            pointToLight = -light.direction;\n        }\n\n        // BSTF\n        vec3 l = normalize(pointToLight);   // Direction from surface point to light\n        vec3 h = normalize(l + v);          // Direction of the vector between l and v, called halfway vector\n        float NdotL = clampedDot(n, l);\n        float NdotV = clampedDot(n, v);\n        float NdotH = clampedDot(n, h);\n        float LdotH = clampedDot(l, h);\n        float VdotH = clampedDot(v, h);\n        if (NdotL > 0.0 || NdotV > 0.0)\n        {\n            // Calculation of analytical light\n            // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\n            vec3 intensity = getLighIntensity(light, pointToLight);\n#ifdef MATERIAL_IRIDESCENCE\n            f_diffuse += intensity * NdotL *  BRDF_lambertianIridescence(materialInfo.f0, materialInfo.f90, iridescenceFresnel, materialInfo.iridescenceFactor, materialInfo.c_diff, materialInfo.specularWeight, VdotH);\n            f_specular += intensity * NdotL * BRDF_specularGGXIridescence(materialInfo.f0, materialInfo.f90, iridescenceFresnel, materialInfo.alphaRoughness, materialInfo.iridescenceFactor, materialInfo.specularWeight, VdotH, NdotL, NdotV, NdotH);\n#elif defined(MATERIAL_ANISOTROPY)\n            f_diffuse += intensity * NdotL *  BRDF_lambertian(materialInfo.f0, materialInfo.f90, materialInfo.c_diff, materialInfo.specularWeight, VdotH);\n            f_specular += intensity * NdotL * BRDF_specularGGXAnisotropy(materialInfo.f0, materialInfo.f90, materialInfo.alphaRoughness, materialInfo.anisotropyStrength, n, v, l, h, materialInfo.anisotropicT, materialInfo.anisotropicB);\n#else\n            f_diffuse += intensity * NdotL *  BRDF_lambertian(materialInfo.f0, materialInfo.f90, materialInfo.c_diff, materialInfo.specularWeight, VdotH);\n            f_specular += intensity * NdotL * BRDF_specularGGX(materialInfo.f0, materialInfo.f90, materialInfo.alphaRoughness, materialInfo.specularWeight, VdotH, NdotL, NdotV, NdotH);\n#endif\n\n#ifdef MATERIAL_SHEEN\n            f_sheen += intensity * getPunctualRadianceSheen(materialInfo.sheenColorFactor, materialInfo.sheenRoughnessFactor, NdotL, NdotV, NdotH);\n            albedoSheenScaling = min(1.0 - max3(materialInfo.sheenColorFactor) * albedoSheenScalingLUT(NdotV, materialInfo.sheenRoughnessFactor),\n                1.0 - max3(materialInfo.sheenColorFactor) * albedoSheenScalingLUT(NdotL, materialInfo.sheenRoughnessFactor));\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n            f_clearcoat += intensity * getPunctualRadianceClearCoat(materialInfo.clearcoatNormal, v, l, h, VdotH,\n                materialInfo.clearcoatF0, materialInfo.clearcoatF90, materialInfo.clearcoatRoughness);\n#endif\n        }\n\n        // BDTF\n#ifdef MATERIAL_TRANSMISSION\n        // If the light ray travels through the geometry, use the point it exits the geometry again.\n        // That will change the angle to the light source, if the material refracts the light ray.\n        vec3 transmissionRay = getVolumeTransmissionRay(n, v, materialInfo.thickness, materialInfo.ior, u_ModelMatrix);\n        pointToLight -= transmissionRay;\n        l = normalize(pointToLight);\n\n        vec3 intensity = getLighIntensity(light, pointToLight);\n        vec3 transmittedLight = intensity * getPunctualRadianceTransmission(n, v, l, materialInfo.alphaRoughness, materialInfo.f0, materialInfo.f90, materialInfo.c_diff, materialInfo.ior);\n\n#ifdef MATERIAL_VOLUME\n        transmittedLight = applyVolumeAttenuation(transmittedLight, length(transmissionRay), materialInfo.attenuationColor, materialInfo.attenuationDistance);\n#endif\n\n        f_transmission += transmittedLight;\n#endif\n    }\n#endif\n\n    f_emissive = u_EmissiveFactor;\n#ifdef MATERIAL_EMISSIVE_STRENGTH\n    f_emissive *= u_EmissiveStrength;\n#endif\n#ifdef HAS_EMISSIVE_MAP\n    f_emissive *= texture(u_EmissiveSampler, getEmissiveUV()).rgb;\n#endif\n\n    // Layer blending\n\n    float clearcoatFactor = 0.0;\n    vec3 clearcoatFresnel = vec3(0);\n    vec3 diffuse;\n    vec3 specular;\n    vec3 sheen;\n    vec3 clearcoat;\n\n    float ao = 1.0;\n    // Apply optional PBR terms for additional (optional) shading\n#ifdef HAS_OCCLUSION_MAP\n    ao = texture(u_OcclusionSampler,  getOcclusionUV()).r;\n    diffuse = f_diffuse + mix(f_diffuse_ibl, f_diffuse_ibl * ao, u_OcclusionStrength);\n    // apply ambient occlusion to all lighting that is not punctual\n    specular = f_specular + mix(f_specular_ibl, f_specular_ibl * ao, u_OcclusionStrength);\n    sheen = f_sheen + mix(f_sheen_ibl, f_sheen_ibl * ao, u_OcclusionStrength);\n    clearcoat = f_clearcoat + mix(f_clearcoat_ibl, f_clearcoat_ibl * ao, u_OcclusionStrength);\n#else\n    diffuse = f_diffuse_ibl + f_diffuse;\n    specular = f_specular_ibl + f_specular;\n    sheen = f_sheen_ibl + f_sheen;\n    clearcoat = f_clearcoat_ibl + f_clearcoat;\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\n    clearcoatFactor = materialInfo.clearcoatFactor;\n    clearcoatFresnel = F_Schlick(materialInfo.clearcoatF0, materialInfo.clearcoatF90, clampedDot(materialInfo.clearcoatNormal, v));\n    clearcoat *= clearcoatFactor;\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\n    diffuse = mix(diffuse, f_transmission, materialInfo.transmissionFactor);\n#endif\n\n    vec3 color = vec3(0);\n#ifdef MATERIAL_UNLIT\n    color = baseColor.rgb;\n#else\n    color = f_emissive + diffuse + specular;\n    color = sheen + color * albedoSheenScaling;\n    color = color * (1.0 - clearcoatFactor * clearcoatFresnel) + clearcoat;\n#endif\n\n#if DEBUG == DEBUG_NONE\n\n#if ALPHAMODE == ALPHAMODE_MASK\n    // Late discard to avoid samplig artifacts. See https://github.com/KhronosGroup/glTF-Sample-Viewer/issues/267\n    if (baseColor.a < u_AlphaCutoff)\n    {\n        discard;\n    }\n    baseColor.a = 1.0;\n#endif\n\n    // add highlight color\n    color.rgb += u_HighlightColor;\n\n#ifdef LINEAR_OUTPUT\n    g_finalColor = vec4(color.rgb, baseColor.a);\n#else\n    g_finalColor = vec4(toneMap(color), baseColor.a);\n#endif\n\n#else\n    // In case of missing data for a debug view, render a checkerboard.\n    g_finalColor = vec4(1.0);\n    {\n        float frequency = 0.02;\n        float gray = 0.9;\n\n        vec2 v1 = step(0.5, fract(frequency * gl_FragCoord.xy));\n        vec2 v2 = step(0.5, vec2(1.0) - fract(frequency * gl_FragCoord.xy));\n        g_finalColor.rgb *= gray + v1.x * v1.y + v2.x * v2.y;\n    }\n#endif\n\n    // Debug views:\n\n    // Generic:\n#if DEBUG == DEBUG_UV_0 && defined(HAS_TEXCOORD_0_VEC2)\n    g_finalColor.rgb = vec3(v_texcoord_0, 0);\n#endif\n#if DEBUG == DEBUG_UV_1 && defined(HAS_TEXCOORD_1_VEC2)\n    g_finalColor.rgb = vec3(v_texcoord_1, 0);\n#endif\n#if DEBUG == DEBUG_NORMAL_TEXTURE && defined(HAS_NORMAL_MAP)\n    g_finalColor.rgb = (normalInfo.ntex + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_NORMAL_SHADING\n    g_finalColor.rgb = (n + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_NORMAL_GEOMETRY\n    g_finalColor.rgb = (normalInfo.ng + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_TANGENT\n    g_finalColor.rgb = (normalInfo.t + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_BITANGENT\n    g_finalColor.rgb = (normalInfo.b + 1.0) / 2.0;\n#endif\n#if DEBUG == DEBUG_ALPHA\n    g_finalColor.rgb = vec3(baseColor.a);\n#endif\n#if DEBUG == DEBUG_OCCLUSION && defined(HAS_OCCLUSION_MAP)\n    g_finalColor.rgb = vec3(ao);\n#endif\n#if DEBUG == DEBUG_EMISSIVE\n    g_finalColor.rgb = linearTosRGB(f_emissive);\n#endif\n\n    // MR:\n#ifdef MATERIAL_METALLICROUGHNESS\n#if DEBUG == DEBUG_METALLIC_ROUGHNESS\n    g_finalColor.rgb = linearTosRGB(f_diffuse + f_diffuse_ibl + f_specular);\n#endif\n#if DEBUG == DEBUG_METALLIC\n    g_finalColor.rgb = vec3(materialInfo.metallic);\n#endif\n#if DEBUG == DEBUG_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.perceptualRoughness);\n#endif\n#if DEBUG == DEBUG_BASE_COLOR\n    g_finalColor.rgb = linearTosRGB(materialInfo.baseColor);\n#endif\n#endif\n\n    // Clearcoat:\n#ifdef MATERIAL_CLEARCOAT\n#if DEBUG == DEBUG_CLEARCOAT\n    g_finalColor.rgb = linearTosRGB(f_clearcoat + f_clearcoat_ibl);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.clearcoatFactor);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.clearcoatRoughness);\n#endif\n#if DEBUG == DEBUG_CLEARCOAT_NORMAL\n    g_finalColor.rgb = (materialInfo.clearcoatNormal + vec3(1)) / 2.0;\n#endif\n#endif\n\n    // Sheen:\n#ifdef MATERIAL_SHEEN\n#if DEBUG == DEBUG_SHEEN\n    g_finalColor.rgb = linearTosRGB(f_sheen + f_sheen_ibl);\n#endif\n#if DEBUG == DEBUG_SHEEN_COLOR\n    g_finalColor.rgb = materialInfo.sheenColorFactor;\n#endif\n#if DEBUG == DEBUG_SHEEN_ROUGHNESS\n    g_finalColor.rgb = vec3(materialInfo.sheenRoughnessFactor);\n#endif\n#endif\n\n    // Specular:\n#ifdef MATERIAL_SPECULAR\n#if DEBUG == DEBUG_SPECULAR\n    g_finalColor.rgb = linearTosRGB(f_specular + f_specular_ibl);\n#endif\n#if DEBUG == DEBUG_SPECULAR_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.specularWeight);\n#endif\n\n#if DEBUG == DEBUG_SPECULAR_COLOR\nvec3 specularTexture = vec3(1.0);\n#ifdef HAS_SPECULAR_COLOR_MAP\n    specularTexture.rgb = texture(u_SpecularColorSampler, getSpecularColorUV()).rgb;\n#endif\n    g_finalColor.rgb = u_KHR_materials_specular_specularColorFactor * specularTexture.rgb;\n#endif\n#endif\n\n    // Transmission, Volume:\n#ifdef MATERIAL_TRANSMISSION\n#if DEBUG == DEBUG_TRANSMISSION_VOLUME\n    g_finalColor.rgb = linearTosRGB(f_transmission);\n#endif\n#if DEBUG == DEBUG_TRANSMISSION_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.transmissionFactor);\n#endif\n#endif\n#ifdef MATERIAL_VOLUME\n#if DEBUG == DEBUG_VOLUME_THICKNESS\n    g_finalColor.rgb = vec3(materialInfo.thickness / u_ThicknessFactor);\n#endif\n#endif\n\n    // Iridescence:\n#ifdef MATERIAL_IRIDESCENCE\n#if DEBUG == DEBUG_IRIDESCENCE\n    g_finalColor.rgb = iridescenceFresnel;\n#endif\n#if DEBUG == DEBUG_IRIDESCENCE_FACTOR\n    g_finalColor.rgb = vec3(materialInfo.iridescenceFactor);\n#endif\n#if DEBUG == DEBUG_IRIDESCENCE_THICKNESS\n    g_finalColor.rgb = vec3(materialInfo.iridescenceThickness / 1200.0);\n#endif\n#endif\n\n    // Anisotropy:\n#ifdef MATERIAL_ANISOTROPY\n#if DEBUG == DEBUG_ANISOTROPIC_STRENGTH\n    g_finalColor.rgb = vec3(materialInfo.anisotropyStrength);\n#endif\n#if DEBUG == DEBUG_ANISOTROPIC_DIRECTION\n    vec2 direction = vec2(1.0, 0.0);\n#ifdef HAS_ANISOTROPY_MAP\n    direction = texture(u_AnisotropySampler, getAnisotropyUV()).xy;\n    direction = direction * 2.0 - vec2(1.0); // [0, 1] -> [-1, 1]\n#endif\n    vec2 directionRotation = u_Anisotropy.xy; // cos(theta), sin(theta)\n    mat2 rotationMatrix = mat2(directionRotation.x, directionRotation.y, -directionRotation.y, directionRotation.x);\n    direction = (direction + vec2(1.0)) * 0.5; // [-1, 1] -> [0, 1]\n\n    g_finalColor.rgb = vec3(direction, 0.0);\n#endif\n#endif\n}\n"; // eslint-disable-line
 
-var brdfShader = "#define GLSLIFY 1\n//\n// Fresnel\n//\n// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html\n// https://github.com/wdas/brdf/tree/master/src/brdfs\n// https://google.github.io/filament/Filament.md.html\n//\n\n// The following equation models the Fresnel reflectance term of the spec equation (aka F())\n// Implementation of fresnel from [4], Equation 15\nvec3 F_Schlick(vec3 f0, vec3 f90, float VdotH)\n{\n    return f0 + (f90 - f0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);\n}\n\nfloat F_Schlick(float f0, float f90, float VdotH)\n{\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = x * x2 * x2;\n    return f0 + (f90 - f0) * x5;\n}\n\nfloat F_Schlick(float f0, float VdotH)\n{\n    float f90 = 1.0; //clamp(50.0 * f0, 0.0, 1.0);\n    return F_Schlick(f0, f90, VdotH);\n}\n\nvec3 F_Schlick(vec3 f0, float f90, float VdotH)\n{\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = x * x2 * x2;\n    return f0 + (f90 - f0) * x5;\n}\n\nvec3 F_Schlick(vec3 f0, float VdotH)\n{\n    float f90 = 1.0; //clamp(dot(f0, vec3(50.0 * 0.33)), 0.0, 1.0);\n    return F_Schlick(f0, f90, VdotH);\n}\n\nvec3 Schlick_to_F0(vec3 f, vec3 f90, float VdotH) {\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = clamp(x * x2 * x2, 0.0, 0.9999);\n\n    return (f - f90 * x5) / (1.0 - x5);\n}\n\nfloat Schlick_to_F0(float f, float f90, float VdotH) {\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = clamp(x * x2 * x2, 0.0, 0.9999);\n\n    return (f - f90 * x5) / (1.0 - x5);\n}\n\nvec3 Schlick_to_F0(vec3 f, float VdotH) {\n    return Schlick_to_F0(f, vec3(1.0), VdotH);\n}\n\nfloat Schlick_to_F0(float f, float VdotH) {\n    return Schlick_to_F0(f, 1.0, VdotH);\n}\n\n// Smith Joint GGX\n// Note: Vis = G / (4 * NdotL * NdotV)\n// see Eric Heitz. 2014. Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs. Journal of Computer Graphics Techniques, 3\n// see Real-Time Rendering. Page 331 to 336.\n// see https://google.github.io/filament/Filament.md.html#materialsystem/specularbrdf/geometricshadowing(specularg)\nfloat V_GGX(float NdotL, float NdotV, float alphaRoughness)\n{\n    float alphaRoughnessSq = alphaRoughness * alphaRoughness;\n\n    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);\n    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);\n\n    float GGX = GGXV + GGXL;\n    if (GGX > 0.0)\n    {\n        return 0.5 / GGX;\n    }\n    return 0.0;\n}\n\n// The following equation(s) model the distribution of microfacet normals across the area being drawn (aka D())\n// Implementation from \"Average Irregularity Representation of a Roughened Surface for Ray Reflection\" by T. S. Trowbridge, and K. P. Reitz\n// Follows the distribution function recommended in the SIGGRAPH 2013 course notes from EPIC Games [1], Equation 3.\nfloat D_GGX(float NdotH, float alphaRoughness)\n{\n    float alphaRoughnessSq = alphaRoughness * alphaRoughness;\n    float f = (NdotH * NdotH) * (alphaRoughnessSq - 1.0) + 1.0;\n    return alphaRoughnessSq / (M_PI * f * f);\n}\n\nfloat lambdaSheenNumericHelper(float x, float alphaG)\n{\n    float oneMinusAlphaSq = (1.0 - alphaG) * (1.0 - alphaG);\n    float a = mix(21.5473, 25.3245, oneMinusAlphaSq);\n    float b = mix(3.82987, 3.32435, oneMinusAlphaSq);\n    float c = mix(0.19823, 0.16801, oneMinusAlphaSq);\n    float d = mix(-1.97760, -1.27393, oneMinusAlphaSq);\n    float e = mix(-4.32054, -4.85967, oneMinusAlphaSq);\n    return a / (1.0 + b * pow(x, c)) + d * x + e;\n}\n\nfloat lambdaSheen(float cosTheta, float alphaG)\n{\n    if (abs(cosTheta) < 0.5)\n    {\n        return exp(lambdaSheenNumericHelper(cosTheta, alphaG));\n    }\n    else\n    {\n        return exp(2.0 * lambdaSheenNumericHelper(0.5, alphaG) - lambdaSheenNumericHelper(1.0 - cosTheta, alphaG));\n    }\n}\n\nfloat V_Sheen(float NdotL, float NdotV, float sheenRoughness)\n{\n    sheenRoughness = max(sheenRoughness, 0.000001); //clamp (0,1]\n    float alphaG = sheenRoughness * sheenRoughness;\n\n    return clamp(1.0 / ((1.0 + lambdaSheen(NdotV, alphaG) + lambdaSheen(NdotL, alphaG)) *\n        (4.0 * NdotV * NdotL)), 0.0, 1.0);\n}\n\n//Sheen implementation-------------------------------------------------------------------------------------\n// See  https://github.com/sebavan/glTF/tree/KHR_materials_sheen/extensions/2.0/Khronos/KHR_materials_sheen\n\n// Estevez and Kulla http://www.aconty.com/pdf/s2017_pbs_imageworks_sheen.pdf\nfloat D_Charlie(float sheenRoughness, float NdotH)\n{\n    sheenRoughness = max(sheenRoughness, 0.000001); //clamp (0,1]\n    float alphaG = sheenRoughness * sheenRoughness;\n    float invR = 1.0 / alphaG;\n    float cos2h = NdotH * NdotH;\n    float sin2h = 1.0 - cos2h;\n    return (2.0 + invR) * pow(sin2h, invR * 0.5) / (2.0 * M_PI);\n}\n\n//https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_lambertian(vec3 f0, vec3 f90, vec3 diffuseColor, float specularWeight, float VdotH)\n{\n    // see https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/\n    return (1.0 - specularWeight * F_Schlick(f0, f90, VdotH)) * (diffuseColor / M_PI);\n}\n\n#ifdef MATERIAL_IRIDESCENCE\n//https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_lambertianIridescence(vec3 f0, vec3 f90, vec3 iridescenceFresnel, float iridescenceFactor, vec3 diffuseColor, float specularWeight, float VdotH)\n{\n    // Use the maximum component of the iridescence Fresnel color\n    // Maximum is used instead of the RGB value to not get inverse colors for the diffuse BRDF\n    vec3 iridescenceFresnelMax = vec3(max(max(iridescenceFresnel.r, iridescenceFresnel.g), iridescenceFresnel.b));\n\n    vec3 schlickFresnel = F_Schlick(f0, f90, VdotH);\n\n    // Blend default specular Fresnel with iridescence Fresnel\n    vec3 F = mix(schlickFresnel, iridescenceFresnelMax, iridescenceFactor);\n\n    // see https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/\n    return (1.0 - specularWeight * F) * (diffuseColor / M_PI);\n}\n#endif\n\n//  https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_specularGGX(vec3 f0, vec3 f90, float alphaRoughness, float specularWeight, float VdotH, float NdotL, float NdotV, float NdotH)\n{\n    vec3 F = F_Schlick(f0, f90, VdotH);\n    float Vis = V_GGX(NdotL, NdotV, alphaRoughness);\n    float D = D_GGX(NdotH, alphaRoughness);\n\n    return specularWeight * F * Vis * D;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\nvec3 BRDF_specularGGXIridescence(vec3 f0, vec3 f90, vec3 iridescenceFresnel, float alphaRoughness, float iridescenceFactor, float specularWeight, float VdotH, float NdotL, float NdotV, float NdotH)\n{\n    vec3 F = mix(F_Schlick(f0, f90, VdotH), iridescenceFresnel, iridescenceFactor);\n    float Vis = V_GGX(NdotL, NdotV, alphaRoughness);\n    float D = D_GGX(NdotH, alphaRoughness);\n\n    return specularWeight * F * Vis * D;\n}\n#endif\n\n// f_sheen\nvec3 BRDF_specularSheen(vec3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH)\n{\n    float sheenDistribution = D_Charlie(sheenRoughness, NdotH);\n    float sheenVisibility = V_Sheen(NdotL, NdotV, sheenRoughness);\n    return sheenColor * sheenDistribution * sheenVisibility;\n}\n"; // eslint-disable-line
+var brdfShader = "#define GLSLIFY 1\n//\n// Fresnel\n//\n// http://graphicrants.blogspot.com/2013/08/specular-brdf-reference.html\n// https://github.com/wdas/brdf/tree/master/src/brdfs\n// https://google.github.io/filament/Filament.md.html\n//\n\n// The following equation models the Fresnel reflectance term of the spec equation (aka F())\n// Implementation of fresnel from [4], Equation 15\nvec3 F_Schlick(vec3 f0, vec3 f90, float VdotH)\n{\n    return f0 + (f90 - f0) * pow(clamp(1.0 - VdotH, 0.0, 1.0), 5.0);\n}\n\nfloat F_Schlick(float f0, float f90, float VdotH)\n{\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = x * x2 * x2;\n    return f0 + (f90 - f0) * x5;\n}\n\nfloat F_Schlick(float f0, float VdotH)\n{\n    float f90 = 1.0; //clamp(50.0 * f0, 0.0, 1.0);\n    return F_Schlick(f0, f90, VdotH);\n}\n\nvec3 F_Schlick(vec3 f0, float f90, float VdotH)\n{\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = x * x2 * x2;\n    return f0 + (f90 - f0) * x5;\n}\n\nvec3 F_Schlick(vec3 f0, float VdotH)\n{\n    float f90 = 1.0; //clamp(dot(f0, vec3(50.0 * 0.33)), 0.0, 1.0);\n    return F_Schlick(f0, f90, VdotH);\n}\n\nvec3 Schlick_to_F0(vec3 f, vec3 f90, float VdotH) {\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = clamp(x * x2 * x2, 0.0, 0.9999);\n\n    return (f - f90 * x5) / (1.0 - x5);\n}\n\nfloat Schlick_to_F0(float f, float f90, float VdotH) {\n    float x = clamp(1.0 - VdotH, 0.0, 1.0);\n    float x2 = x * x;\n    float x5 = clamp(x * x2 * x2, 0.0, 0.9999);\n\n    return (f - f90 * x5) / (1.0 - x5);\n}\n\nvec3 Schlick_to_F0(vec3 f, float VdotH) {\n    return Schlick_to_F0(f, vec3(1.0), VdotH);\n}\n\nfloat Schlick_to_F0(float f, float VdotH) {\n    return Schlick_to_F0(f, 1.0, VdotH);\n}\n\n// Smith Joint GGX\n// Note: Vis = G / (4 * NdotL * NdotV)\n// see Eric Heitz. 2014. Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs. Journal of Computer Graphics Techniques, 3\n// see Real-Time Rendering. Page 331 to 336.\n// see https://google.github.io/filament/Filament.md.html#materialsystem/specularbrdf/geometricshadowing(specularg)\nfloat V_GGX(float NdotL, float NdotV, float alphaRoughness)\n{\n    float alphaRoughnessSq = alphaRoughness * alphaRoughness;\n\n    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);\n    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaRoughnessSq) + alphaRoughnessSq);\n\n    float GGX = GGXV + GGXL;\n    if (GGX > 0.0)\n    {\n        return 0.5 / GGX;\n    }\n    return 0.0;\n}\n\n// The following equation(s) model the distribution of microfacet normals across the area being drawn (aka D())\n// Implementation from \"Average Irregularity Representation of a Roughened Surface for Ray Reflection\" by T. S. Trowbridge, and K. P. Reitz\n// Follows the distribution function recommended in the SIGGRAPH 2013 course notes from EPIC Games [1], Equation 3.\nfloat D_GGX(float NdotH, float alphaRoughness)\n{\n    float alphaRoughnessSq = alphaRoughness * alphaRoughness;\n    float f = (NdotH * NdotH) * (alphaRoughnessSq - 1.0) + 1.0;\n    return alphaRoughnessSq / (M_PI * f * f);\n}\n\nfloat lambdaSheenNumericHelper(float x, float alphaG)\n{\n    float oneMinusAlphaSq = (1.0 - alphaG) * (1.0 - alphaG);\n    float a = mix(21.5473, 25.3245, oneMinusAlphaSq);\n    float b = mix(3.82987, 3.32435, oneMinusAlphaSq);\n    float c = mix(0.19823, 0.16801, oneMinusAlphaSq);\n    float d = mix(-1.97760, -1.27393, oneMinusAlphaSq);\n    float e = mix(-4.32054, -4.85967, oneMinusAlphaSq);\n    return a / (1.0 + b * pow(x, c)) + d * x + e;\n}\n\nfloat lambdaSheen(float cosTheta, float alphaG)\n{\n    if (abs(cosTheta) < 0.5)\n    {\n        return exp(lambdaSheenNumericHelper(cosTheta, alphaG));\n    }\n    else\n    {\n        return exp(2.0 * lambdaSheenNumericHelper(0.5, alphaG) - lambdaSheenNumericHelper(1.0 - cosTheta, alphaG));\n    }\n}\n\nfloat V_Sheen(float NdotL, float NdotV, float sheenRoughness)\n{\n    sheenRoughness = max(sheenRoughness, 0.000001); //clamp (0,1]\n    float alphaG = sheenRoughness * sheenRoughness;\n\n    return clamp(1.0 / ((1.0 + lambdaSheen(NdotV, alphaG) + lambdaSheen(NdotL, alphaG)) *\n        (4.0 * NdotV * NdotL)), 0.0, 1.0);\n}\n\n//Sheen implementation-------------------------------------------------------------------------------------\n// See  https://github.com/sebavan/glTF/tree/KHR_materials_sheen/extensions/2.0/Khronos/KHR_materials_sheen\n\n// Estevez and Kulla http://www.aconty.com/pdf/s2017_pbs_imageworks_sheen.pdf\nfloat D_Charlie(float sheenRoughness, float NdotH)\n{\n    sheenRoughness = max(sheenRoughness, 0.000001); //clamp (0,1]\n    float alphaG = sheenRoughness * sheenRoughness;\n    float invR = 1.0 / alphaG;\n    float cos2h = NdotH * NdotH;\n    float sin2h = 1.0 - cos2h;\n    return (2.0 + invR) * pow(sin2h, invR * 0.5) / (2.0 * M_PI);\n}\n\n//https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_lambertian(vec3 f0, vec3 f90, vec3 diffuseColor, float specularWeight, float VdotH)\n{\n    // see https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/\n    return (1.0 - specularWeight * F_Schlick(f0, f90, VdotH)) * (diffuseColor / M_PI);\n}\n\n#ifdef MATERIAL_IRIDESCENCE\n//https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_lambertianIridescence(vec3 f0, vec3 f90, vec3 iridescenceFresnel, float iridescenceFactor, vec3 diffuseColor, float specularWeight, float VdotH)\n{\n    // Use the maximum component of the iridescence Fresnel color\n    // Maximum is used instead of the RGB value to not get inverse colors for the diffuse BRDF\n    vec3 iridescenceFresnelMax = vec3(max(max(iridescenceFresnel.r, iridescenceFresnel.g), iridescenceFresnel.b));\n\n    vec3 schlickFresnel = F_Schlick(f0, f90, VdotH);\n\n    // Blend default specular Fresnel with iridescence Fresnel\n    vec3 F = mix(schlickFresnel, iridescenceFresnelMax, iridescenceFactor);\n\n    // see https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/\n    return (1.0 - specularWeight * F) * (diffuseColor / M_PI);\n}\n#endif\n\n//  https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#acknowledgments AppendixB\nvec3 BRDF_specularGGX(vec3 f0, vec3 f90, float alphaRoughness, float specularWeight, float VdotH, float NdotL, float NdotV, float NdotH)\n{\n    vec3 F = F_Schlick(f0, f90, VdotH);\n    float Vis = V_GGX(NdotL, NdotV, alphaRoughness);\n    float D = D_GGX(NdotH, alphaRoughness);\n\n    return specularWeight * F * Vis * D;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\nvec3 BRDF_specularGGXIridescence(vec3 f0, vec3 f90, vec3 iridescenceFresnel, float alphaRoughness, float iridescenceFactor, float specularWeight, float VdotH, float NdotL, float NdotV, float NdotH)\n{\n    vec3 F = mix(F_Schlick(f0, f90, VdotH), iridescenceFresnel, iridescenceFactor);\n    float Vis = V_GGX(NdotL, NdotV, alphaRoughness);\n    float D = D_GGX(NdotH, alphaRoughness);\n\n    return specularWeight * F * Vis * D;\n}\n#endif\n\n#ifdef MATERIAL_ANISOTROPY\n// GGX Distribution Anisotropic (Same as Babylon.js)\n// https://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf Addenda\nfloat D_GGX_anisotropic(float NdotH, float TdotH, float BdotH, float anisotropy, float at, float ab)\n{\n    float a2 = at * ab;\n    vec3 f = vec3(ab * TdotH, at * BdotH, a2 * NdotH);\n    float w2 = a2 / dot(f, f);\n    return a2 * w2 * w2 / M_PI;\n}\n\n// GGX Mask/Shadowing Anisotropic (Same as Babylon.js - smithVisibility_GGXCorrelated_Anisotropic)\n// Heitz http://jcgt.org/published/0003/02/03/paper.pdf\nfloat V_GGX_anisotropic(float NdotL, float NdotV, float BdotV, float TdotV, float TdotL, float BdotL, float at, float ab)\n{\n    float GGXV = NdotL * length(vec3(at * TdotV, ab * BdotV, NdotV));\n    float GGXL = NdotV * length(vec3(at * TdotL, ab * BdotL, NdotL));\n    float v = 0.5 / (GGXV + GGXL);\n    return clamp(v, 0.0, 1.0);\n}\n\nvec3 BRDF_specularGGXAnisotropy(vec3 f0, vec3 f90, float alphaRoughness, float anisotropy, vec3 n, vec3 v, vec3 l, vec3 h, vec3 t, vec3 b)\n{\n    // Roughness along the anisotropy bitangent is the material roughness, while the tangent roughness increases with anisotropy.\n    float at = mix(alphaRoughness, 1.0, anisotropy * anisotropy);\n    float ab = clamp(alphaRoughness, 0.001, 1.0);\n\n    float NdotL = clamp(dot(n, l), 0.0, 1.0);\n    float NdotH = clamp(dot(n, h), 0.001, 1.0);\n    float NdotV = dot(n, v);\n    float VdotH = clamp(dot(v, h), 0.0, 1.0);\n\n    float V = V_GGX_anisotropic(NdotL, NdotV, dot(b, v), dot(t, v), dot(t, l), dot(b, l), at, ab);\n    float D = D_GGX_anisotropic(NdotH, dot(t, h), dot(b, h), anisotropy, at, ab);\n\n    vec3 F = F_Schlick(f0, f90, VdotH);\n    return F * V * D;\n}\n#endif\n\n// f_sheen\nvec3 BRDF_specularSheen(vec3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH)\n{\n    float sheenDistribution = D_Charlie(sheenRoughness, NdotH);\n    float sheenVisibility = V_Sheen(NdotL, NdotV, sheenRoughness);\n    return sheenColor * sheenDistribution * sheenVisibility;\n}\n"; // eslint-disable-line
 
 var iridescenceShader = "#define GLSLIFY 1\n// XYZ to sRGB color space\nconst mat3 XYZ_TO_REC709 = mat3(\n     3.2404542, -0.9692660,  0.0556434,\n    -1.5371385,  1.8760108, -0.2040259,\n    -0.4985314,  0.0415560,  1.0572252\n);\n\n// Assume air interface for top\n// Note: We don't handle the case fresnel0 == 1\nvec3 Fresnel0ToIor(vec3 fresnel0) {\n    vec3 sqrtF0 = sqrt(fresnel0);\n    return (vec3(1.0) + sqrtF0) / (vec3(1.0) - sqrtF0);\n}\n\n// Conversion FO/IOR\nvec3 IorToFresnel0(vec3 transmittedIor, float incidentIor) {\n    return sq((transmittedIor - vec3(incidentIor)) / (transmittedIor + vec3(incidentIor)));\n}\n\n// ior is a value between 1.0 and 3.0. 1.0 is air interface\nfloat IorToFresnel0(float transmittedIor, float incidentIor) {\n    return sq((transmittedIor - incidentIor) / (transmittedIor + incidentIor));\n}\n\n// Fresnel equations for dielectric/dielectric interfaces.\n// Ref: https://belcour.github.io/blog/research/2017/05/01/brdf-thin-film.html\n// Evaluation XYZ sensitivity curves in Fourier space\nvec3 evalSensitivity(float OPD, vec3 shift) {\n    float phase = 2.0 * M_PI * OPD * 1.0e-9;\n    vec3 val = vec3(5.4856e-13, 4.4201e-13, 5.2481e-13);\n    vec3 pos = vec3(1.6810e+06, 1.7953e+06, 2.2084e+06);\n    vec3 var = vec3(4.3278e+09, 9.3046e+09, 6.6121e+09);\n\n    vec3 xyz = val * sqrt(2.0 * M_PI * var) * cos(pos * phase + shift) * exp(-sq(phase) * var);\n    xyz.x += 9.7470e-14 * sqrt(2.0 * M_PI * 4.5282e+09) * cos(2.2399e+06 * phase + shift[0]) * exp(-4.5282e+09 * sq(phase));\n    xyz /= 1.0685e-7;\n\n    vec3 srgb = XYZ_TO_REC709 * xyz;\n    return srgb;\n}\n\nvec3 evalIridescence(float outsideIOR, float eta2, float cosTheta1, float thinFilmThickness, vec3 baseF0) {\n    vec3 I;\n\n    // Force iridescenceIor -> outsideIOR when thinFilmThickness -> 0.0\n    float iridescenceIor = mix(outsideIOR, eta2, smoothstep(0.0, 0.03, thinFilmThickness));\n    // Evaluate the cosTheta on the base layer (Snell law)\n    float sinTheta2Sq = sq(outsideIOR / iridescenceIor) * (1.0 - sq(cosTheta1));\n\n    // Handle TIR:\n    float cosTheta2Sq = 1.0 - sinTheta2Sq;\n    if (cosTheta2Sq < 0.0) {\n        return vec3(1.0);\n    }\n\n    float cosTheta2 = sqrt(cosTheta2Sq);\n\n    // First interface\n    float R0 = IorToFresnel0(iridescenceIor, outsideIOR);\n    float R12 = F_Schlick(R0, cosTheta1);\n    float R21 = R12;\n    float T121 = 1.0 - R12;\n    float phi12 = 0.0;\n    if (iridescenceIor < outsideIOR) phi12 = M_PI;\n    float phi21 = M_PI - phi12;\n\n    // Second interface\n    vec3 baseIOR = Fresnel0ToIor(clamp(baseF0, 0.0, 0.9999)); // guard against 1.0\n    vec3 R1 = IorToFresnel0(baseIOR, iridescenceIor);\n    vec3 R23 = F_Schlick(R1, cosTheta2);\n    vec3 phi23 = vec3(0.0);\n    if (baseIOR[0] < iridescenceIor) phi23[0] = M_PI;\n    if (baseIOR[1] < iridescenceIor) phi23[1] = M_PI;\n    if (baseIOR[2] < iridescenceIor) phi23[2] = M_PI;\n\n    // Phase shift\n    float OPD = 2.0 * iridescenceIor * thinFilmThickness * cosTheta2;\n    vec3 phi = vec3(phi21) + phi23;\n\n    // Compound terms\n    vec3 R123 = clamp(R12 * R23, 1e-5, 0.9999);\n    vec3 r123 = sqrt(R123);\n    vec3 Rs = sq(T121) * R23 / (vec3(1.0) - R123);\n\n    // Reflectance term for m = 0 (DC term amplitude)\n    vec3 C0 = R12 + Rs;\n    I = C0;\n\n    // Reflectance term for m > 0 (pairs of diracs)\n    vec3 Cm = Rs - T121;\n    for (int m = 1; m <= 2; ++m)\n    {\n        Cm *= r123;\n        vec3 Sm = 2.0 * evalSensitivity(float(m) * OPD, float(m) * phi);\n        I += Cm * Sm;\n    }\n\n    // Since out of gamut colors might be produced, negative color values are clamped to 0.\n    return max(I, vec3(0.0));\n}\n"; // eslint-disable-line
 
-var materialInfoShader = "#define GLSLIFY 1\n// Metallic Roughness\nuniform float u_MetallicFactor;\nuniform float u_RoughnessFactor;\nuniform vec4 u_BaseColorFactor;\n\n// Specular Glossiness\nuniform vec3 u_SpecularFactor;\nuniform vec4 u_DiffuseFactor;\nuniform float u_GlossinessFactor;\n\n// Sheen\nuniform float u_SheenRoughnessFactor;\nuniform vec3 u_SheenColorFactor;\n\n// Clearcoat\nuniform float u_ClearcoatFactor;\nuniform float u_ClearcoatRoughnessFactor;\n\n// Specular\nuniform vec3 u_KHR_materials_specular_specularColorFactor;\nuniform float u_KHR_materials_specular_specularFactor;\n\n// Transmission\nuniform float u_TransmissionFactor;\n\n// Volume\nuniform float u_ThicknessFactor;\nuniform vec3 u_AttenuationColor;\nuniform float u_AttenuationDistance;\n\n// Iridescence\nuniform float u_IridescenceFactor;\nuniform float u_IridescenceIor;\nuniform float u_IridescenceThicknessMinimum;\nuniform float u_IridescenceThicknessMaximum;\n\n// Emissive Strength\nuniform float u_EmissiveStrength;\n\n// PBR Next IOR\nuniform float u_Ior;\n\n// Alpha mode\nuniform float u_AlphaCutoff;\n\nuniform vec3 u_Camera;\n\n#ifdef MATERIAL_TRANSMISSION\nuniform ivec2 u_ScreenSize;\n#endif\n\nuniform mat4 u_ModelMatrix;\nuniform mat4 u_ViewMatrix;\nuniform mat4 u_ProjectionMatrix;\n\nstruct MaterialInfo\n{\n    float ior;\n    float perceptualRoughness;      // roughness value, as authored by the model creator (input to shader)\n    vec3 f0;                        // full reflectance color (n incidence angle)\n\n    float alphaRoughness;           // roughness mapped to a more linear change in the roughness (proposed by [2])\n    vec3 c_diff;\n\n    vec3 f90;                       // reflectance color at grazing angle\n    float metallic;\n\n    vec3 baseColor;\n\n    float sheenRoughnessFactor;\n    vec3 sheenColorFactor;\n\n    vec3 clearcoatF0;\n    vec3 clearcoatF90;\n    float clearcoatFactor;\n    vec3 clearcoatNormal;\n    float clearcoatRoughness;\n\n    // KHR_materials_specular \n    float specularWeight; // product of specularFactor and specularTexture.a\n\n    float transmissionFactor;\n\n    float thickness;\n    vec3 attenuationColor;\n    float attenuationDistance;\n\n    // KHR_materials_iridescence\n    float iridescenceFactor;\n    float iridescenceIor;\n    float iridescenceThickness;\n};\n\n// Get normal, tangent and bitangent vectors.\nNormalInfo getNormalInfo(vec3 v)\n{\n    vec2 UV = getNormalUV();\n    vec3 uv_dx = dFdx(vec3(UV, 0.0));\n    vec3 uv_dy = dFdy(vec3(UV, 0.0));\n\n    if (length(uv_dx) + length(uv_dy) <= 1e-6) {\n        uv_dx = vec3(1.0, 0.0, 0.0);\n        uv_dy = vec3(0.0, 1.0, 0.0);\n    }\n\n    vec3 t_ = (uv_dy.t * dFdx(v_Position) - uv_dx.t * dFdy(v_Position)) /\n        (uv_dx.s * uv_dy.t - uv_dy.s * uv_dx.t);\n\n    vec3 n, t, b, ng;\n\n    // Compute geometrical TBN:\n#ifdef HAS_NORMAL_VEC3\n#ifdef HAS_TANGENT_VEC4\n    // Trivial TBN computation, present as vertex attribute.\n    // Normalize eigenvectors as matrix is linearly interpolated.\n    t = normalize(v_TBN[0]);\n    b = normalize(v_TBN[1]);\n    ng = normalize(v_TBN[2]);\n#else\n    // Normals are either present as vertex attributes or approximated.\n    ng = normalize(v_Normal);\n    t = normalize(t_ - ng * dot(ng, t_));\n    b = cross(ng, t);\n#endif\n#else\n    ng = normalize(cross(dFdx(v_Position), dFdy(v_Position)));\n    t = normalize(t_ - ng * dot(ng, t_));\n    b = cross(ng, t);\n#endif\n\n    // For a back-facing surface, the tangential basis vectors are negated.\n    if (gl_FrontFacing == false)\n    {\n        t *= -1.0;\n        b *= -1.0;\n        ng *= -1.0;\n    }\n\n    // Compute normals:\n    NormalInfo info;\n    info.ng = ng;\n#ifdef HAS_NORMAL_MAP\n    info.ntex = texture(u_NormalSampler, UV).rgb * 2.0 - vec3(1.0);\n    info.ntex *= vec3(u_NormalScale, u_NormalScale, 1.0);\n    info.ntex = normalize(info.ntex);\n    info.n = normalize(mat3(t, b, ng) * info.ntex);\n#else\n    info.n = ng;\n#endif\n    info.t = t;\n    info.b = b;\n    return info;\n}\n\n#ifdef MATERIAL_CLEARCOAT\nvec3 getClearcoatNormal(NormalInfo normalInfo)\n{\n#ifdef HAS_CLEARCOAT_NORMAL_MAP\n    vec3 n = texture(u_ClearcoatNormalSampler, getClearcoatNormalUV()).rgb * 2.0 - vec3(1.0);\n    n *= vec3(u_ClearcoatNormalScale, u_ClearcoatNormalScale, 1.0);\n    n = mat3(normalInfo.t, normalInfo.b, normalInfo.ng) * normalize(n);\n    return n;\n#else\n    return normalInfo.ng;\n#endif\n}\n#endif\n\nvec4 getBaseColor()\n{\n    vec4 baseColor = vec4(1);\n\n#if defined(MATERIAL_SPECULARGLOSSINESS)\n    baseColor = u_DiffuseFactor;\n#elif defined(MATERIAL_METALLICROUGHNESS)\n    baseColor = u_BaseColorFactor;\n#endif\n\n#if defined(MATERIAL_SPECULARGLOSSINESS) && defined(HAS_DIFFUSE_MAP)\n    baseColor *= texture(u_DiffuseSampler, getDiffuseUV());\n#elif defined(MATERIAL_METALLICROUGHNESS) && defined(HAS_BASE_COLOR_MAP)\n    baseColor *= texture(u_BaseColorSampler, getBaseColorUV());\n#endif\n\n    return baseColor * getVertexColor();\n}\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\nMaterialInfo getSpecularGlossinessInfo(MaterialInfo info)\n{\n    info.f0 = u_SpecularFactor;\n    info.perceptualRoughness = u_GlossinessFactor;\n\n#ifdef HAS_SPECULAR_GLOSSINESS_MAP\n    vec4 sgSample = texture(u_SpecularGlossinessSampler, getSpecularGlossinessUV());\n    info.perceptualRoughness *= sgSample.a ; // glossiness to roughness\n    info.f0 *= sgSample.rgb; // specular\n#endif // ! HAS_SPECULAR_GLOSSINESS_MAP\n\n    info.perceptualRoughness = 1.0 - info.perceptualRoughness; // 1 - glossiness\n    info.c_diff = info.baseColor.rgb * (1.0 - max(max(info.f0.r, info.f0.g), info.f0.b));\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_METALLICROUGHNESS\nMaterialInfo getMetallicRoughnessInfo(MaterialInfo info)\n{\n    info.metallic = u_MetallicFactor;\n    info.perceptualRoughness = u_RoughnessFactor;\n\n#ifdef HAS_METALLIC_ROUGHNESS_MAP\n    // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.\n    // This layout intentionally reserves the 'r' channel for (optional) occlusion map data\n    vec4 mrSample = texture(u_MetallicRoughnessSampler, getMetallicRoughnessUV());\n    info.perceptualRoughness *= mrSample.g;\n    info.metallic *= mrSample.b;\n#endif\n\n    // Achromatic f0 based on IOR.\n    info.c_diff = mix(info.baseColor.rgb,  vec3(0), info.metallic);\n    info.f0 = mix(info.f0, info.baseColor.rgb, info.metallic);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_SHEEN\nMaterialInfo getSheenInfo(MaterialInfo info)\n{\n    info.sheenColorFactor = u_SheenColorFactor;\n    info.sheenRoughnessFactor = u_SheenRoughnessFactor;\n\n#ifdef HAS_SHEEN_COLOR_MAP\n    vec4 sheenColorSample = texture(u_SheenColorSampler, getSheenColorUV());\n    info.sheenColorFactor *= sheenColorSample.rgb;\n#endif\n\n#ifdef HAS_SHEEN_ROUGHNESS_MAP\n    vec4 sheenRoughnessSample = texture(u_SheenRoughnessSampler, getSheenRoughnessUV());\n    info.sheenRoughnessFactor *= sheenRoughnessSample.a;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_SPECULAR\nMaterialInfo getSpecularInfo(MaterialInfo info)\n{   \n    vec4 specularTexture = vec4(1.0);\n#ifdef HAS_SPECULAR_MAP\n    specularTexture.a = texture(u_SpecularSampler, getSpecularUV()).a;\n#endif\n#ifdef HAS_SPECULAR_COLOR_MAP\n    specularTexture.rgb = texture(u_SpecularColorSampler, getSpecularColorUV()).rgb;\n#endif\n\n    vec3 dielectricSpecularF0 = min(info.f0 * u_KHR_materials_specular_specularColorFactor * specularTexture.rgb, vec3(1.0));\n    info.f0 = mix(dielectricSpecularF0, info.baseColor.rgb, info.metallic);\n    info.specularWeight = u_KHR_materials_specular_specularFactor * specularTexture.a;\n    info.c_diff = mix(info.baseColor.rgb, vec3(0), info.metallic);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nMaterialInfo getTransmissionInfo(MaterialInfo info)\n{\n    info.transmissionFactor = u_TransmissionFactor;\n\n#ifdef HAS_TRANSMISSION_MAP\n    vec4 transmissionSample = texture(u_TransmissionSampler, getTransmissionUV());\n    info.transmissionFactor *= transmissionSample.r;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_VOLUME\nMaterialInfo getVolumeInfo(MaterialInfo info)\n{\n    info.thickness = u_ThicknessFactor;\n    info.attenuationColor = u_AttenuationColor;\n    info.attenuationDistance = u_AttenuationDistance;\n\n#ifdef HAS_THICKNESS_MAP\n    vec4 thicknessSample = texture(u_ThicknessSampler, getThicknessUV());\n    info.thickness *= thicknessSample.g;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_IRIDESCENCE\nMaterialInfo getIridescenceInfo(MaterialInfo info)\n{\n    info.iridescenceFactor = u_IridescenceFactor;\n    info.iridescenceIor = u_IridescenceIor;\n    info.iridescenceThickness = u_IridescenceThicknessMaximum;\n\n    #ifdef HAS_IRIDESCENCE_MAP\n        info.iridescenceFactor *= texture(u_IridescenceSampler, getIridescenceUV()).r;\n    #endif\n\n    #ifdef HAS_IRIDESCENCE_THICKNESS_MAP\n        float thicknessSampled = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;\n        float thickness = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thicknessSampled);\n        info.iridescenceThickness = thickness;\n    #endif\n\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\nMaterialInfo getClearCoatInfo(MaterialInfo info, NormalInfo normalInfo)\n{\n    info.clearcoatFactor = u_ClearcoatFactor;\n    info.clearcoatRoughness = u_ClearcoatRoughnessFactor;\n    info.clearcoatF0 = vec3(pow((info.ior - 1.0) / (info.ior + 1.0), 2.0));\n    info.clearcoatF90 = vec3(1.0);\n\n#ifdef HAS_CLEARCOAT_MAP\n    vec4 clearcoatSample = texture(u_ClearcoatSampler, getClearcoatUV());\n    info.clearcoatFactor *= clearcoatSample.r;\n#endif\n\n#ifdef HAS_CLEARCOAT_ROUGHNESS_MAP\n    vec4 clearcoatSampleRoughness = texture(u_ClearcoatRoughnessSampler, getClearcoatRoughnessUV());\n    info.clearcoatRoughness *= clearcoatSampleRoughness.g;\n#endif\n\n    info.clearcoatNormal = getClearcoatNormal(normalInfo);\n    info.clearcoatRoughness = clamp(info.clearcoatRoughness, 0.0, 1.0);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_IOR\nMaterialInfo getIorInfo(MaterialInfo info)\n{\n    info.f0 = vec3(pow(( u_Ior - 1.0) /  (u_Ior + 1.0), 2.0));\n    info.ior = u_Ior;\n    return info;\n}\n#endif\n\nfloat albedoSheenScalingLUT(float NdotV, float sheenRoughnessFactor)\n{\n    return texture(u_SheenELUT, vec2(NdotV, sheenRoughnessFactor)).r;\n}\n"; // eslint-disable-line
+var materialInfoShader = "#define GLSLIFY 1\n// Metallic Roughness\nuniform float u_MetallicFactor;\nuniform float u_RoughnessFactor;\nuniform vec4 u_BaseColorFactor;\n\n// Specular Glossiness\nuniform vec3 u_SpecularFactor;\nuniform vec4 u_DiffuseFactor;\nuniform float u_GlossinessFactor;\n\n// Sheen\nuniform float u_SheenRoughnessFactor;\nuniform vec3 u_SheenColorFactor;\n\n// Clearcoat\nuniform float u_ClearcoatFactor;\nuniform float u_ClearcoatRoughnessFactor;\n\n// Specular\nuniform vec3 u_KHR_materials_specular_specularColorFactor;\nuniform float u_KHR_materials_specular_specularFactor;\n\n// Transmission\nuniform float u_TransmissionFactor;\n\n// Volume\nuniform float u_ThicknessFactor;\nuniform vec3 u_AttenuationColor;\nuniform float u_AttenuationDistance;\n\n// Iridescence\nuniform float u_IridescenceFactor;\nuniform float u_IridescenceIor;\nuniform float u_IridescenceThicknessMinimum;\nuniform float u_IridescenceThicknessMaximum;\n\n// Emissive Strength\nuniform float u_EmissiveStrength;\n\n// IOR\nuniform float u_Ior;\n\n// Anisotropy\nuniform vec3 u_Anisotropy;\n\n// Alpha mode\nuniform float u_AlphaCutoff;\n\nuniform vec3 u_Camera;\n\n#ifdef MATERIAL_TRANSMISSION\nuniform ivec2 u_ScreenSize;\n#endif\n\nuniform mat4 u_ModelMatrix;\nuniform mat4 u_ViewMatrix;\nuniform mat4 u_ProjectionMatrix;\n\nstruct MaterialInfo\n{\n    float ior;\n    float perceptualRoughness;      // roughness value, as authored by the model creator (input to shader)\n    vec3 f0;                        // full reflectance color (n incidence angle)\n\n    float alphaRoughness;           // roughness mapped to a more linear change in the roughness (proposed by [2])\n    vec3 c_diff;\n\n    vec3 f90;                       // reflectance color at grazing angle\n    float metallic;\n\n    vec3 baseColor;\n\n    float sheenRoughnessFactor;\n    vec3 sheenColorFactor;\n\n    vec3 clearcoatF0;\n    vec3 clearcoatF90;\n    float clearcoatFactor;\n    vec3 clearcoatNormal;\n    float clearcoatRoughness;\n\n    // KHR_materials_specular \n    float specularWeight; // product of specularFactor and specularTexture.a\n\n    float transmissionFactor;\n\n    float thickness;\n    vec3 attenuationColor;\n    float attenuationDistance;\n\n    // KHR_materials_iridescence\n    float iridescenceFactor;\n    float iridescenceIor;\n    float iridescenceThickness;\n\n    // KHR_materials_anisotropy\n    vec3 anisotropicT;\n    vec3 anisotropicB;\n    float anisotropyStrength;\n};\n\n// Get normal, tangent and bitangent vectors.\nNormalInfo getNormalInfo(vec3 v)\n{\n    vec2 UV = getNormalUV();\n    vec2 uv_dx = dFdx(UV);\n    vec2 uv_dy = dFdy(UV);\n\n    if (length(uv_dx) <= 1e-2) {\n      uv_dx = vec2(1.0, 0.0);\n    }\n\n    if (length(uv_dy) <= 1e-2) {\n      uv_dy = vec2(0.0, 1.0);\n    }\n\n    vec3 t_ = (uv_dy.t * dFdx(v_Position) - uv_dx.t * dFdy(v_Position)) /\n        (uv_dx.s * uv_dy.t - uv_dy.s * uv_dx.t);\n\n    vec3 n, t, b, ng;\n\n    // Compute geometrical TBN:\n#ifdef HAS_NORMAL_VEC3\n#ifdef HAS_TANGENT_VEC4\n    // Trivial TBN computation, present as vertex attribute.\n    // Normalize eigenvectors as matrix is linearly interpolated.\n    t = normalize(v_TBN[0]);\n    b = normalize(v_TBN[1]);\n    ng = normalize(v_TBN[2]);\n#else\n    // Normals are either present as vertex attributes or approximated.\n    ng = normalize(v_Normal);\n    t = normalize(t_ - ng * dot(ng, t_));\n    b = cross(ng, t);\n#endif\n#else\n    ng = normalize(cross(dFdx(v_Position), dFdy(v_Position)));\n    t = normalize(t_ - ng * dot(ng, t_));\n    b = cross(ng, t);\n#endif\n\n    // For a back-facing surface, the tangential basis vectors are negated.\n    if (gl_FrontFacing == false)\n    {\n        t *= -1.0;\n        b *= -1.0;\n        ng *= -1.0;\n    }\n\n    // Compute normals:\n    NormalInfo info;\n    info.ng = ng;\n#ifdef HAS_NORMAL_MAP\n    info.ntex = texture(u_NormalSampler, UV).rgb * 2.0 - vec3(1.0);\n    info.ntex *= vec3(u_NormalScale, u_NormalScale, 1.0);\n    info.ntex = normalize(info.ntex);\n    info.n = normalize(mat3(t, b, ng) * info.ntex);\n#else\n    info.n = ng;\n#endif\n    info.t = t;\n    info.b = b;\n    return info;\n}\n\n#ifdef MATERIAL_CLEARCOAT\nvec3 getClearcoatNormal(NormalInfo normalInfo)\n{\n#ifdef HAS_CLEARCOAT_NORMAL_MAP\n    vec3 n = texture(u_ClearcoatNormalSampler, getClearcoatNormalUV()).rgb * 2.0 - vec3(1.0);\n    n *= vec3(u_ClearcoatNormalScale, u_ClearcoatNormalScale, 1.0);\n    n = mat3(normalInfo.t, normalInfo.b, normalInfo.ng) * normalize(n);\n    return n;\n#else\n    return normalInfo.ng;\n#endif\n}\n#endif\n\nvec4 getBaseColor()\n{\n    vec4 baseColor = vec4(1);\n\n#if defined(MATERIAL_SPECULARGLOSSINESS)\n    baseColor = u_DiffuseFactor;\n#elif defined(MATERIAL_METALLICROUGHNESS)\n    baseColor = u_BaseColorFactor;\n#endif\n\n#if defined(MATERIAL_SPECULARGLOSSINESS) && defined(HAS_DIFFUSE_MAP)\n    baseColor *= texture(u_DiffuseSampler, getDiffuseUV());\n#elif defined(MATERIAL_METALLICROUGHNESS) && defined(HAS_BASE_COLOR_MAP)\n    baseColor *= texture(u_BaseColorSampler, getBaseColorUV());\n#endif\n\n    return baseColor * getVertexColor();\n}\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\nMaterialInfo getSpecularGlossinessInfo(MaterialInfo info)\n{\n    info.f0 = u_SpecularFactor;\n    info.perceptualRoughness = u_GlossinessFactor;\n\n#ifdef HAS_SPECULAR_GLOSSINESS_MAP\n    vec4 sgSample = texture(u_SpecularGlossinessSampler, getSpecularGlossinessUV());\n    info.perceptualRoughness *= sgSample.a ; // glossiness to roughness\n    info.f0 *= sgSample.rgb; // specular\n#endif // ! HAS_SPECULAR_GLOSSINESS_MAP\n\n    info.perceptualRoughness = 1.0 - info.perceptualRoughness; // 1 - glossiness\n    info.c_diff = info.baseColor.rgb * (1.0 - max(max(info.f0.r, info.f0.g), info.f0.b));\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_METALLICROUGHNESS\nMaterialInfo getMetallicRoughnessInfo(MaterialInfo info)\n{\n    info.metallic = u_MetallicFactor;\n    info.perceptualRoughness = u_RoughnessFactor;\n\n#ifdef HAS_METALLIC_ROUGHNESS_MAP\n    // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.\n    // This layout intentionally reserves the 'r' channel for (optional) occlusion map data\n    vec4 mrSample = texture(u_MetallicRoughnessSampler, getMetallicRoughnessUV());\n    info.perceptualRoughness *= mrSample.g;\n    info.metallic *= mrSample.b;\n#endif\n\n    // Achromatic f0 based on IOR.\n    info.c_diff = mix(info.baseColor.rgb,  vec3(0), info.metallic);\n    info.f0 = mix(info.f0, info.baseColor.rgb, info.metallic);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_SHEEN\nMaterialInfo getSheenInfo(MaterialInfo info)\n{\n    info.sheenColorFactor = u_SheenColorFactor;\n    info.sheenRoughnessFactor = u_SheenRoughnessFactor;\n\n#ifdef HAS_SHEEN_COLOR_MAP\n    vec4 sheenColorSample = texture(u_SheenColorSampler, getSheenColorUV());\n    info.sheenColorFactor *= sheenColorSample.rgb;\n#endif\n\n#ifdef HAS_SHEEN_ROUGHNESS_MAP\n    vec4 sheenRoughnessSample = texture(u_SheenRoughnessSampler, getSheenRoughnessUV());\n    info.sheenRoughnessFactor *= sheenRoughnessSample.a;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_SPECULAR\nMaterialInfo getSpecularInfo(MaterialInfo info)\n{   \n    vec4 specularTexture = vec4(1.0);\n#ifdef HAS_SPECULAR_MAP\n    specularTexture.a = texture(u_SpecularSampler, getSpecularUV()).a;\n#endif\n#ifdef HAS_SPECULAR_COLOR_MAP\n    specularTexture.rgb = texture(u_SpecularColorSampler, getSpecularColorUV()).rgb;\n#endif\n\n    vec3 dielectricSpecularF0 = min(info.f0 * u_KHR_materials_specular_specularColorFactor * specularTexture.rgb, vec3(1.0));\n    info.f0 = mix(dielectricSpecularF0, info.baseColor.rgb, info.metallic);\n    info.specularWeight = u_KHR_materials_specular_specularFactor * specularTexture.a;\n    info.c_diff = mix(info.baseColor.rgb, vec3(0), info.metallic);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nMaterialInfo getTransmissionInfo(MaterialInfo info)\n{\n    info.transmissionFactor = u_TransmissionFactor;\n\n#ifdef HAS_TRANSMISSION_MAP\n    vec4 transmissionSample = texture(u_TransmissionSampler, getTransmissionUV());\n    info.transmissionFactor *= transmissionSample.r;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_VOLUME\nMaterialInfo getVolumeInfo(MaterialInfo info)\n{\n    info.thickness = u_ThicknessFactor;\n    info.attenuationColor = u_AttenuationColor;\n    info.attenuationDistance = u_AttenuationDistance;\n\n#ifdef HAS_THICKNESS_MAP\n    vec4 thicknessSample = texture(u_ThicknessSampler, getThicknessUV());\n    info.thickness *= thicknessSample.g;\n#endif\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_IRIDESCENCE\nMaterialInfo getIridescenceInfo(MaterialInfo info)\n{\n    info.iridescenceFactor = u_IridescenceFactor;\n    info.iridescenceIor = u_IridescenceIor;\n    info.iridescenceThickness = u_IridescenceThicknessMaximum;\n\n    #ifdef HAS_IRIDESCENCE_MAP\n        info.iridescenceFactor *= texture(u_IridescenceSampler, getIridescenceUV()).r;\n    #endif\n\n    #ifdef HAS_IRIDESCENCE_THICKNESS_MAP\n        float thicknessSampled = texture(u_IridescenceThicknessSampler, getIridescenceThicknessUV()).g;\n        float thickness = mix(u_IridescenceThicknessMinimum, u_IridescenceThicknessMaximum, thicknessSampled);\n        info.iridescenceThickness = thickness;\n    #endif\n\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_CLEARCOAT\nMaterialInfo getClearCoatInfo(MaterialInfo info, NormalInfo normalInfo)\n{\n    info.clearcoatFactor = u_ClearcoatFactor;\n    info.clearcoatRoughness = u_ClearcoatRoughnessFactor;\n    info.clearcoatF0 = vec3(pow((info.ior - 1.0) / (info.ior + 1.0), 2.0));\n    info.clearcoatF90 = vec3(1.0);\n\n#ifdef HAS_CLEARCOAT_MAP\n    vec4 clearcoatSample = texture(u_ClearcoatSampler, getClearcoatUV());\n    info.clearcoatFactor *= clearcoatSample.r;\n#endif\n\n#ifdef HAS_CLEARCOAT_ROUGHNESS_MAP\n    vec4 clearcoatSampleRoughness = texture(u_ClearcoatRoughnessSampler, getClearcoatRoughnessUV());\n    info.clearcoatRoughness *= clearcoatSampleRoughness.g;\n#endif\n\n    info.clearcoatNormal = getClearcoatNormal(normalInfo);\n    info.clearcoatRoughness = clamp(info.clearcoatRoughness, 0.0, 1.0);\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_IOR\nMaterialInfo getIorInfo(MaterialInfo info)\n{\n    info.f0 = vec3(pow(( u_Ior - 1.0) /  (u_Ior + 1.0), 2.0));\n    info.ior = u_Ior;\n    return info;\n}\n#endif\n\n#ifdef MATERIAL_ANISOTROPY\nMaterialInfo getAnisotropyInfo(MaterialInfo info, NormalInfo normalInfo)\n{\n    vec2 direction = vec2(1.0, 0.0);\n    float strengthFactor = 1.0;\n#ifdef HAS_ANISOTROPY_MAP\n    vec3 anisotropySample = texture(u_AnisotropySampler, getAnisotropyUV()).xyz;\n    direction = anisotropySample.xy * 2.0 - vec2(1.0);\n    strengthFactor = anisotropySample.z;\n#endif\n    vec2 directionRotation = u_Anisotropy.xy; // cos(theta), sin(theta)\n    mat2 rotationMatrix = mat2(directionRotation.x, directionRotation.y, -directionRotation.y, directionRotation.x);\n    direction = rotationMatrix * direction.xy;\n\n    info.anisotropicT = mat3(normalInfo.t, normalInfo.b, normalInfo.n) * normalize(vec3(direction, 0.0));\n    info.anisotropicB = cross(normalInfo.ng, info.anisotropicT);\n    info.anisotropyStrength = clamp(u_Anisotropy.z * strengthFactor, 0.0, 1.0);\n    return info;\n}\n#endif\n\nfloat albedoSheenScalingLUT(float NdotV, float sheenRoughnessFactor)\n{\n    return texture(u_SheenELUT, vec2(NdotV, sheenRoughnessFactor)).r;\n}\n"; // eslint-disable-line
 
-var iblShader = "#define GLSLIFY 1\nuniform float u_EnvIntensity;\n\nvec3 getDiffuseLight(vec3 n)\n{\n    return texture(u_LambertianEnvSampler, u_EnvRotation * n).rgb * u_EnvIntensity;\n}\n\nvec4 getSpecularSample(vec3 reflection, float lod)\n{\n    return textureLod(u_GGXEnvSampler, u_EnvRotation * reflection, lod) * u_EnvIntensity;\n}\n\nvec4 getSheenSample(vec3 reflection, float lod)\n{\n    return textureLod(u_CharlieEnvSampler, u_EnvRotation * reflection, lod) * u_EnvIntensity;\n}\n\nvec3 getIBLRadianceGGX(vec3 n, vec3 v, float roughness, vec3 F0, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = roughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec4 specularSample = getSpecularSample(reflection, lod);\n\n    vec3 specularLight = specularSample.rgb;\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = k_S * f_ab.x + f_ab.y;\n\n    return specularWeight * specularLight * FssEss;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\nvec3 getIBLRadianceGGXIridescence(vec3 n, vec3 v, float roughness, vec3 F0, vec3 iridescenceFresnel, float iridescenceFactor, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = roughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec4 specularSample = getSpecularSample(reflection, lod);\n\n    vec3 specularLight = specularSample.rgb;\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = mix(F0 + Fr * pow(1.0 - NdotV, 5.0), iridescenceFresnel, iridescenceFactor);\n    vec3 FssEss = k_S * f_ab.x + f_ab.y;\n\n    return specularWeight * specularLight * FssEss;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nvec3 getTransmissionSample(vec2 fragCoord, float roughness, float ior)\n{\n    float framebufferLod = log2(float(u_TransmissionFramebufferSize.x)) * applyIorToRoughness(roughness, ior);\n    vec3 transmittedLight = textureLod(u_TransmissionFramebufferSampler, fragCoord.xy, framebufferLod).rgb;\n    return transmittedLight;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nvec3 getIBLVolumeRefraction(vec3 n, vec3 v, float perceptualRoughness, vec3 baseColor, vec3 f0, vec3 f90,\n    vec3 position, mat4 modelMatrix, mat4 viewMatrix, mat4 projMatrix, float ior, float thickness, vec3 attenuationColor, float attenuationDistance)\n{\n    vec3 transmissionRay = getVolumeTransmissionRay(n, v, thickness, ior, modelMatrix);\n    vec3 refractedRayExit = position + transmissionRay;\n\n    // Project refracted vector on the framebuffer, while mapping to normalized device coordinates.\n    vec4 ndcPos = projMatrix * viewMatrix * vec4(refractedRayExit, 1.0);\n    vec2 refractionCoords = ndcPos.xy / ndcPos.w;\n    refractionCoords += 1.0;\n    refractionCoords /= 2.0;\n\n    // Sample framebuffer to get pixel the refracted ray hits.\n    vec3 transmittedLight = getTransmissionSample(refractionCoords, perceptualRoughness, ior);\n\n    vec3 attenuatedColor = applyVolumeAttenuation(transmittedLight, length(transmissionRay), attenuationColor, attenuationDistance);\n\n    // Sample GGX LUT to get the specular component.\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, perceptualRoughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 brdf = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec3 specularColor = f0 * brdf.x + f90 * brdf.y;\n\n    return (1.0 - specularColor) * attenuatedColor * baseColor;\n}\n#endif\n\n// specularWeight is introduced with KHR_materials_specular\nvec3 getIBLRadianceLambertian(vec3 n, vec3 v, float roughness, vec3 diffuseColor, vec3 F0, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n\n    vec3 irradiance = getDiffuseLight(n);\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = specularWeight * k_S * f_ab.x + f_ab.y; // <--- GGX / specular light contribution (scale it down if the specularWeight is low)\n\n    // Multiple scattering, from Fdez-Aguera\n    float Ems = (1.0 - (f_ab.x + f_ab.y));\n    vec3 F_avg = specularWeight * (F0 + (1.0 - F0) / 21.0);\n    vec3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);\n    vec3 k_D = diffuseColor * (1.0 - FssEss + FmsEms); // we use +FmsEms as indicated by the formula in the blog post (might be a typo in the implementation)\n\n    return (FmsEms + k_D) * irradiance;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\n// specularWeight is introduced with KHR_materials_specular\nvec3 getIBLRadianceLambertianIridescence(vec3 n, vec3 v, float roughness, vec3 diffuseColor, vec3 F0, vec3 iridescenceF0, float iridescenceFactor, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n\n    vec3 irradiance = getDiffuseLight(n);\n\n    // Use the maximum component of the iridescence Fresnel color\n    // Maximum is used instead of the RGB value to not get inverse colors for the diffuse BRDF\n    vec3 iridescenceF0Max = vec3(max(max(iridescenceF0.r, iridescenceF0.g), iridescenceF0.b));\n\n    // Blend between base F0 and iridescence F0\n    vec3 mixedF0 = mix(F0, iridescenceF0Max, iridescenceFactor);\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n\n    vec3 Fr = max(vec3(1.0 - roughness), mixedF0) - mixedF0;\n    vec3 k_S = mixedF0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = specularWeight * k_S * f_ab.x + f_ab.y; // <--- GGX / specular light contribution (scale it down if the specularWeight is low)\n\n    // Multiple scattering, from Fdez-Aguera\n    float Ems = (1.0 - (f_ab.x + f_ab.y));\n    vec3 F_avg = specularWeight * (mixedF0 + (1.0 - mixedF0) / 21.0);\n    vec3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);\n    vec3 k_D = diffuseColor * (1.0 - FssEss + FmsEms); // we use +FmsEms as indicated by the formula in the blog post (might be a typo in the implementation)\n\n    return (FmsEms + k_D) * irradiance;\n}\n#endif\n\nvec3 getIBLRadianceCharlie(vec3 n, vec3 v, float sheenRoughness, vec3 sheenColor)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = sheenRoughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, sheenRoughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    float brdf = texture(u_CharlieLUT, brdfSamplePoint).b;\n    vec4 sheenSample = getSheenSample(reflection, lod);\n\n    vec3 sheenLight = sheenSample.rgb;\n    return sheenLight * sheenColor * brdf;\n}\n"; // eslint-disable-line
+var iblShader = "#define GLSLIFY 1\nuniform float u_EnvIntensity;\n\nvec3 getDiffuseLight(vec3 n)\n{\n    return texture(u_LambertianEnvSampler, u_EnvRotation * n).rgb * u_EnvIntensity;\n}\n\nvec4 getSpecularSample(vec3 reflection, float lod)\n{\n    return textureLod(u_GGXEnvSampler, u_EnvRotation * reflection, lod) * u_EnvIntensity;\n}\n\nvec4 getSheenSample(vec3 reflection, float lod)\n{\n    return textureLod(u_CharlieEnvSampler, u_EnvRotation * reflection, lod) * u_EnvIntensity;\n}\n\nvec3 getIBLRadianceGGX(vec3 n, vec3 v, float roughness, vec3 F0, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = roughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec4 specularSample = getSpecularSample(reflection, lod);\n\n    vec3 specularLight = specularSample.rgb;\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = k_S * f_ab.x + f_ab.y;\n\n    return specularWeight * specularLight * FssEss;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\nvec3 getIBLRadianceGGXIridescence(vec3 n, vec3 v, float roughness, vec3 F0, vec3 iridescenceFresnel, float iridescenceFactor, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = roughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec4 specularSample = getSpecularSample(reflection, lod);\n\n    vec3 specularLight = specularSample.rgb;\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = mix(F0 + Fr * pow(1.0 - NdotV, 5.0), iridescenceFresnel, iridescenceFactor);\n    vec3 FssEss = k_S * f_ab.x + f_ab.y;\n\n    return specularWeight * specularLight * FssEss;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nvec3 getTransmissionSample(vec2 fragCoord, float roughness, float ior)\n{\n    float framebufferLod = log2(float(u_TransmissionFramebufferSize.x)) * applyIorToRoughness(roughness, ior);\n    vec3 transmittedLight = textureLod(u_TransmissionFramebufferSampler, fragCoord.xy, framebufferLod).rgb;\n    return transmittedLight;\n}\n#endif\n\n#ifdef MATERIAL_TRANSMISSION\nvec3 getIBLVolumeRefraction(vec3 n, vec3 v, float perceptualRoughness, vec3 baseColor, vec3 f0, vec3 f90,\n    vec3 position, mat4 modelMatrix, mat4 viewMatrix, mat4 projMatrix, float ior, float thickness, vec3 attenuationColor, float attenuationDistance)\n{\n    vec3 transmissionRay = getVolumeTransmissionRay(n, v, thickness, ior, modelMatrix);\n    vec3 refractedRayExit = position + transmissionRay;\n\n    // Project refracted vector on the framebuffer, while mapping to normalized device coordinates.\n    vec4 ndcPos = projMatrix * viewMatrix * vec4(refractedRayExit, 1.0);\n    vec2 refractionCoords = ndcPos.xy / ndcPos.w;\n    refractionCoords += 1.0;\n    refractionCoords /= 2.0;\n\n    // Sample framebuffer to get pixel the refracted ray hits.\n    vec3 transmittedLight = getTransmissionSample(refractionCoords, perceptualRoughness, ior);\n\n    vec3 attenuatedColor = applyVolumeAttenuation(transmittedLight, length(transmissionRay), attenuationColor, attenuationDistance);\n\n    // Sample GGX LUT to get the specular component.\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, perceptualRoughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 brdf = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec3 specularColor = f0 * brdf.x + f90 * brdf.y;\n\n    return (1.0 - specularColor) * attenuatedColor * baseColor;\n}\n#endif\n\n// specularWeight is introduced with KHR_materials_specular\nvec3 getIBLRadianceLambertian(vec3 n, vec3 v, float roughness, vec3 diffuseColor, vec3 F0, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n\n    vec3 irradiance = getDiffuseLight(n);\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = specularWeight * k_S * f_ab.x + f_ab.y; // <--- GGX / specular light contribution (scale it down if the specularWeight is low)\n\n    // Multiple scattering, from Fdez-Aguera\n    float Ems = (1.0 - (f_ab.x + f_ab.y));\n    vec3 F_avg = specularWeight * (F0 + (1.0 - F0) / 21.0);\n    vec3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);\n    vec3 k_D = diffuseColor * (1.0 - FssEss + FmsEms); // we use +FmsEms as indicated by the formula in the blog post (might be a typo in the implementation)\n\n    return (FmsEms + k_D) * irradiance;\n}\n\n#ifdef MATERIAL_IRIDESCENCE\n// specularWeight is introduced with KHR_materials_specular\nvec3 getIBLRadianceLambertianIridescence(vec3 n, vec3 v, float roughness, vec3 diffuseColor, vec3 F0, vec3 iridescenceF0, float iridescenceFactor, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n\n    vec3 irradiance = getDiffuseLight(n);\n\n    // Use the maximum component of the iridescence Fresnel color\n    // Maximum is used instead of the RGB value to not get inverse colors for the diffuse BRDF\n    vec3 iridescenceF0Max = vec3(max(max(iridescenceF0.r, iridescenceF0.g), iridescenceF0.b));\n\n    // Blend between base F0 and iridescence F0\n    vec3 mixedF0 = mix(F0, iridescenceF0Max, iridescenceFactor);\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n\n    vec3 Fr = max(vec3(1.0 - roughness), mixedF0) - mixedF0;\n    vec3 k_S = mixedF0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = specularWeight * k_S * f_ab.x + f_ab.y; // <--- GGX / specular light contribution (scale it down if the specularWeight is low)\n\n    // Multiple scattering, from Fdez-Aguera\n    float Ems = (1.0 - (f_ab.x + f_ab.y));\n    vec3 F_avg = specularWeight * (mixedF0 + (1.0 - mixedF0) / 21.0);\n    vec3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);\n    vec3 k_D = diffuseColor * (1.0 - FssEss + FmsEms); // we use +FmsEms as indicated by the formula in the blog post (might be a typo in the implementation)\n\n    return (FmsEms + k_D) * irradiance;\n}\n#endif\n\n#ifdef MATERIAL_ANISOTROPY\nvec3 getIBLRadianceAnisotropy(vec3 n, vec3 v, float roughness, float anisotropy, vec3 anisotropyDirection, vec3 F0, float specularWeight)\n{\n    float NdotV = clampedDot(n, v);\n\n    float tangentRoughness = mix(roughness, 1.0, anisotropy * anisotropy);\n    vec3  anisotropicTangent  = cross(anisotropyDirection, v);\n    vec3  anisotropicNormal   = cross(anisotropicTangent, anisotropyDirection);\n    float bendFactor          = 1.0 - anisotropy * (1.0 - roughness);\n    float bendFactorPow4      = bendFactor * bendFactor * bendFactor * bendFactor;\n    vec3  bentNormal          = normalize(mix(anisotropicNormal, n, bendFactorPow4));\n\n    float lod = roughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, bentNormal));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, roughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    vec2 f_ab = texture(u_GGXLUT, brdfSamplePoint).rg;\n    vec4 specularSample = getSpecularSample(reflection, lod);\n\n    vec3 specularLight = specularSample.rgb;\n\n    // see https://bruop.github.io/ibl/#single_scattering_results at Single Scattering Results\n    // Roughness dependent fresnel, from Fdez-Aguera\n    vec3 Fr = max(vec3(1.0 - roughness), F0) - F0;\n    vec3 k_S = F0 + Fr * pow(1.0 - NdotV, 5.0);\n    vec3 FssEss = k_S * f_ab.x + f_ab.y;\n\n    return specularWeight * specularLight * FssEss;\n}\n#endif\n\nvec3 getIBLRadianceCharlie(vec3 n, vec3 v, float sheenRoughness, vec3 sheenColor)\n{\n    float NdotV = clampedDot(n, v);\n    float lod = sheenRoughness * float(u_MipCount - 1);\n    vec3 reflection = normalize(reflect(-v, n));\n\n    vec2 brdfSamplePoint = clamp(vec2(NdotV, sheenRoughness), vec2(0.0, 0.0), vec2(1.0, 1.0));\n    float brdf = texture(u_CharlieLUT, brdfSamplePoint).b;\n    vec4 sheenSample = getSheenSample(reflection, lod);\n\n    vec3 sheenLight = sheenSample.rgb;\n    return sheenLight * sheenColor * brdf;\n}\n"; // eslint-disable-line
 
-var punctualShader = "#define GLSLIFY 1\n// KHR_lights_punctual extension.\n// see https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual\nstruct Light\n{\n    vec3 direction;\n    float range;\n\n    vec3 color;\n    float intensity;\n\n    vec3 position;\n    float innerConeCos;\n\n    float outerConeCos;\n    int type;\n};\n\nconst int LightType_Directional = 0;\nconst int LightType_Point = 1;\nconst int LightType_Spot = 2;\n\n#ifdef USE_PUNCTUAL\nuniform Light u_Lights[LIGHT_COUNT + 1]; //Array [0] is not allowed\n#endif\n\n// https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_lights_punctual/README.md#range-property\nfloat getRangeAttenuation(float range, float distance)\n{\n    if (range <= 0.0)\n    {\n        // negative range means unlimited\n        return 1.0 / pow(distance, 2.0);\n    }\n    return max(min(1.0 - pow(distance / range, 4.0), 1.0), 0.0) / pow(distance, 2.0);\n}\n\n// https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_lights_punctual/README.md#inner-and-outer-cone-angles\nfloat getSpotAttenuation(vec3 pointToLight, vec3 spotDirection, float outerConeCos, float innerConeCos)\n{\n    float actualCos = dot(normalize(spotDirection), normalize(-pointToLight));\n    if (actualCos > outerConeCos)\n    {\n        if (actualCos < innerConeCos)\n        {\n            return smoothstep(outerConeCos, innerConeCos, actualCos);\n        }\n        return 1.0;\n    }\n    return 0.0;\n}\n\nvec3 getLighIntensity(Light light, vec3 pointToLight)\n{\n    float rangeAttenuation = 1.0;\n    float spotAttenuation = 1.0;\n\n    if (light.type != LightType_Directional)\n    {\n        rangeAttenuation = getRangeAttenuation(light.range, length(pointToLight));\n    }\n    if (light.type == LightType_Spot)\n    {\n        spotAttenuation = getSpotAttenuation(pointToLight, light.direction, light.outerConeCos, light.innerConeCos);\n    }\n\n    return rangeAttenuation * spotAttenuation * light.intensity * light.color;\n}\n\nvec3 getPunctualRadianceTransmission(vec3 normal, vec3 view, vec3 pointToLight, float alphaRoughness,\n    vec3 f0, vec3 f90, vec3 baseColor, float ior)\n{\n    float transmissionRougness = applyIorToRoughness(alphaRoughness, ior);\n\n    vec3 n = normalize(normal);           // Outward direction of surface point\n    vec3 v = normalize(view);             // Direction from surface point to view\n    vec3 l = normalize(pointToLight);\n    vec3 l_mirror = normalize(l + 2.0*n*dot(-l, n));     // Mirror light reflection vector on surface\n    vec3 h = normalize(l_mirror + v);            // Halfway vector between transmission light vector and v\n\n    float D = D_GGX(clamp(dot(n, h), 0.0, 1.0), transmissionRougness);\n    vec3 F = F_Schlick(f0, f90, clamp(dot(v, h), 0.0, 1.0));\n    float Vis = V_GGX(clamp(dot(n, l_mirror), 0.0, 1.0), clamp(dot(n, v), 0.0, 1.0), transmissionRougness);\n\n    // Transmission BTDF\n    return (1.0 - F) * baseColor * D * Vis;\n}\n\nvec3 getPunctualRadianceClearCoat(vec3 clearcoatNormal, vec3 v, vec3 l, vec3 h, float VdotH, vec3 f0, vec3 f90, float clearcoatRoughness)\n{\n    float NdotL = clampedDot(clearcoatNormal, l);\n    float NdotV = clampedDot(clearcoatNormal, v);\n    float NdotH = clampedDot(clearcoatNormal, h);\n    return NdotL * BRDF_specularGGX(f0, f90, clearcoatRoughness * clearcoatRoughness, 1.0, VdotH, NdotL, NdotV, NdotH);\n}\n\nvec3 getPunctualRadianceSheen(vec3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH)\n{\n    return NdotL * BRDF_specularSheen(sheenColor, sheenRoughness, NdotL, NdotV, NdotH);\n}\n\n// Compute attenuated light as it travels through a volume.\nvec3 applyVolumeAttenuation(vec3 radiance, float transmissionDistance, vec3 attenuationColor, float attenuationDistance)\n{\n    if (attenuationDistance == 0.0)\n    {\n        // Attenuation distance is +∞ (which we indicate by zero), i.e. the transmitted color is not attenuated at all.\n        return radiance;\n    }\n    else\n    {\n        // Compute light attenuation using Beer's law.\n        vec3 attenuationCoefficient = -log(attenuationColor) / attenuationDistance;\n        vec3 transmittance = exp(-attenuationCoefficient * transmissionDistance); // Beer's law\n        return transmittance * radiance;\n    }\n}\n\nvec3 getVolumeTransmissionRay(vec3 n, vec3 v, float thickness, float ior, mat4 modelMatrix)\n{\n    // Direction of refracted light.\n    vec3 refractionVector = refract(-v, normalize(n), 1.0 / ior);\n\n    // Compute rotation-independant scaling of the model matrix.\n    vec3 modelScale;\n    modelScale.x = length(vec3(modelMatrix[0].xyz));\n    modelScale.y = length(vec3(modelMatrix[1].xyz));\n    modelScale.z = length(vec3(modelMatrix[2].xyz));\n\n    // The thickness is specified in local space.\n    return normalize(refractionVector) * thickness * modelScale;\n}\n"; // eslint-disable-line
+var punctualShader = "#define GLSLIFY 1\n// KHR_lights_punctual extension.\n// see https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual\nstruct Light\n{\n    vec3 direction;\n    float range;\n\n    vec3 color;\n    float intensity;\n\n    vec3 position;\n    float innerConeCos;\n\n    float outerConeCos;\n    int type;\n};\n\nconst int LightType_Directional = 0;\nconst int LightType_Point = 1;\nconst int LightType_Spot = 2;\n\n#ifdef USE_PUNCTUAL\nuniform Light u_Lights[LIGHT_COUNT + 1]; //Array [0] is not allowed\n#endif\n\n// https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_lights_punctual/README.md#range-property\nfloat getRangeAttenuation(float range, float distance)\n{\n    if (range <= 0.0)\n    {\n        // negative range means unlimited\n        return 1.0 / pow(distance, 2.0);\n    }\n    return max(min(1.0 - pow(distance / range, 4.0), 1.0), 0.0) / pow(distance, 2.0);\n}\n\n// https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_lights_punctual/README.md#inner-and-outer-cone-angles\nfloat getSpotAttenuation(vec3 pointToLight, vec3 spotDirection, float outerConeCos, float innerConeCos)\n{\n    float actualCos = dot(normalize(spotDirection), normalize(-pointToLight));\n    if (actualCos > outerConeCos)\n    {\n        if (actualCos < innerConeCos)\n        {\n            float angularAttenuation = (actualCos - outerConeCos) / (innerConeCos - outerConeCos);\n            return angularAttenuation * angularAttenuation;\n        }\n        return 1.0;\n    }\n    return 0.0;\n}\n\nvec3 getLighIntensity(Light light, vec3 pointToLight)\n{\n    float rangeAttenuation = 1.0;\n    float spotAttenuation = 1.0;\n\n    if (light.type != LightType_Directional)\n    {\n        rangeAttenuation = getRangeAttenuation(light.range, length(pointToLight));\n    }\n    if (light.type == LightType_Spot)\n    {\n        spotAttenuation = getSpotAttenuation(pointToLight, light.direction, light.outerConeCos, light.innerConeCos);\n    }\n\n    return rangeAttenuation * spotAttenuation * light.intensity * light.color;\n}\n\nvec3 getPunctualRadianceTransmission(vec3 normal, vec3 view, vec3 pointToLight, float alphaRoughness,\n    vec3 f0, vec3 f90, vec3 baseColor, float ior)\n{\n    float transmissionRougness = applyIorToRoughness(alphaRoughness, ior);\n\n    vec3 n = normalize(normal);           // Outward direction of surface point\n    vec3 v = normalize(view);             // Direction from surface point to view\n    vec3 l = normalize(pointToLight);\n    vec3 l_mirror = normalize(l + 2.0*n*dot(-l, n));     // Mirror light reflection vector on surface\n    vec3 h = normalize(l_mirror + v);            // Halfway vector between transmission light vector and v\n\n    float D = D_GGX(clamp(dot(n, h), 0.0, 1.0), transmissionRougness);\n    vec3 F = F_Schlick(f0, f90, clamp(dot(v, h), 0.0, 1.0));\n    float Vis = V_GGX(clamp(dot(n, l_mirror), 0.0, 1.0), clamp(dot(n, v), 0.0, 1.0), transmissionRougness);\n\n    // Transmission BTDF\n    return (1.0 - F) * baseColor * D * Vis;\n}\n\nvec3 getPunctualRadianceClearCoat(vec3 clearcoatNormal, vec3 v, vec3 l, vec3 h, float VdotH, vec3 f0, vec3 f90, float clearcoatRoughness)\n{\n    float NdotL = clampedDot(clearcoatNormal, l);\n    float NdotV = clampedDot(clearcoatNormal, v);\n    float NdotH = clampedDot(clearcoatNormal, h);\n    return NdotL * BRDF_specularGGX(f0, f90, clearcoatRoughness * clearcoatRoughness, 1.0, VdotH, NdotL, NdotV, NdotH);\n}\n\nvec3 getPunctualRadianceSheen(vec3 sheenColor, float sheenRoughness, float NdotL, float NdotV, float NdotH)\n{\n    return NdotL * BRDF_specularSheen(sheenColor, sheenRoughness, NdotL, NdotV, NdotH);\n}\n\n// Compute attenuated light as it travels through a volume.\nvec3 applyVolumeAttenuation(vec3 radiance, float transmissionDistance, vec3 attenuationColor, float attenuationDistance)\n{\n    if (attenuationDistance == 0.0)\n    {\n        // Attenuation distance is +∞ (which we indicate by zero), i.e. the transmitted color is not attenuated at all.\n        return radiance;\n    }\n    else\n    {\n        // Compute light attenuation using Beer's law.\n        vec3 attenuationCoefficient = -log(attenuationColor) / attenuationDistance;\n        vec3 transmittance = exp(-attenuationCoefficient * transmissionDistance); // Beer's law\n        return transmittance * radiance;\n    }\n}\n\nvec3 getVolumeTransmissionRay(vec3 n, vec3 v, float thickness, float ior, mat4 modelMatrix)\n{\n    // Direction of refracted light.\n    vec3 refractionVector = refract(-v, normalize(n), 1.0 / ior);\n\n    // Compute rotation-independant scaling of the model matrix.\n    vec3 modelScale;\n    modelScale.x = length(vec3(modelMatrix[0].xyz));\n    modelScale.y = length(vec3(modelMatrix[1].xyz));\n    modelScale.z = length(vec3(modelMatrix[2].xyz));\n\n    // The thickness is specified in local space.\n    return normalize(refractionVector) * thickness * modelScale;\n}\n"; // eslint-disable-line
 
 var primitiveShader = "#define GLSLIFY 1\n#include <animation.glsl>\n\nuniform mat4 u_ViewProjectionMatrix;\nuniform mat4 u_ModelMatrix;\nuniform mat4 u_NormalMatrix;\n\nin vec3 a_position;\nout vec3 v_Position;\n\n#ifdef HAS_NORMAL_VEC3\nin vec3 a_normal;\n#endif\n\n#ifdef HAS_NORMAL_VEC3\n#ifdef HAS_TANGENT_VEC4\nin vec4 a_tangent;\nout mat3 v_TBN;\n#else\nout vec3 v_Normal;\n#endif\n#endif\n\n#ifdef HAS_TEXCOORD_0_VEC2\nin vec2 a_texcoord_0;\n#endif\n\n#ifdef HAS_TEXCOORD_1_VEC2\nin vec2 a_texcoord_1;\n#endif\n\nout vec2 v_texcoord_0;\nout vec2 v_texcoord_1;\n\n#ifdef HAS_COLOR_0_VEC3\nin vec3 a_color_0;\nout vec3 v_Color;\n#endif\n\n#ifdef HAS_COLOR_0_VEC4\nin vec4 a_color_0;\nout vec4 v_Color;\n#endif\n\nvec4 getPosition()\n{\n    vec4 pos = vec4(a_position, 1.0);\n\n#ifdef USE_MORPHING\n    pos += getTargetPosition(gl_VertexID);\n#endif\n\n#ifdef USE_SKINNING\n    pos = getSkinningMatrix() * pos;\n#endif\n\n    return pos;\n}\n\n#ifdef HAS_NORMAL_VEC3\nvec3 getNormal()\n{\n    vec3 normal = a_normal;\n\n#ifdef USE_MORPHING\n    normal += getTargetNormal(gl_VertexID);\n#endif\n\n#ifdef USE_SKINNING\n    normal = mat3(getSkinningNormalMatrix()) * normal;\n#endif\n\n    return normalize(normal);\n}\n#endif\n\n#ifdef HAS_NORMAL_VEC3\n#ifdef HAS_TANGENT_VEC4\nvec3 getTangent()\n{\n    vec3 tangent = a_tangent.xyz;\n\n#ifdef USE_MORPHING\n    tangent += getTargetTangent(gl_VertexID);\n#endif\n\n#ifdef USE_SKINNING\n    tangent = mat3(getSkinningMatrix()) * tangent;\n#endif\n\n    return normalize(tangent);\n}\n#endif\n#endif\n\nvoid main()\n{\n    gl_PointSize = 1.0f;\n    vec4 pos = u_ModelMatrix * getPosition();\n    v_Position = vec3(pos.xyz) / pos.w;\n\n#ifdef HAS_NORMAL_VEC3\n#ifdef HAS_TANGENT_VEC4\n    vec3 tangent = getTangent();\n    vec3 normalW = normalize(vec3(u_NormalMatrix * vec4(getNormal(), 0.0)));\n    vec3 tangentW = normalize(vec3(u_ModelMatrix * vec4(tangent, 0.0)));\n    vec3 bitangentW = cross(normalW, tangentW) * a_tangent.w;\n    v_TBN = mat3(tangentW, bitangentW, normalW);\n#else\n    v_Normal = normalize(vec3(u_NormalMatrix * vec4(getNormal(), 0.0)));\n#endif\n#endif\n\n    v_texcoord_0 = vec2(0.0, 0.0);\n    v_texcoord_1 = vec2(0.0, 0.0);\n\n#ifdef HAS_TEXCOORD_0_VEC2\n    v_texcoord_0 = a_texcoord_0;\n#endif\n\n#ifdef HAS_TEXCOORD_1_VEC2\n    v_texcoord_1 = a_texcoord_1;\n#endif\n\n#ifdef USE_MORPHING\n    v_texcoord_0 += getTargetTexCoord0(gl_VertexID);\n    v_texcoord_1 += getTargetTexCoord1(gl_VertexID);\n#endif\n\n#if defined(HAS_COLOR_0_VEC3) \n    v_Color = a_color_0;\n#if defined(USE_MORPHING)\n    v_Color = clamp(v_Color + getTargetColor0(gl_VertexID).xyz, 0.0f, 1.0f);\n#endif\n#endif\n\n#if defined(HAS_COLOR_0_VEC4) \n    v_Color = a_color_0;\n#if defined(USE_MORPHING)\n    v_Color = clamp(v_Color + getTargetColor0(gl_VertexID), 0.0f, 1.0f);\n#endif\n#endif\n\n    gl_Position = u_ViewProjectionMatrix * pos;\n}\n"; // eslint-disable-line
 
-var texturesShader = "#define GLSLIFY 1\n// IBL\n\nuniform int u_MipCount;\nuniform samplerCube u_LambertianEnvSampler;\nuniform samplerCube u_GGXEnvSampler;\nuniform sampler2D u_GGXLUT;\nuniform samplerCube u_CharlieEnvSampler;\nuniform sampler2D u_CharlieLUT;\nuniform sampler2D u_SheenELUT;\nuniform mat3 u_EnvRotation;\n\n// General Material\n\nuniform sampler2D u_NormalSampler;\nuniform float u_NormalScale;\nuniform int u_NormalUVSet;\nuniform mat3 u_NormalUVTransform;\n\nuniform vec3 u_EmissiveFactor;\nuniform sampler2D u_EmissiveSampler;\nuniform int u_EmissiveUVSet;\nuniform mat3 u_EmissiveUVTransform;\n\nuniform sampler2D u_OcclusionSampler;\nuniform int u_OcclusionUVSet;\nuniform float u_OcclusionStrength;\nuniform mat3 u_OcclusionUVTransform;\n\nin vec2 v_texcoord_0;\nin vec2 v_texcoord_1;\n\nvec2 getNormalUV()\n{\n    vec3 uv = vec3(u_NormalUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_NORMAL_UV_TRANSFORM\n    uv = u_NormalUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getEmissiveUV()\n{\n    vec3 uv = vec3(u_EmissiveUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_EMISSIVE_UV_TRANSFORM\n    uv = u_EmissiveUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getOcclusionUV()\n{\n    vec3 uv = vec3(u_OcclusionUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_OCCLUSION_UV_TRANSFORM\n    uv = u_OcclusionUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n// Metallic Roughness Material\n\n#ifdef MATERIAL_METALLICROUGHNESS\n\nuniform sampler2D u_BaseColorSampler;\nuniform int u_BaseColorUVSet;\nuniform mat3 u_BaseColorUVTransform;\n\nuniform sampler2D u_MetallicRoughnessSampler;\nuniform int u_MetallicRoughnessUVSet;\nuniform mat3 u_MetallicRoughnessUVTransform;\n\nvec2 getBaseColorUV()\n{\n    vec3 uv = vec3(u_BaseColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_BASECOLOR_UV_TRANSFORM\n    uv = u_BaseColorUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getMetallicRoughnessUV()\n{\n    vec3 uv = vec3(u_MetallicRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_METALLICROUGHNESS_UV_TRANSFORM\n    uv = u_MetallicRoughnessUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n#endif\n\n// Specular Glossiness Material\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\n\nuniform sampler2D u_DiffuseSampler;\nuniform int u_DiffuseUVSet;\nuniform mat3 u_DiffuseUVTransform;\n\nuniform sampler2D u_SpecularGlossinessSampler;\nuniform int u_SpecularGlossinessUVSet;\nuniform mat3 u_SpecularGlossinessUVTransform;\n\nvec2 getSpecularGlossinessUV()\n{\n    vec3 uv = vec3(u_SpecularGlossinessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_SPECULARGLOSSINESS_UV_TRANSFORM\n    uv = u_SpecularGlossinessUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getDiffuseUV()\n{\n    vec3 uv = vec3(u_DiffuseUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_DIFFUSE_UV_TRANSFORM\n    uv = u_DiffuseUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n#endif\n\n// Clearcoat Material\n\n#ifdef MATERIAL_CLEARCOAT\n\nuniform sampler2D u_ClearcoatSampler;\nuniform int u_ClearcoatUVSet;\nuniform mat3 u_ClearcoatUVTransform;\n\nuniform sampler2D u_ClearcoatRoughnessSampler;\nuniform int u_ClearcoatRoughnessUVSet;\nuniform mat3 u_ClearcoatRoughnessUVTransform;\n\nuniform sampler2D u_ClearcoatNormalSampler;\nuniform int u_ClearcoatNormalUVSet;\nuniform mat3 u_ClearcoatNormalUVTransform;\nuniform float u_ClearcoatNormalScale;\n\nvec2 getClearcoatUV()\n{\n    vec3 uv = vec3(u_ClearcoatUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOAT_UV_TRANSFORM\n    uv = u_ClearcoatUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getClearcoatRoughnessUV()\n{\n    vec3 uv = vec3(u_ClearcoatRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOATROUGHNESS_UV_TRANSFORM\n    uv = u_ClearcoatRoughnessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getClearcoatNormalUV()\n{\n    vec3 uv = vec3(u_ClearcoatNormalUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOATNORMAL_UV_TRANSFORM\n    uv = u_ClearcoatNormalUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Sheen Material\n\n#ifdef MATERIAL_SHEEN\n\nuniform sampler2D u_SheenColorSampler;\nuniform int u_SheenColorUVSet;\nuniform mat3 u_SheenColorUVTransform;\nuniform sampler2D u_SheenRoughnessSampler;\nuniform int u_SheenRoughnessUVSet;\nuniform mat3 u_SheenRoughnessUVTransform;\n\nvec2 getSheenColorUV()\n{\n    vec3 uv = vec3(u_SheenColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SHEENCOLOR_UV_TRANSFORM\n    uv = u_SheenColorUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getSheenRoughnessUV()\n{\n    vec3 uv = vec3(u_SheenRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SHEENROUGHNESS_UV_TRANSFORM\n    uv = u_SheenRoughnessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Specular Material\n\n#ifdef MATERIAL_SPECULAR\n\nuniform sampler2D u_SpecularSampler;\nuniform int u_SpecularUVSet;\nuniform mat3 u_SpecularUVTransform;\nuniform sampler2D u_SpecularColorSampler;\nuniform int u_SpecularColorUVSet;\nuniform mat3 u_SpecularColorUVTransform;\n\nvec2 getSpecularUV()\n{\n    vec3 uv = vec3(u_SpecularUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SPECULAR_UV_TRANSFORM\n    uv = u_SpecularUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getSpecularColorUV()\n{\n    vec3 uv = vec3(u_SpecularColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SPECULARCOLOR_UV_TRANSFORM\n    uv = u_SpecularColorUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Transmission Material\n\n#ifdef MATERIAL_TRANSMISSION\n\nuniform sampler2D u_TransmissionSampler;\nuniform int u_TransmissionUVSet;\nuniform mat3 u_TransmissionUVTransform;\nuniform sampler2D u_TransmissionFramebufferSampler;\nuniform ivec2 u_TransmissionFramebufferSize;\n\nvec2 getTransmissionUV()\n{\n    vec3 uv = vec3(u_TransmissionUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_TRANSMISSION_UV_TRANSFORM\n    uv = u_TransmissionUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Volume Material\n\n#ifdef MATERIAL_VOLUME\n\nuniform sampler2D u_ThicknessSampler;\nuniform int u_ThicknessUVSet;\nuniform mat3 u_ThicknessUVTransform;\n\nvec2 getThicknessUV()\n{\n    vec3 uv = vec3(u_ThicknessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_THICKNESS_UV_TRANSFORM\n    uv = u_ThicknessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Iridescence\n\n#ifdef MATERIAL_IRIDESCENCE\n\nuniform sampler2D u_IridescenceSampler;\nuniform int u_IridescenceUVSet;\nuniform mat3 u_IridescenceUVTransform;\n\nuniform sampler2D u_IridescenceThicknessSampler;\nuniform int u_IridescenceThicknessUVSet;\nuniform mat3 u_IridescenceThicknessUVTransform;\n\nvec2 getIridescenceUV()\n{\n    vec3 uv = vec3(u_IridescenceUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_IRIDESCENCE_UV_TRANSFORM\n    uv = u_IridescenceUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getIridescenceThicknessUV()\n{\n    vec3 uv = vec3(u_IridescenceThicknessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_IRIDESCENCETHICKNESS_UV_TRANSFORM\n    uv = u_IridescenceThicknessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n"; // eslint-disable-line
+var texturesShader = "#define GLSLIFY 1\n// IBL\n\nuniform int u_MipCount;\nuniform samplerCube u_LambertianEnvSampler;\nuniform samplerCube u_GGXEnvSampler;\nuniform sampler2D u_GGXLUT;\nuniform samplerCube u_CharlieEnvSampler;\nuniform sampler2D u_CharlieLUT;\nuniform sampler2D u_SheenELUT;\nuniform mat3 u_EnvRotation;\n\n// General Material\n\nuniform sampler2D u_NormalSampler;\nuniform float u_NormalScale;\nuniform int u_NormalUVSet;\nuniform mat3 u_NormalUVTransform;\n\nuniform vec3 u_EmissiveFactor;\nuniform sampler2D u_EmissiveSampler;\nuniform int u_EmissiveUVSet;\nuniform mat3 u_EmissiveUVTransform;\n\nuniform sampler2D u_OcclusionSampler;\nuniform int u_OcclusionUVSet;\nuniform float u_OcclusionStrength;\nuniform mat3 u_OcclusionUVTransform;\n\nuniform vec3 u_HighlightColor;\n\nin vec2 v_texcoord_0;\nin vec2 v_texcoord_1;\n\nvec2 getNormalUV()\n{\n    vec3 uv = vec3(u_NormalUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_NORMAL_UV_TRANSFORM\n    uv = u_NormalUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getEmissiveUV()\n{\n    vec3 uv = vec3(u_EmissiveUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_EMISSIVE_UV_TRANSFORM\n    uv = u_EmissiveUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getOcclusionUV()\n{\n    vec3 uv = vec3(u_OcclusionUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_OCCLUSION_UV_TRANSFORM\n    uv = u_OcclusionUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n// Metallic Roughness Material\n\n#ifdef MATERIAL_METALLICROUGHNESS\n\nuniform sampler2D u_BaseColorSampler;\nuniform int u_BaseColorUVSet;\nuniform mat3 u_BaseColorUVTransform;\n\nuniform sampler2D u_MetallicRoughnessSampler;\nuniform int u_MetallicRoughnessUVSet;\nuniform mat3 u_MetallicRoughnessUVTransform;\n\nvec2 getBaseColorUV()\n{\n    vec3 uv = vec3(u_BaseColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_BASECOLOR_UV_TRANSFORM\n    uv = u_BaseColorUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getMetallicRoughnessUV()\n{\n    vec3 uv = vec3(u_MetallicRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_METALLICROUGHNESS_UV_TRANSFORM\n    uv = u_MetallicRoughnessUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n#endif\n\n// Specular Glossiness Material\n\n#ifdef MATERIAL_SPECULARGLOSSINESS\n\nuniform sampler2D u_DiffuseSampler;\nuniform int u_DiffuseUVSet;\nuniform mat3 u_DiffuseUVTransform;\n\nuniform sampler2D u_SpecularGlossinessSampler;\nuniform int u_SpecularGlossinessUVSet;\nuniform mat3 u_SpecularGlossinessUVTransform;\n\nvec2 getSpecularGlossinessUV()\n{\n    vec3 uv = vec3(u_SpecularGlossinessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_SPECULARGLOSSINESS_UV_TRANSFORM\n    uv = u_SpecularGlossinessUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\nvec2 getDiffuseUV()\n{\n    vec3 uv = vec3(u_DiffuseUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n\n#ifdef HAS_DIFFUSE_UV_TRANSFORM\n    uv = u_DiffuseUVTransform * uv;\n#endif\n\n    return uv.xy;\n}\n\n#endif\n\n// Clearcoat Material\n\n#ifdef MATERIAL_CLEARCOAT\n\nuniform sampler2D u_ClearcoatSampler;\nuniform int u_ClearcoatUVSet;\nuniform mat3 u_ClearcoatUVTransform;\n\nuniform sampler2D u_ClearcoatRoughnessSampler;\nuniform int u_ClearcoatRoughnessUVSet;\nuniform mat3 u_ClearcoatRoughnessUVTransform;\n\nuniform sampler2D u_ClearcoatNormalSampler;\nuniform int u_ClearcoatNormalUVSet;\nuniform mat3 u_ClearcoatNormalUVTransform;\nuniform float u_ClearcoatNormalScale;\n\nvec2 getClearcoatUV()\n{\n    vec3 uv = vec3(u_ClearcoatUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOAT_UV_TRANSFORM\n    uv = u_ClearcoatUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getClearcoatRoughnessUV()\n{\n    vec3 uv = vec3(u_ClearcoatRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOATROUGHNESS_UV_TRANSFORM\n    uv = u_ClearcoatRoughnessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getClearcoatNormalUV()\n{\n    vec3 uv = vec3(u_ClearcoatNormalUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_CLEARCOATNORMAL_UV_TRANSFORM\n    uv = u_ClearcoatNormalUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Sheen Material\n\n#ifdef MATERIAL_SHEEN\n\nuniform sampler2D u_SheenColorSampler;\nuniform int u_SheenColorUVSet;\nuniform mat3 u_SheenColorUVTransform;\nuniform sampler2D u_SheenRoughnessSampler;\nuniform int u_SheenRoughnessUVSet;\nuniform mat3 u_SheenRoughnessUVTransform;\n\nvec2 getSheenColorUV()\n{\n    vec3 uv = vec3(u_SheenColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SHEENCOLOR_UV_TRANSFORM\n    uv = u_SheenColorUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getSheenRoughnessUV()\n{\n    vec3 uv = vec3(u_SheenRoughnessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SHEENROUGHNESS_UV_TRANSFORM\n    uv = u_SheenRoughnessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Specular Material\n\n#ifdef MATERIAL_SPECULAR\n\nuniform sampler2D u_SpecularSampler;\nuniform int u_SpecularUVSet;\nuniform mat3 u_SpecularUVTransform;\nuniform sampler2D u_SpecularColorSampler;\nuniform int u_SpecularColorUVSet;\nuniform mat3 u_SpecularColorUVTransform;\n\nvec2 getSpecularUV()\n{\n    vec3 uv = vec3(u_SpecularUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SPECULAR_UV_TRANSFORM\n    uv = u_SpecularUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getSpecularColorUV()\n{\n    vec3 uv = vec3(u_SpecularColorUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_SPECULARCOLOR_UV_TRANSFORM\n    uv = u_SpecularColorUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Transmission Material\n\n#ifdef MATERIAL_TRANSMISSION\n\nuniform sampler2D u_TransmissionSampler;\nuniform int u_TransmissionUVSet;\nuniform mat3 u_TransmissionUVTransform;\nuniform sampler2D u_TransmissionFramebufferSampler;\nuniform ivec2 u_TransmissionFramebufferSize;\n\nvec2 getTransmissionUV()\n{\n    vec3 uv = vec3(u_TransmissionUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_TRANSMISSION_UV_TRANSFORM\n    uv = u_TransmissionUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Volume Material\n\n#ifdef MATERIAL_VOLUME\n\nuniform sampler2D u_ThicknessSampler;\nuniform int u_ThicknessUVSet;\nuniform mat3 u_ThicknessUVTransform;\n\nvec2 getThicknessUV()\n{\n    vec3 uv = vec3(u_ThicknessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_THICKNESS_UV_TRANSFORM\n    uv = u_ThicknessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Iridescence\n\n#ifdef MATERIAL_IRIDESCENCE\n\nuniform sampler2D u_IridescenceSampler;\nuniform int u_IridescenceUVSet;\nuniform mat3 u_IridescenceUVTransform;\n\nuniform sampler2D u_IridescenceThicknessSampler;\nuniform int u_IridescenceThicknessUVSet;\nuniform mat3 u_IridescenceThicknessUVTransform;\n\nvec2 getIridescenceUV()\n{\n    vec3 uv = vec3(u_IridescenceUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_IRIDESCENCE_UV_TRANSFORM\n    uv = u_IridescenceUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\nvec2 getIridescenceThicknessUV()\n{\n    vec3 uv = vec3(u_IridescenceThicknessUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_IRIDESCENCETHICKNESS_UV_TRANSFORM\n    uv = u_IridescenceThicknessUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n\n// Anisotropy\n\n#ifdef MATERIAL_ANISOTROPY\n\nuniform sampler2D u_AnisotropySampler;\nuniform int u_AnisotropyUVSet;\nuniform mat3 u_AnisotropyUVTransform;\n\nvec2 getAnisotropyUV()\n{\n    vec3 uv = vec3(u_AnisotropyUVSet < 1 ? v_texcoord_0 : v_texcoord_1, 1.0);\n#ifdef HAS_ANISOTROPY_UV_TRANSFORM\n    uv = u_AnisotropyUVTransform * uv;\n#endif\n    return uv.xy;\n}\n\n#endif\n"; // eslint-disable-line
 
 var tonemappingShader = "#define GLSLIFY 1\nuniform float u_Exposure;\n\nconst float GAMMA = 2.2;\nconst float INV_GAMMA = 1.0 / GAMMA;\n\n// sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT\nconst mat3 ACESInputMat = mat3\n(\n    0.59719, 0.07600, 0.02840,\n    0.35458, 0.90834, 0.13383,\n    0.04823, 0.01566, 0.83777\n);\n\n// ODT_SAT => XYZ => D60_2_D65 => sRGB\nconst mat3 ACESOutputMat = mat3\n(\n    1.60475, -0.10208, -0.00327,\n    -0.53108,  1.10813, -0.07276,\n    -0.07367, -0.00605,  1.07602\n);\n\n// linear to sRGB approximation\n// see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html\nvec3 linearTosRGB(vec3 color)\n{\n    return pow(color, vec3(INV_GAMMA));\n}\n\n// sRGB to linear approximation\n// see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html\nvec3 sRGBToLinear(vec3 srgbIn)\n{\n    return vec3(pow(srgbIn.xyz, vec3(GAMMA)));\n}\n\nvec4 sRGBToLinear(vec4 srgbIn)\n{\n    return vec4(sRGBToLinear(srgbIn.xyz), srgbIn.w);\n}\n\n// ACES tone map (faster approximation)\n// see: https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/\nvec3 toneMapACES_Narkowicz(vec3 color)\n{\n    const float A = 2.51;\n    const float B = 0.03;\n    const float C = 2.43;\n    const float D = 0.59;\n    const float E = 0.14;\n    return clamp((color * (A * color + B)) / (color * (C * color + D) + E), 0.0, 1.0);\n}\n\n// ACES filmic tone map approximation\n// see https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl\nvec3 RRTAndODTFit(vec3 color)\n{\n    vec3 a = color * (color + 0.0245786) - 0.000090537;\n    vec3 b = color * (0.983729 * color + 0.4329510) + 0.238081;\n    return a / b;\n}\n\n// tone mapping \nvec3 toneMapACES_Hill(vec3 color)\n{\n    color = ACESInputMat * color;\n\n    // Apply RRT and ODT\n    color = RRTAndODTFit(color);\n\n    color = ACESOutputMat * color;\n\n    // Clamp to [0, 1]\n    color = clamp(color, 0.0, 1.0);\n\n    return color;\n}\n\nvec3 toneMap(vec3 color)\n{\n    color *= u_Exposure;\n\n#ifdef TONEMAP_ACES_NARKOWICZ\n    color = toneMapACES_Narkowicz(color);\n#endif\n\n#ifdef TONEMAP_ACES_HILL\n    color = toneMapACES_Hill(color);\n#endif\n\n#ifdef TONEMAP_ACES_HILL_EXPOSURE_BOOST\n    // boost exposure as discussed in https://github.com/mrdoob/three.js/pull/19621\n    // this factor is based on the exposure correction of Krzysztof Narkowicz in his\n    // implemetation of ACES tone mapping\n    color /= 0.6;\n    color = toneMapACES_Hill(color);\n#endif\n\n    return linearTosRGB(color);\n}\n"; // eslint-disable-line
 
@@ -3878,19 +4000,20 @@ class gltfRenderer
     clearFrame(clearColor)
     {
         this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, null);
-        this.webGl.context.clearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, clearColor[3] / 255.0);
+        this.webGl.context.clearColor(...clearColor);
         this.webGl.context.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
         this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, this.opaqueFramebuffer);
-        this.webGl.context.clearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, clearColor[3] / 255.0);
+        this.webGl.context.clearColor(...clearColor);
         this.webGl.context.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
         this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, null);
         this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, this.opaqueFramebufferMSAA);
-        this.webGl.context.clearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, clearColor[3] / 255.0);
+        this.webGl.context.clearColor(...clearColor);
         this.webGl.context.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
         this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, null);
     }
 
     prepareScene(state, scene) {
+        //debugger;
         this.nodes = scene.gatherNodes(state.gltf);
 
         // collect drawables by essentially zipping primitives (for geometry and material)
@@ -3915,6 +4038,43 @@ class gltfRenderer
                     || state.gltf.materials[primitive.material].extensions.KHR_materials_transmission === undefined));
 
         this.transmissionDrawables = drawables
+            .filter(({primitive}) => state.gltf.materials[primitive.material].extensions !== undefined
+                && state.gltf.materials[primitive.material].extensions.KHR_materials_transmission !== undefined);
+
+        /// GLTF-Compressor
+
+        // save the original
+        this.opaqueDrawablesOriginal = this.opaqueDrawables;
+        this.transparentDrawablesOriginal = this.transparentDrawables;
+        this.transmissionDrawablesOriginal = this.transmissionDrawables;
+
+        // Compute the compressed drawables
+        const compressed_drawables = this.nodes
+            .filter(node => node.compressedMesh !== undefined)
+            .reduce((acc, node) => acc.concat(node.compressedMesh.primitives.map( primitive => {
+                return  {node: node, primitive: primitive};
+            })), [])
+            .filter(({primitive}) => primitive.material !== undefined)
+        .concat(this.nodes
+            .filter(node => node.compressedNode === undefined && node.mesh !== undefined)
+            .reduce((acc, node) => acc.concat(state.gltf.meshes[node.mesh].primitives.map( primitive => {
+                return  {node: node, primitive: primitive};
+            })), [])
+            .filter(({primitive}) => primitive.material !== undefined));
+
+        // opaque drawables don't need sorting
+        this.opaqueDrawablesCompressed = compressed_drawables
+            .filter(({primitive}) => state.gltf.materials[primitive.material].alphaMode !== "BLEND"
+                && (state.gltf.materials[primitive.material].extensions === undefined
+                    || state.gltf.materials[primitive.material].extensions.KHR_materials_transmission === undefined));
+
+        // transparent drawables need sorting before they can be drawn
+        this.transparentDrawablesCompressed = compressed_drawables
+            .filter(({primitive}) => state.gltf.materials[primitive.material].alphaMode === "BLEND"
+                && (state.gltf.materials[primitive.material].extensions === undefined
+                    || state.gltf.materials[primitive.material].extensions.KHR_materials_transmission === undefined));
+
+        this.transmissionDrawablesCompressed = compressed_drawables
             .filter(({primitive}) => state.gltf.materials[primitive.material].extensions !== undefined
                 && state.gltf.materials[primitive.material].extensions.KHR_materials_transmission !== undefined);
     }
@@ -3957,7 +4117,7 @@ class gltfRenderer
             this.visibleLights.push([null, this.lightFill]);
         }
 
-        multiply(this.viewProjectionMatrix, this.projMatrix, this.viewMatrix);
+        multiply$1(this.viewProjectionMatrix, this.projMatrix, this.viewMatrix);
 
         // Update skins.
         for (const node of this.nodes)
@@ -3968,11 +4128,19 @@ class gltfRenderer
             }
         }
 
+        this.opaqueDrawables = state.compressorParameters.previewCompressed? this.opaqueDrawablesCompressed : this.opaqueDrawablesOriginal;
+        this.transparentDrawables = state.compressorParameters.previewCompressed? this.transparentDrawablesCompressed : this.transparentDrawablesOriginal;
+        this.transmissionDrawables = state.compressorParameters.previewCompressed? this.transmissionDrawablesCompressed : this.transmissionDrawablesOriginal;
+
         // If any transmissive drawables are present, render all opaque and transparent drawables into a separate framebuffer.
         if (this.transmissionDrawables.length > 0) {
             // Render transmission sample texture
             this.webGl.context.bindFramebuffer(this.webGl.context.FRAMEBUFFER, this.opaqueFramebufferMSAA);
             this.webGl.context.viewport(0, 0, this.opaqueFramebufferWidth, this.opaqueFramebufferHeight);
+
+            const clearColor = state.renderingParameters.clearColor;
+            this.webGl.context.clearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, clearColor[3] / 255.0);
+            this.webGl.context.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
 
             // Render environment for the transmission background
             this.environmentRenderer.drawEnvironmentMap(this.webGl, this.viewProjectionMatrix, state, this.shaderCache, ["LINEAR_OUTPUT 1"]);
@@ -4110,6 +4278,8 @@ class gltfRenderer
         this.shader.updateUniform("u_NormalMatrix", node.normalMatrix, false);
         this.shader.updateUniform("u_Exposure", state.renderingParameters.exposure, false);
         this.shader.updateUniform("u_Camera", this.currentCameraPosition, false);
+        const highlightIntensity = primitive.isHighlighted && state.compressorParameters.meshHighlighing ? 0.5 : 0.0;
+        this.shader.updateUniform("u_HighlightColor", new Float32Array([highlightIntensity, highlightIntensity, 0]));
 
         this.updateAnimationUniforms(state, node, primitive);
 
@@ -4158,7 +4328,7 @@ class gltfRenderer
             vertexCount = gltfAccessor.count;
 
             const location = this.shader.getAttributeLocation(attribute.name);
-            if (location < 0)
+            if (location === null)
             {
                 continue; // only skip this attribute
             }
@@ -4168,6 +4338,7 @@ class gltfRenderer
             }
         }
 
+        // update uniforms
         for (let [uniform, val] of material.getProperties().entries())
         {
             this.shader.updateUniform(uniform, val, false);
@@ -4178,8 +4349,7 @@ class gltfRenderer
         {
             let info = material.textures[textureIndex];
             const location = this.shader.getUniformLocation(info.samplerName);
-
-            if (location < 0)
+            if (!this.webGl.setTexture(location, state.gltf, info, textureIndex))
             {
                 console.log("Unable to find uniform location of "+info.samplerName);
                 continue; // only skip this texture
@@ -4194,11 +4364,6 @@ class gltfRenderer
         if (primitive.morphTargetTextureInfo !== undefined) 
         {
             const location = this.shader.getUniformLocation(primitive.morphTargetTextureInfo.samplerName);
-            if (location < 0)
-            {
-                console.log("Unable to find uniform location of " + primitive.morphTargetTextureInfo.samplerName);
-            }
-
             this.webGl.setTexture(location, state.gltf, primitive.morphTargetTextureInfo, textureIndex); // binds texture and sampler
             textureIndex++;
         }
@@ -4208,11 +4373,6 @@ class gltfRenderer
         {
             const skin = state.gltf.skins[node.skin];
             const location = this.shader.getUniformLocation(skin.jointTextureInfo.samplerName);
-            if (location < 0)
-            {
-                console.log("Unable to find uniform location of " + skin.jointTextureInfo.samplerName);
-            }
-
             this.webGl.setTexture(location, state.gltf, skin.jointTextureInfo, textureIndex); // binds texture and sampler
             textureIndex++;
         }
@@ -4256,7 +4416,7 @@ class gltfRenderer
         for (const attribute of primitive.glAttributes)
         {
             const location = this.shader.getAttributeLocation(attribute.name);
-            if (location < 0)
+            if (location === null)
             {
                 continue; // skip this attribute
             }
@@ -4330,11 +4490,11 @@ class gltfRenderer
         {
             vertDefines.push("USE_SKINNING 1");
         }
-
         // morphing
-        if (parameters.morphing && node.mesh !== undefined && primitive.targets.length > 0)
+        const mesh_id = node.mesh !== undefined ? node.mesh : ( (node.compressedMesh !== undefined && node.compressedMesh.mesh !== undefined) ? node.compressedMesh.mesh : undefined );
+        if (parameters.morphing && mesh_id !== undefined && primitive.targets.length > 0)
         {
-            const mesh = gltf.meshes[node.mesh];
+            const mesh = gltf.meshes[mesh_id];
             if (mesh.getWeightsAnimated() !== undefined && mesh.getWeightsAnimated().length > 0)
             {
                 vertDefines.push("USE_MORPHING 1");
@@ -4345,9 +4505,11 @@ class gltfRenderer
 
     updateAnimationUniforms(state, node, primitive)
     {
-        if (state.renderingParameters.morphing && node.mesh !== undefined && primitive.targets.length > 0)
+
+        const mesh_id = node.mesh !== undefined ? node.mesh : ( (node.compressedMesh !== undefined && node.compressedMesh.mesh !== undefined) ? node.compressedMesh.mesh : undefined );
+        if (state.renderingParameters.morphing && mesh_id !== undefined && primitive.targets.length > 0)
         {
-            const mesh = state.gltf.meshes[node.mesh];
+            const mesh = state.gltf.meshes[mesh_id];
             const weightsAnimated = mesh.getWeightsAnimated();
             if (weightsAnimated !== undefined && weightsAnimated.length > 0)
             {
@@ -4422,6 +4584,9 @@ class gltfRenderer
             {debugOutput: GltfState.DebugOutput.iridescence.IRIDESCENCE, shaderDefine: "DEBUG_IRIDESCENCE"},
             {debugOutput: GltfState.DebugOutput.iridescence.IRIDESCENCE_FACTOR, shaderDefine: "DEBUG_IRIDESCENCE_FACTOR"},
             {debugOutput: GltfState.DebugOutput.iridescence.IRIDESCENCE_THICKNESS, shaderDefine: "DEBUG_IRIDESCENCE_THICKNESS"},
+
+            {debugOutput: GltfState.DebugOutput.anisotropy.ANISOTROPIC_STRENGTH, shaderDefine: "DEBUG_ANISOTROPIC_STRENGTH"},
+            {debugOutput: GltfState.DebugOutput.anisotropy.ANISOTROPIC_DIRECTION, shaderDefine: "DEBUG_ANISOTROPIC_DIRECTION"},
         ];
 
         let mappingCount = 0;
@@ -6694,6 +6859,31 @@ class gltfAccessor extends GltfObject
         this.normalizedTypedView = undefined;
     }
 
+    
+    // getTypedView provides a view to the accessors data in form of
+    // a TypedArray. This data can directly be passed to vertexAttribPointer
+    decodeMeshoptBuffer(gltf, bufferView)
+    {
+        const moptDecoder = gltf.moptDecoder;
+        const filter = bufferView.filter || 'NONE';
+        const buffer = gltf.buffers[bufferView.buffer];
+        const byteLength = bufferView.byteLength;
+        const byteStride = bufferView.byteStride;
+        const componentSize = this.getComponentSize(this.componentType);
+        //const componentCount = this.getComponentCount(this.type);
+        const componentCount = byteStride / componentSize;
+        const viewArrayLength = bufferView.count * componentCount * componentSize;
+        this.count * componentCount * componentSize;
+        const bytes = (view) => new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+
+        const encoded = new Uint8Array(buffer.buffer, bufferView.byteOffset, byteLength);
+        const decoded = new Uint8Array(viewArrayLength);
+
+
+        moptDecoder.decodeGltfBuffer(bytes(decoded), bufferView.count, byteStride, encoded, bufferView.mode, filter);
+        return {buffer: decoded.buffer};
+    }
+
     // getTypedView provides a view to the accessors data in form of
     // a TypedArray. This data can directly be passed to vertexAttribPointer
     getTypedView(gltf)
@@ -6705,10 +6895,10 @@ class gltfAccessor extends GltfObject
 
         if (this.bufferView !== undefined)
         {
-            const bufferView = gltf.bufferViews[this.bufferView];
-            const buffer = gltf.buffers[bufferView.buffer];
-            const byteOffset = this.byteOffset + bufferView.byteOffset;
-
+            const isMeshOptCompressed = gltf.bufferViews[this.bufferView].extensions !== undefined && gltf.bufferViews[this.bufferView].extensions.EXT_meshopt_compression !== undefined;
+            const bufferView = (!isMeshOptCompressed) ? gltf.bufferViews[this.bufferView] : gltf.bufferViews[this.bufferView].extensions.EXT_meshopt_compression;
+            const buffer = (!isMeshOptCompressed) ? gltf.buffers[bufferView.buffer] : this.decodeMeshoptBuffer(gltf, bufferView);
+            const byteOffset = this.byteOffset + ((!isMeshOptCompressed) ? bufferView.byteOffset : 0);
             const componentSize = this.getComponentSize(this.componentType);
             let componentCount = this.getComponentCount(this.type);
 
@@ -6798,10 +6988,10 @@ class gltfAccessor extends GltfObject
 
         if (this.bufferView !== undefined)
         {
-            const bufferView = gltf.bufferViews[this.bufferView];
-            const buffer = gltf.buffers[bufferView.buffer];
-            const byteOffset = this.byteOffset + bufferView.byteOffset;
-
+            const isMeshOptCompressed = gltf.bufferViews[this.bufferView].extensions !== undefined && gltf.bufferViews[this.bufferView].extensions.EXT_meshopt_compression !== undefined;
+            const bufferView = (!isMeshOptCompressed) ? gltf.bufferViews[this.bufferView] : gltf.bufferViews[this.bufferView].extensions.EXT_meshopt_compression;
+            const buffer = (!isMeshOptCompressed) ? gltf.buffers[bufferView.buffer] : this.decodeMeshoptBuffer(gltf, bufferView);
+            const byteOffset = this.byteOffset + ((!isMeshOptCompressed) ? bufferView.byteOffset : 0);
             const componentSize = this.getComponentSize(this.componentType);
             const componentCount = this.getComponentCount(this.type);
             const arrayLength = this.count * componentCount;
@@ -6991,6 +7181,31 @@ class gltfAccessor extends GltfObject
         }
     }
 
+    getSize()
+    {
+        return  this.getComponentCount(this.type) * 
+                this.getComponentSize(this.componentType) * 
+                this.count;
+    }
+
+    getComponentBitCount(componentType)
+    {
+        switch (componentType)
+        {
+        case GL.BYTE:
+        case GL.UNSIGNED_BYTE:
+            return 8;
+        case GL.SHORT:
+        case GL.UNSIGNED_SHORT:
+            return 16;
+        case GL.UNSIGNED_INT:
+        case GL.FLOAT:
+            return 32;
+        default:
+            return 0;
+        }
+    }
+
     getComponentCount(type)
     {
         return CompononentCount.get(type);
@@ -7065,7 +7280,10 @@ class gltfBuffer extends GltfObject
             if (!self.setBufferFromFiles(additionalFiles, resolve) &&
                 !self.setBufferFromUri(gltf, resolve))
             {
-                console.error("Was not able to resolve buffer with uri '%s'", self.uri);
+                /* Handle fallback buffer case for EXT_meshopt_compression */
+                if (self.extensions === undefined &&
+                    self.extensions.EXT_meshopt_compression === undefined)
+                    console.error("Was not able to resolve buffer with uri '%s'", self.uri);
                 resolve();
             }
         });
@@ -7095,13 +7313,12 @@ class gltfBuffer extends GltfObject
             return false;
         }
 
-        const foundFile = files.find(function(file)
-        {
+        const foundFile = files.find(([path, file]) => {
             if (file.name === this.uri || file.fullPath === this.uri)
             {
                 return true;
             }
-        }, this);
+        });
 
         if (foundFile === undefined)
         {
@@ -7115,7 +7332,7 @@ class gltfBuffer extends GltfObject
             self.buffer = event.target.result;
             callback();
         };
-        reader.readAsArrayBuffer(foundFile);
+        reader.readAsArrayBuffer(foundFile[1]);
 
         return true;
     }
@@ -7133,6 +7350,11 @@ class gltfBufferView extends GltfObject
         this.target = undefined;
         this.name = undefined;
     }
+}
+
+function toMb(value)
+{ 
+    return value/1024/1024; 
 }
 
 class AsyncFileReader
@@ -7235,7 +7457,7 @@ class ImageUtils
         const texture_dst = gl.createTexture();
         const vao = gl.createVertexArray();
         
-        console.log(gl.getError());
+        while(gl.getError());
         gl.bindTexture(gl.TEXTURE_2D, texture_dst);
         gl.texStorage2D(gl.TEXTURE_2D, 1, isSRGB? gl.SRGB8_ALPHA8 : gl.RGBA8, width, height); 
         
@@ -7299,7 +7521,7 @@ var lookup = [];
 var revLookup = [];
 var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
 var inited = false;
-function init () {
+function init$1 () {
   inited = true;
   var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   for (var i = 0, len = code.length; i < len; ++i) {
@@ -7313,7 +7535,7 @@ function init () {
 
 function toByteArray (b64) {
   if (!inited) {
-    init();
+    init$1();
   }
   var i, j, l, tmp, placeHolders, arr;
   var len = b64.length;
@@ -7372,7 +7594,7 @@ function encodeChunk (uint8, start, end) {
 
 function fromByteArray (uint8) {
   if (!inited) {
-    init();
+    init$1();
   }
   var tmp;
   var len = uint8.length;
@@ -7529,7 +7751,7 @@ var INSPECT_MAX_BYTES = 50;
  * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
  * get the Object implementation, which is slower but behaves correctly.
  */
-Buffer.TYPED_ARRAY_SUPPORT = global$1.TYPED_ARRAY_SUPPORT !== undefined
+Buffer$1.TYPED_ARRAY_SUPPORT = global$1.TYPED_ARRAY_SUPPORT !== undefined
   ? global$1.TYPED_ARRAY_SUPPORT
   : true;
 
@@ -7539,7 +7761,7 @@ Buffer.TYPED_ARRAY_SUPPORT = global$1.TYPED_ARRAY_SUPPORT !== undefined
 kMaxLength();
 
 function kMaxLength () {
-  return Buffer.TYPED_ARRAY_SUPPORT
+  return Buffer$1.TYPED_ARRAY_SUPPORT
     ? 0x7fffffff
     : 0x3fffffff
 }
@@ -7548,14 +7770,14 @@ function createBuffer (that, length) {
   if (kMaxLength() < length) {
     throw new RangeError('Invalid typed array length')
   }
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     // Return an augmented `Uint8Array` instance, for best performance
     that = new Uint8Array(length);
-    that.__proto__ = Buffer.prototype;
+    that.__proto__ = Buffer$1.prototype;
   } else {
     // Fallback: Return an object instance of the Buffer class
     if (that === null) {
-      that = new Buffer(length);
+      that = new Buffer$1(length);
     }
     that.length = length;
   }
@@ -7573,9 +7795,9 @@ function createBuffer (that, length) {
  * The `Uint8Array` prototype remains unmodified.
  */
 
-function Buffer (arg, encodingOrOffset, length) {
-  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
-    return new Buffer(arg, encodingOrOffset, length)
+function Buffer$1 (arg, encodingOrOffset, length) {
+  if (!Buffer$1.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer$1)) {
+    return new Buffer$1(arg, encodingOrOffset, length)
   }
 
   // Common case.
@@ -7590,11 +7812,11 @@ function Buffer (arg, encodingOrOffset, length) {
   return from$1(this, arg, encodingOrOffset, length)
 }
 
-Buffer.poolSize = 8192; // not used by this implementation
+Buffer$1.poolSize = 8192; // not used by this implementation
 
 // TODO: Legacy, not needed anymore. Remove in next major version.
-Buffer._augment = function (arr) {
-  arr.__proto__ = Buffer.prototype;
+Buffer$1._augment = function (arr) {
+  arr.__proto__ = Buffer$1.prototype;
   return arr
 };
 
@@ -7622,15 +7844,15 @@ function from$1 (that, value, encodingOrOffset, length) {
  * Buffer.from(buffer)
  * Buffer.from(arrayBuffer[, byteOffset[, length]])
  **/
-Buffer.from = function (value, encodingOrOffset, length) {
+Buffer$1.from = function (value, encodingOrOffset, length) {
   return from$1(null, value, encodingOrOffset, length)
 };
 
-if (Buffer.TYPED_ARRAY_SUPPORT) {
-  Buffer.prototype.__proto__ = Uint8Array.prototype;
-  Buffer.__proto__ = Uint8Array;
+if (Buffer$1.TYPED_ARRAY_SUPPORT) {
+  Buffer$1.prototype.__proto__ = Uint8Array.prototype;
+  Buffer$1.__proto__ = Uint8Array;
   if (typeof Symbol !== 'undefined' && Symbol.species &&
-      Buffer[Symbol.species] === Buffer) ;
+      Buffer$1[Symbol.species] === Buffer$1) ;
 }
 
 function assertSize (size) {
@@ -7661,14 +7883,14 @@ function alloc (that, size, fill, encoding) {
  * Creates a new filled Buffer instance.
  * alloc(size[, fill[, encoding]])
  **/
-Buffer.alloc = function (size, fill, encoding) {
+Buffer$1.alloc = function (size, fill, encoding) {
   return alloc(null, size, fill, encoding)
 };
 
 function allocUnsafe (that, size) {
   assertSize(size);
   that = createBuffer(that, size < 0 ? 0 : checked(size) | 0);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+  if (!Buffer$1.TYPED_ARRAY_SUPPORT) {
     for (var i = 0; i < size; ++i) {
       that[i] = 0;
     }
@@ -7679,13 +7901,13 @@ function allocUnsafe (that, size) {
 /**
  * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
  * */
-Buffer.allocUnsafe = function (size) {
+Buffer$1.allocUnsafe = function (size) {
   return allocUnsafe(null, size)
 };
 /**
  * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
  */
-Buffer.allocUnsafeSlow = function (size) {
+Buffer$1.allocUnsafeSlow = function (size) {
   return allocUnsafe(null, size)
 };
 
@@ -7694,7 +7916,7 @@ function fromString (that, string, encoding) {
     encoding = 'utf8';
   }
 
-  if (!Buffer.isEncoding(encoding)) {
+  if (!Buffer$1.isEncoding(encoding)) {
     throw new TypeError('"encoding" must be a valid string encoding')
   }
 
@@ -7741,10 +7963,10 @@ function fromArrayBuffer (that, array, byteOffset, length) {
     array = new Uint8Array(array, byteOffset, length);
   }
 
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     // Return an augmented `Uint8Array` instance, for best performance
     that = array;
-    that.__proto__ = Buffer.prototype;
+    that.__proto__ = Buffer$1.prototype;
   } else {
     // Fallback: Return an object instance of the Buffer class
     that = fromArrayLike(that, array);
@@ -7791,12 +8013,12 @@ function checked (length) {
   }
   return length | 0
 }
-Buffer.isBuffer = isBuffer;
+Buffer$1.isBuffer = isBuffer;
 function internalIsBuffer (b) {
   return !!(b != null && b._isBuffer)
 }
 
-Buffer.compare = function compare (a, b) {
+Buffer$1.compare = function compare (a, b) {
   if (!internalIsBuffer(a) || !internalIsBuffer(b)) {
     throw new TypeError('Arguments must be Buffers')
   }
@@ -7819,7 +8041,7 @@ Buffer.compare = function compare (a, b) {
   return 0
 };
 
-Buffer.isEncoding = function isEncoding (encoding) {
+Buffer$1.isEncoding = function isEncoding (encoding) {
   switch (String(encoding).toLowerCase()) {
     case 'hex':
     case 'utf8':
@@ -7838,13 +8060,13 @@ Buffer.isEncoding = function isEncoding (encoding) {
   }
 };
 
-Buffer.concat = function concat (list, length) {
+Buffer$1.concat = function concat (list, length) {
   if (!isArray$2(list)) {
     throw new TypeError('"list" argument must be an Array of Buffers')
   }
 
   if (list.length === 0) {
-    return Buffer.alloc(0)
+    return Buffer$1.alloc(0)
   }
 
   var i;
@@ -7855,7 +8077,7 @@ Buffer.concat = function concat (list, length) {
     }
   }
 
-  var buffer = Buffer.allocUnsafe(length);
+  var buffer = Buffer$1.allocUnsafe(length);
   var pos = 0;
   for (i = 0; i < list.length; ++i) {
     var buf = list[i];
@@ -7911,7 +8133,7 @@ function byteLength (string, encoding) {
     }
   }
 }
-Buffer.byteLength = byteLength;
+Buffer$1.byteLength = byteLength;
 
 function slowToString (encoding, start, end) {
   var loweredCase = false;
@@ -7985,7 +8207,7 @@ function slowToString (encoding, start, end) {
 
 // The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
 // Buffer instances.
-Buffer.prototype._isBuffer = true;
+Buffer$1.prototype._isBuffer = true;
 
 function swap (b, n, m) {
   var i = b[n];
@@ -7993,7 +8215,7 @@ function swap (b, n, m) {
   b[m] = i;
 }
 
-Buffer.prototype.swap16 = function swap16 () {
+Buffer$1.prototype.swap16 = function swap16 () {
   var len = this.length;
   if (len % 2 !== 0) {
     throw new RangeError('Buffer size must be a multiple of 16-bits')
@@ -8004,7 +8226,7 @@ Buffer.prototype.swap16 = function swap16 () {
   return this
 };
 
-Buffer.prototype.swap32 = function swap32 () {
+Buffer$1.prototype.swap32 = function swap32 () {
   var len = this.length;
   if (len % 4 !== 0) {
     throw new RangeError('Buffer size must be a multiple of 32-bits')
@@ -8016,7 +8238,7 @@ Buffer.prototype.swap32 = function swap32 () {
   return this
 };
 
-Buffer.prototype.swap64 = function swap64 () {
+Buffer$1.prototype.swap64 = function swap64 () {
   var len = this.length;
   if (len % 8 !== 0) {
     throw new RangeError('Buffer size must be a multiple of 64-bits')
@@ -8030,20 +8252,20 @@ Buffer.prototype.swap64 = function swap64 () {
   return this
 };
 
-Buffer.prototype.toString = function toString () {
+Buffer$1.prototype.toString = function toString () {
   var length = this.length | 0;
   if (length === 0) return ''
   if (arguments.length === 0) return utf8Slice(this, 0, length)
   return slowToString.apply(this, arguments)
 };
 
-Buffer.prototype.equals = function equals (b) {
+Buffer$1.prototype.equals = function equals (b) {
   if (!internalIsBuffer(b)) throw new TypeError('Argument must be a Buffer')
   if (this === b) return true
-  return Buffer.compare(this, b) === 0
+  return Buffer$1.compare(this, b) === 0
 };
 
-Buffer.prototype.inspect = function inspect () {
+Buffer$1.prototype.inspect = function inspect () {
   var str = '';
   var max = INSPECT_MAX_BYTES;
   if (this.length > 0) {
@@ -8053,7 +8275,7 @@ Buffer.prototype.inspect = function inspect () {
   return '<Buffer ' + str + '>'
 };
 
-Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+Buffer$1.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
   if (!internalIsBuffer(target)) {
     throw new TypeError('Argument must be a Buffer')
   }
@@ -8152,7 +8374,7 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
 
   // Normalize val
   if (typeof val === 'string') {
-    val = Buffer.from(val, encoding);
+    val = Buffer$1.from(val, encoding);
   }
 
   // Finally, search either indexOf (if dir is true) or lastIndexOf
@@ -8164,7 +8386,7 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
     return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
   } else if (typeof val === 'number') {
     val = val & 0xFF; // Search for a byte value [0-255]
-    if (Buffer.TYPED_ARRAY_SUPPORT &&
+    if (Buffer$1.TYPED_ARRAY_SUPPORT &&
         typeof Uint8Array.prototype.indexOf === 'function') {
       if (dir) {
         return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
@@ -8234,15 +8456,15 @@ function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
   return -1
 }
 
-Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+Buffer$1.prototype.includes = function includes (val, byteOffset, encoding) {
   return this.indexOf(val, byteOffset, encoding) !== -1
 };
 
-Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+Buffer$1.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
   return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
 };
 
-Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+Buffer$1.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
   return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
 };
 
@@ -8293,7 +8515,7 @@ function ucs2Write (buf, string, offset, length) {
   return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
 }
 
-Buffer.prototype.write = function write (string, offset, length, encoding) {
+Buffer$1.prototype.write = function write (string, offset, length, encoding) {
   // Buffer#write(string)
   if (offset === undefined) {
     encoding = 'utf8';
@@ -8365,7 +8587,7 @@ Buffer.prototype.write = function write (string, offset, length, encoding) {
   }
 };
 
-Buffer.prototype.toJSON = function toJSON () {
+Buffer$1.prototype.toJSON = function toJSON () {
   return {
     type: 'Buffer',
     data: Array.prototype.slice.call(this._arr || this, 0)
@@ -8518,7 +8740,7 @@ function utf16leSlice (buf, start, end) {
   return res
 }
 
-Buffer.prototype.slice = function slice (start, end) {
+Buffer$1.prototype.slice = function slice (start, end) {
   var len = this.length;
   start = ~~start;
   end = end === undefined ? len : ~~end;
@@ -8540,12 +8762,12 @@ Buffer.prototype.slice = function slice (start, end) {
   if (end < start) end = start;
 
   var newBuf;
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     newBuf = this.subarray(start, end);
-    newBuf.__proto__ = Buffer.prototype;
+    newBuf.__proto__ = Buffer$1.prototype;
   } else {
     var sliceLen = end - start;
-    newBuf = new Buffer(sliceLen, undefined);
+    newBuf = new Buffer$1(sliceLen, undefined);
     for (var i = 0; i < sliceLen; ++i) {
       newBuf[i] = this[i + start];
     }
@@ -8562,7 +8784,7 @@ function checkOffset (offset, ext, length) {
   if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
 }
 
-Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+Buffer$1.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
   offset = offset | 0;
   byteLength = byteLength | 0;
   if (!noAssert) checkOffset(offset, byteLength, this.length);
@@ -8577,7 +8799,7 @@ Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert)
   return val
 };
 
-Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+Buffer$1.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
   offset = offset | 0;
   byteLength = byteLength | 0;
   if (!noAssert) {
@@ -8593,22 +8815,22 @@ Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert)
   return val
 };
 
-Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+Buffer$1.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 1, this.length);
   return this[offset]
 };
 
-Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+Buffer$1.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 2, this.length);
   return this[offset] | (this[offset + 1] << 8)
 };
 
-Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+Buffer$1.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 2, this.length);
   return (this[offset] << 8) | this[offset + 1]
 };
 
-Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+Buffer$1.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
 
   return ((this[offset]) |
@@ -8617,7 +8839,7 @@ Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
       (this[offset + 3] * 0x1000000)
 };
 
-Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+Buffer$1.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
 
   return (this[offset] * 0x1000000) +
@@ -8626,7 +8848,7 @@ Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
     this[offset + 3])
 };
 
-Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+Buffer$1.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
   offset = offset | 0;
   byteLength = byteLength | 0;
   if (!noAssert) checkOffset(offset, byteLength, this.length);
@@ -8644,7 +8866,7 @@ Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
   return val
 };
 
-Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+Buffer$1.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
   offset = offset | 0;
   byteLength = byteLength | 0;
   if (!noAssert) checkOffset(offset, byteLength, this.length);
@@ -8662,25 +8884,25 @@ Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
   return val
 };
 
-Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+Buffer$1.prototype.readInt8 = function readInt8 (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 1, this.length);
   if (!(this[offset] & 0x80)) return (this[offset])
   return ((0xff - this[offset] + 1) * -1)
 };
 
-Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+Buffer$1.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 2, this.length);
   var val = this[offset] | (this[offset + 1] << 8);
   return (val & 0x8000) ? val | 0xFFFF0000 : val
 };
 
-Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+Buffer$1.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 2, this.length);
   var val = this[offset + 1] | (this[offset] << 8);
   return (val & 0x8000) ? val | 0xFFFF0000 : val
 };
 
-Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+Buffer$1.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
 
   return (this[offset]) |
@@ -8689,7 +8911,7 @@ Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
     (this[offset + 3] << 24)
 };
 
-Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+Buffer$1.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
 
   return (this[offset] << 24) |
@@ -8698,22 +8920,22 @@ Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
     (this[offset + 3])
 };
 
-Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+Buffer$1.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
   return read(this, offset, true, 23, 4)
 };
 
-Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+Buffer$1.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 4, this.length);
   return read(this, offset, false, 23, 4)
 };
 
-Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+Buffer$1.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 8, this.length);
   return read(this, offset, true, 52, 8)
 };
 
-Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+Buffer$1.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
   if (!noAssert) checkOffset(offset, 8, this.length);
   return read(this, offset, false, 52, 8)
 };
@@ -8724,7 +8946,7 @@ function checkInt (buf, value, offset, ext, max, min) {
   if (offset + ext > buf.length) throw new RangeError('Index out of range')
 }
 
-Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+Buffer$1.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
   value = +value;
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -8743,7 +8965,7 @@ Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, 
   return offset + byteLength
 };
 
-Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+Buffer$1.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
   value = +value;
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -8762,11 +8984,11 @@ Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, 
   return offset + byteLength
 };
 
-Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+Buffer$1.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
+  if (!Buffer$1.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
   this[offset] = (value & 0xff);
   return offset + 1
 };
@@ -8779,11 +9001,11 @@ function objectWriteUInt16 (buf, value, offset, littleEndian) {
   }
 }
 
-Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+Buffer$1.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value & 0xff);
     this[offset + 1] = (value >>> 8);
   } else {
@@ -8792,11 +9014,11 @@ Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert
   return offset + 2
 };
 
-Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+Buffer$1.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value >>> 8);
     this[offset + 1] = (value & 0xff);
   } else {
@@ -8812,11 +9034,11 @@ function objectWriteUInt32 (buf, value, offset, littleEndian) {
   }
 }
 
-Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+Buffer$1.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset + 3] = (value >>> 24);
     this[offset + 2] = (value >>> 16);
     this[offset + 1] = (value >>> 8);
@@ -8827,11 +9049,11 @@ Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert
   return offset + 4
 };
 
-Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+Buffer$1.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value >>> 24);
     this[offset + 1] = (value >>> 16);
     this[offset + 2] = (value >>> 8);
@@ -8842,7 +9064,7 @@ Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert
   return offset + 4
 };
 
-Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+Buffer$1.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) {
@@ -8865,7 +9087,7 @@ Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, no
   return offset + byteLength
 };
 
-Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+Buffer$1.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) {
@@ -8888,21 +9110,21 @@ Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, no
   return offset + byteLength
 };
 
-Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+Buffer$1.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80);
-  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
+  if (!Buffer$1.TYPED_ARRAY_SUPPORT) value = Math.floor(value);
   if (value < 0) value = 0xff + value + 1;
   this[offset] = (value & 0xff);
   return offset + 1
 };
 
-Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+Buffer$1.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value & 0xff);
     this[offset + 1] = (value >>> 8);
   } else {
@@ -8911,11 +9133,11 @@ Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) 
   return offset + 2
 };
 
-Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+Buffer$1.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value >>> 8);
     this[offset + 1] = (value & 0xff);
   } else {
@@ -8924,11 +9146,11 @@ Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) 
   return offset + 2
 };
 
-Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+Buffer$1.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value & 0xff);
     this[offset + 1] = (value >>> 8);
     this[offset + 2] = (value >>> 16);
@@ -8939,12 +9161,12 @@ Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) 
   return offset + 4
 };
 
-Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+Buffer$1.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
   value = +value;
   offset = offset | 0;
   if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000);
   if (value < 0) value = 0xffffffff + value + 1;
-  if (Buffer.TYPED_ARRAY_SUPPORT) {
+  if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     this[offset] = (value >>> 24);
     this[offset + 1] = (value >>> 16);
     this[offset + 2] = (value >>> 8);
@@ -8968,11 +9190,11 @@ function writeFloat (buf, value, offset, littleEndian, noAssert) {
   return offset + 4
 }
 
-Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+Buffer$1.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
   return writeFloat(this, value, offset, true, noAssert)
 };
 
-Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+Buffer$1.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
   return writeFloat(this, value, offset, false, noAssert)
 };
 
@@ -8984,16 +9206,16 @@ function writeDouble (buf, value, offset, littleEndian, noAssert) {
   return offset + 8
 }
 
-Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+Buffer$1.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
   return writeDouble(this, value, offset, true, noAssert)
 };
 
-Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+Buffer$1.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
   return writeDouble(this, value, offset, false, noAssert)
 };
 
 // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+Buffer$1.prototype.copy = function copy (target, targetStart, start, end) {
   if (!start) start = 0;
   if (!end && end !== 0) end = this.length;
   if (targetStart >= target.length) targetStart = target.length;
@@ -9025,7 +9247,7 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
     for (i = len - 1; i >= 0; --i) {
       target[i + targetStart] = this[i + start];
     }
-  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+  } else if (len < 1000 || !Buffer$1.TYPED_ARRAY_SUPPORT) {
     // ascending copy from start
     for (i = 0; i < len; ++i) {
       target[i + targetStart] = this[i + start];
@@ -9045,7 +9267,7 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
 //    buffer.fill(number[, offset[, end]])
 //    buffer.fill(buffer[, offset[, end]])
 //    buffer.fill(string[, offset[, end]][, encoding])
-Buffer.prototype.fill = function fill (val, start, end, encoding) {
+Buffer$1.prototype.fill = function fill (val, start, end, encoding) {
   // Handle string cases:
   if (typeof val === 'string') {
     if (typeof start === 'string') {
@@ -9065,7 +9287,7 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
     if (encoding !== undefined && typeof encoding !== 'string') {
       throw new TypeError('encoding must be a string')
     }
-    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+    if (typeof encoding === 'string' && !Buffer$1.isEncoding(encoding)) {
       throw new TypeError('Unknown encoding: ' + encoding)
     }
   } else if (typeof val === 'number') {
@@ -9094,7 +9316,7 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
   } else {
     var bytes = internalIsBuffer(val)
       ? val
-      : utf8ToBytes(new Buffer(val, encoding).toString());
+      : utf8ToBytes(new Buffer$1(val, encoding).toString());
     var len = bytes.length;
     for (i = 0; i < end - start; ++i) {
       this[i + start] = bytes[i % len];
@@ -9958,7 +10180,7 @@ var encoder$1 = {exports: {}};
 				}
 		
 				writeWord(0xFFD9); //EOI
-	      return Buffer.from(byteout);
+	      return Buffer$1.from(byteout);
 		};
 		
 		function setQuality(quality){
@@ -11138,7 +11360,7 @@ var decoder$1 = {exports: {}};
 	      exifBuffer: decoder.exifBuffer,
 	      data: opts.useTArray ?
 	        new Uint8Array(bytesNeeded) :
-	        Buffer.alloc(bytesNeeded)
+	        Buffer$1.alloc(bytesNeeded)
 	    };
 	    if(decoder.comments.length > 0) {
 	      image["comments"] = decoder.comments;
@@ -19286,7 +19508,7 @@ class gltfImage extends GltfObject
         miplevel = 0,
         bufferView = undefined,
         name = undefined,
-        mimeType = ImageMimeType.JPEG,
+        mimeType = undefined,
         image = undefined)
     {
         super();
@@ -19319,12 +19541,9 @@ class gltfImage extends GltfObject
 
     resolveRelativePath(basePath)
     {
-        if (typeof this.uri === 'string' || this.uri instanceof String)
-        {
-            if (this.uri.startsWith('./'))
-            {
-                // Remove preceding './' from URI.
-                this.uri = this.uri.substr(2);
+        if (typeof this.uri === 'string' || this.uri instanceof String) {
+            if (this.uri.startsWith('./')) {
+                this.uri = this.uri.substring(2);
             }
             this.uri = basePath + this.uri;
         }
@@ -19342,10 +19561,9 @@ class gltfImage extends GltfObject
         }
 
         if (!await this.setImageFromBufferView(gltf) &&
-            !await this.setImageFromFiles(additionalFiles, gltf) &&
+            !await this.setImageFromFiles(gltf, additionalFiles) &&
             !await this.setImageFromUri(gltf))
         {
-            console.error("Was not able to resolve image with uri '%s'", this.uri);
             return;
         }
 
@@ -19363,12 +19581,43 @@ class gltfImage extends GltfObject
         });
     }
 
+    setMimetypeFromFilename(filename)
+    {
+
+        let extension = getExtension(filename);
+        if(extension == "ktx2" || extension == "ktx")
+        {
+            this.mimeType = ImageMimeType.KTX2;
+        } 
+        else if(extension == "jpg" || extension == "jpeg")
+        {
+            this.mimeType = ImageMimeType.JPEG;
+        }
+        else if(extension == "png" )
+        {
+            this.mimeType = ImageMimeType.PNG;
+        } 
+        else 
+        {
+            console.warn("MimeType not defined");
+            // assume jpeg encoding as best guess
+            this.mimeType = ImageMimeType.JPEG; 
+        }
+    
+    }
+
     async setImageFromUri(gltf)
     {
         if (this.uri === undefined)
         {
             return false;
         }
+        
+        if (this.mimeType === undefined)
+        {
+            this.setMimetypeFromFilename(this.uri);
+        }
+        
         this.compressedMimeType = this.mimeType;
 
         if(this.mimeType === ImageMimeType.KTX2)
@@ -19549,6 +19798,8 @@ class gltfImage extends GltfObject
             return false;
         }
 
+        console.log("Load image: " + this.mimeType);
+
         const buffer = gltf.buffers[view.buffer].buffer;
         const array = new Uint8Array(buffer, view.byteOffset, view.byteLength);
         this.fileSize = view.byteLength;
@@ -19712,21 +19963,27 @@ class gltfImage extends GltfObject
         return true;
     }
 
-    async setImageFromFiles(files, gltf)
+    base64ToArrayBuffer(base64) {
+        var binaryString = atob(base64);
+        var bytes = new Uint8Array(binaryString.length);
+        for (var i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    async setImageFromFiles(gltf, files)
     {
         if (this.uri === undefined || files === undefined)
         {
             return false;
         }
 
-        let foundFile = files.find(function(file)
-        {
-            const uriName = this.uri.split('\\').pop().split('/').pop();
-            if (file.name === uriName)
-            {
+        let foundFile = files.find(file => {
+            if (file[0] == "/" + this.uri) {
                 return true;
             }
-        }, this);
+        });
 
         if (foundFile === undefined)
         {
@@ -19735,14 +19992,20 @@ class gltfImage extends GltfObject
         
         this.fileSize = foundFile.size;
 
+        if (this.mimeType === undefined)
+        {
+            this.setMimetypeFromFilename(foundFile[0]);
+        }
+
         this.compressedMimeType = this.mimeType;
 
         if(this.mimeType === ImageMimeType.KTX2)
         {
             if (gltf.ktxDecoder !== undefined)
             {
-                const data = new Uint8Array(await foundFile.arrayBuffer());
+                const data = new Uint8Array(await foundFile[1].arrayBuffer());
                 this.image = await gltf.ktxDecoder.loadKtxFromBuffer(data);
+                this.fileSize = data.byteLength;
                 this.gpuSize = this.image.gpuSize;
                 this.gpuFormat = this.image.gpuFormat;
 
@@ -19787,7 +20050,7 @@ class gltfImage extends GltfObject
         }
         else if (typeof(Image) !== 'undefined' && (this.mimeType === ImageMimeType.JPEG || this.mimeType === ImageMimeType.PNG))
         {
-            const imageData = await AsyncFileReader.readAsDataURL(foundFile).catch( () => {
+            const imageData = await AsyncFileReader.readAsDataURL(foundFile[1]).catch( () => {
                 console.error("Could not load image with FileReader");
             });
             this.image = await gltfImage.loadHTMLImage(imageData).catch( () => {
@@ -19806,6 +20069,11 @@ class gltfImage extends GltfObject
             this.compressedGpuSize = this.gpuSize;
             this.compressedGpuFormat = this.gpuFormat;
             this.compressedTextureNeedUpdate = true;
+            new TextDecoder().decode(this.compressedImageTypedArrayBuffer);
+            const blobText = await blob.text();
+            const originalImageBase64 = blobText.substring(blobText.indexOf(",") + 1);
+            this.originalImageTypedArrayBuffer = this.base64ToArrayBuffer(originalImageBase64);  
+            this.fileSize = this.originalImageTypedArrayBuffer.byteLength;
 
             // thumbnail
             this.thumbnail = await gltfImage.loadHTMLImage(imageData).catch( (error) => {
@@ -19818,6 +20086,7 @@ class gltfImage extends GltfObject
             {
                 const data = new Uint8Array(await foundFile.arrayBuffer());
                 this.image = await gltf.webpLibrary.loadWebpFromBuffer(data);
+                this.fileSize = data.byteLength;
                 this.gpuSize = this.image.width * this.image.height * 4;
                 this.gpuSize = Math.floor(this.gpuSize * 4 / 3 );
                 this.gpuFormat = "RGBA8888";
@@ -19870,7 +20139,7 @@ class gltfImage extends GltfObject
             console.log("GL Error");
 
         let raw_data = (this.mimeType !== ImageMimeType.KTX2) ?
-         await ImageUtils.loadImageData(this.image) :
+         await ImageUtils.loadImageDataGL(this.glTexture, this.image.width, this.image.height, gl, this.imageType === ImageType.COLOR) :
          await ImageUtils.loadImageDataGL(this.image, this.image.width, this.image.height, gl, this.imageType === ImageType.COLOR);
 
         raw_data = (height !== this.image.height || width !== this.image.width) 
@@ -20070,6 +20339,7 @@ class gltfMaterial extends GltfObject
         this.hasEmissiveStrength = false;
         this.hasVolume = false;
         this.hasIridescence = false;
+        this.hasAnisotropy = false;
 
         // non gltf properties
         this.type = "unlit";
@@ -20092,6 +20362,78 @@ class gltfMaterial extends GltfObject
         defaultMaterial.properties.set("u_RoughnessFactor", roughnessFactor);
 
         return defaultMaterial;
+    }
+
+    copyFromMaterial(originalMaterial)
+    {
+        this.name = originalMaterial.name;
+        this.pbrMetallicRoughness = {...originalMaterial.pbrMetallicRoughness};
+        this.normalTexture = originalMaterial;
+        this.occlusionTexture = originalMaterial;
+        this.emissiveTexture = originalMaterial;
+        this.emissiveFactor = copy(create$3(), originalMaterial.emissiveFactor);
+        this.alphaMode = originalMaterial.alphaMode;
+        this.alphaCutoff = originalMaterial.alphaCutoff;
+        this.doubleSided = originalMaterial.doubleSided;
+
+        this.baseColorTexture = gltfTextureInfo.createCopy(originalMaterial.baseColorTexture);
+        this.emissiveTexture = gltfTextureInfo.createCopy(originalMaterial.emissiveTexture);
+        this.normalTexture = gltfTextureInfo.createCopy(originalMaterial.normalTexture);
+        this.occlusionTexture = gltfTextureInfo.createCopy(originalMaterial.occlusionTexture);
+        this.metallicRoughnessTexture = gltfTextureInfo.createCopy(originalMaterial.metallicRoughnessTexture);
+
+        // Anisotropy
+        this.anisotropyTexture = gltfTextureInfo.createCopy(originalMaterial.anisotropyTexture);
+
+        // Clear coat
+        this.clearcoatTexture = gltfTextureInfo.createCopy(originalMaterial.clearcoatTexture);
+        this.clearcoatNormalTexture = gltfTextureInfo.createCopy(originalMaterial.clearcoatNormalTexture);
+        this.clearcoatRoughnessTexture = gltfTextureInfo.createCopy(originalMaterial.clearcoatRoughnessTexture);
+
+        // Specular Glossiness
+        this.diffuseTexture = gltfTextureInfo.createCopy(originalMaterial.diffuseTexture);
+        this.specularGlossinessTexture = gltfTextureInfo.createCopy(originalMaterial.specularGlossinessTexture);
+
+        // Specular
+        this.specularColorTexture = gltfTextureInfo.createCopy(originalMaterial.specularColorTexture);        
+        this.specularTexture = gltfTextureInfo.createCopy(originalMaterial.specularTexture);
+
+        // Sheen
+        this.sheenColorTexture = gltfTextureInfo.createCopy(originalMaterial.sheenColorTexture);
+        this.sheenRoughnessTexture = gltfTextureInfo.createCopy(originalMaterial.sheenRoughnessTexture); 
+
+        // Transmission
+        this.transmissionTexture = gltfTextureInfo.createCopy(originalMaterial.transmissionTexture);
+
+        // Thickness
+        this.thicknessTexture = gltfTextureInfo.createCopy(originalMaterial.thicknessTexture);
+
+        // Iridescence
+        this.iridescenceTexture = gltfTextureInfo.createCopy(originalMaterial.iridescenceTexture);
+        this.iridescenceThicknessTexture = gltfTextureInfo.createCopy(originalMaterial.iridescenceThicknessTexture);
+
+        this.extensions = {...originalMaterial.extensions};
+        if(this.extensions.KHR_materials_volume)
+        {
+            this.extensions.KHR_materials_volume = {...this.extensions.KHR_materials_volume};
+        }
+        this.extras = {...originalMaterial.extras};
+
+        // pbr next extension toggles
+        this.hasClearcoat = originalMaterial.hasClearcoat;
+        this.hasSheen = originalMaterial.hasSheen;
+        this.hasTransmission = originalMaterial.hasTransmission;
+        this.hasIOR = originalMaterial.hasIOR;
+        this.hasEmissiveStrength = originalMaterial.hasEmissiveStrength;
+        this.hasVolume = originalMaterial.hasVolume;
+        this.hasIridescence = originalMaterial.hasIridescence;
+        this.hasAnisotropy = originalMaterial.hasAnisotropy;
+
+        // non gltf properties
+        this.type = originalMaterial.type;
+        this.textures = originalMaterial.textures;
+        this.properties = new Map(originalMaterial.properties);
+        this.defines = originalMaterial.defines.map(e => e);
     }
 
     getShaderIdentifier()
@@ -20140,6 +20482,10 @@ class gltfMaterial extends GltfObject
         if(this.hasEmissiveStrength && renderingParameters.enabledExtensions.KHR_materials_emissive_strength)
         {
             defines.push("MATERIAL_EMISSIVE_STRENGTH 1");
+        }
+        if(this.hasAnisotropy && renderingParameters.enabledExtensions.KHR_materials_anisotropy)
+        {
+            defines.push("MATERIAL_ANISOTROPY 1");
         }
 
         return defines;
@@ -20206,8 +20552,8 @@ class gltfMaterial extends GltfObject
             }
 
             let uvMatrix = create$5();
-            multiply$1(uvMatrix, translation, rotation);
-            multiply$1(uvMatrix, uvMatrix, scale);
+            multiply$2(uvMatrix, translation, rotation);
+            multiply$2(uvMatrix, uvMatrix, scale);
 
             this.defines.push("HAS_" + textureKey.toUpperCase() + "_UV_TRANSFORM 1");
             this.properties.set("u_" + textureKey + "UVTransform", uvMatrix);
@@ -20609,6 +20955,37 @@ class gltfMaterial extends GltfObject
                 this.properties.set("u_IridescenceIor", iridescenceIor);
                 this.properties.set("u_IridescenceThicknessMaximum", thicknessMaximum);
             }
+
+            // KHR Extension: Anisotropy
+            // See https://github.com/KhronosGroup/glTF/tree/KHR_materials_anisotropy/extensions/2.0/Khronos/KHR_materials_anisotropy
+            if(this.extensions.KHR_materials_anisotropy !== undefined)
+            {
+                this.hasAnisotropy = true;
+
+                let factor = this.extensions.KHR_materials_anisotropy.anisotropyStrength;
+                let rotation = this.extensions.KHR_materials_anisotropy.anisotropyRotation;
+
+                if (factor === undefined)
+                {
+                    factor = 0.0;
+                }
+                if (rotation === undefined)
+                {
+                    rotation = 0;
+                }
+
+                if (this.anisotropyTexture !== undefined)
+                {
+                    this.anisotropyTexture.samplerName = "u_AnisotropySampler";
+                    this.parseTextureInfoExtensions(this.anisotropyTexture, "Anisotropy");
+                    this.textures.push(this.anisotropyTexture);
+                    this.defines.push("HAS_ANISOTROPY_MAP 1");
+                    this.properties.set("u_AnisotropyUVSet", this.anisotropyTexture.texCoord);
+                }
+
+                let anisotropy =  fromValues$3(Math.cos(rotation), Math.sin(rotation), factor);
+                this.properties.set("u_Anisotropy", anisotropy);
+            }
         }
 
         initGlForMembers(this, gltf, webGlContext);
@@ -20697,6 +21074,11 @@ class gltfMaterial extends GltfObject
         if(jsonExtensions.KHR_materials_iridescence !== undefined)
         {
             this.fromJsonIridescence(jsonExtensions.KHR_materials_iridescence);
+        }
+
+        if(jsonExtensions.KHR_materials_anisotropy !== undefined)
+        {
+            this.fromJsonAnisotropy(jsonExtensions.KHR_materials_anisotropy);
         }
     }
 
@@ -20827,6 +21209,16 @@ class gltfMaterial extends GltfObject
             this.iridescenceThicknessTexture = iridescenceThicknessTexture;
         }
     }
+
+    fromJsonAnisotropy(jsonAnisotropy)
+    {
+        if(jsonAnisotropy.anisotropyTexture !== undefined)
+        {
+            const anisotropyTexture = new gltfTextureInfo();
+            anisotropyTexture.fromJson(jsonAnisotropy.anisotropyTexture);
+            this.anisotropyTexture = anisotropyTexture;
+        }
+    }
 }
 
 class gltfSampler extends GltfObject
@@ -20890,12 +21282,511 @@ class DracoDecoder {
 
 }
 
+class DracoEncoder {
+
+    constructor(dracoLib) {
+        if (!DracoEncoder.instance && dracoLib === undefined)
+        {
+            if (DracoEncoderModule === undefined)
+            {
+                console.error('Failed to initalize DracoEncoder: draco library undefined');
+                return undefined;
+            }
+            else
+            {
+                dracoLib = DracoEncoderModule;
+            }
+        }
+        if (!DracoEncoder.instance)
+        {
+            DracoEncoder.instance = this;
+            this.module = null;
+
+            this.initializingPromise = new Promise(resolve => {
+                let dracoEncoderType = {};
+                dracoEncoderType['onModuleLoaded'] = dracoEncoderModule => {
+                    this.module = dracoEncoderModule;
+                    resolve();
+                };
+                dracoLib(dracoEncoderType);
+            });
+        }
+        return DracoEncoder.instance;
+    }
+
+    async ready() {
+        await this.initializingPromise;
+        Object.freeze(DracoEncoder.instance);
+    }
+
+    getAttributeType(attribute_type) {
+        const draco_attribute_types = {
+            'NORMAL': this.module.NORMAL,
+            'TANGENT': this.module.GENERIC,
+            'POSITION': this.module.POSITION,
+            'TEXCOORD_0': this.module.TEX_COORD,
+            'TEXCOORD_1': this.module.TEX_COORD,
+            'JOINTS_0': this.module.GENERIC,
+            'WEIGHTS_0': this.module.GENERIC,
+            'JOINTS_1': this.module.GENERIC,
+            'WEIGHTS_1': this.module.GENERIC
+        };
+        return draco_attribute_types[attribute_type];
+    }
+}
+
+let wasm;
+
+let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+
+cachedTextDecoder.decode();
+
+let cachegetUint8Memory0 = null;
+function getUint8Memory0() {
+    if (cachegetUint8Memory0 === null || cachegetUint8Memory0.buffer !== wasm.memory.buffer) {
+        cachegetUint8Memory0 = new Uint8Array(wasm.memory.buffer);
+    }
+    return cachegetUint8Memory0;
+}
+
+function getStringFromWasm0(ptr, len) {
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+}
+
+const heap = new Array(32).fill(undefined);
+
+heap.push(undefined, null, true, false);
+
+let heap_next = heap.length;
+
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
+
+function getObject(idx) { return heap[idx]; }
+
+function dropObject(idx) {
+    if (idx < 36) return;
+    heap[idx] = heap_next;
+    heap_next = idx;
+}
+
+function takeObject(idx) {
+    const ret = getObject(idx);
+    dropObject(idx);
+    return ret;
+}
+
+let cachegetFloat32Memory0 = null;
+function getFloat32Memory0() {
+    if (cachegetFloat32Memory0 === null || cachegetFloat32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetFloat32Memory0 = new Float32Array(wasm.memory.buffer);
+    }
+    return cachegetFloat32Memory0;
+}
+
+let WASM_VECTOR_LEN = 0;
+
+function passArrayF32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4);
+    getFloat32Memory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+let cachegetInt32Memory0 = null;
+function getInt32Memory0() {
+    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachegetInt32Memory0;
+}
+
+function getArrayF32FromWasm0(ptr, len) {
+    return getFloat32Memory0().subarray(ptr / 4, ptr / 4 + len);
+}
+/**
+* Generates vertex tangents for the given position/normal/texcoord attributes.
+* @param {Float32Array} position
+* @param {Float32Array} normal
+* @param {Float32Array} texcoord
+* @returns {Float32Array}
+*/
+function generateTangents(position, normal, texcoord) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        var ptr0 = passArrayF32ToWasm0(position, wasm.__wbindgen_malloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passArrayF32ToWasm0(normal, wasm.__wbindgen_malloc);
+        var len1 = WASM_VECTOR_LEN;
+        var ptr2 = passArrayF32ToWasm0(texcoord, wasm.__wbindgen_malloc);
+        var len2 = WASM_VECTOR_LEN;
+        wasm.generateTangents(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        var v3 = getArrayF32FromWasm0(r0, r1).slice();
+        wasm.__wbindgen_free(r0, r1 * 4);
+        return v3;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+async function load(module, imports) {
+    if (typeof Response === 'function' && module instanceof Response) {
+        if (typeof WebAssembly.instantiateStreaming === 'function') {
+            try {
+                return await WebAssembly.instantiateStreaming(module, imports);
+
+            } catch (e) {
+                if (module.headers.get('Content-Type') != 'application/wasm') {
+                    console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
+
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        const bytes = await module.arrayBuffer();
+        return await WebAssembly.instantiate(bytes, imports);
+
+    } else {
+        const instance = await WebAssembly.instantiate(module, imports);
+
+        if (instance instanceof WebAssembly.Instance) {
+            return { instance, module };
+
+        } else {
+            return instance;
+        }
+    }
+}
+
+async function init(input) {
+    if (typeof input === 'undefined') {
+        input = new URL('mikktspace_bg.wasm', import.meta.url);
+    }
+    const imports = {};
+    imports.wbg = {};
+    imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
+        var ret = getStringFromWasm0(arg0, arg1);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_rethrow = function(arg0) {
+        throw takeObject(arg0);
+    };
+
+    if (typeof input === 'string' || (typeof Request === 'function' && input instanceof Request) || (typeof URL === 'function' && input instanceof URL)) {
+        input = fetch(input);
+    }
+
+
+
+    const { instance, module } = await load(await input, imports);
+
+    wasm = instance.exports;
+    init.__wbindgen_wasm_module = module;
+
+    return wasm;
+}
+
+const GEOMETRY_COMPRESSION_TYPE = {
+    QUANTIZATION: "MeshQuantization",
+    DRACO: "Draco",
+    MESHOPT: "MeshOpt"
+};
+
+class GeometryQuantizationOptions {
+    constructor() {
+        this.positionCompression = 0; // all available formats
+        this.positionCompressionNormalized = true;
+
+        this.normalsCompression = 0; // float, byte/short normalized
+        this.normalsCompressionNormalized = false;
+
+        this.texcoord0Compression = 0; // all available formats except unsigned normalized
+        this.texcoord0CompressionNormalized = true;
+        this.texcoord0CompressionOffset = undefined;
+        this.texcoord0CompressionScale = undefined;
+
+        this.texcoord1Compression = 0; // all available formats except unsigned normalized
+        this.texcoord1CompressionNormalized = true;
+        this.texcoord1CompressionOffset = undefined;
+        this.texcoord1CompressionScale = undefined;
+
+        this.tangentsCompression = 0; // float, byte/short normalized
+        this.tangentsCompressionNormalized = false;
+        this.scale = undefined;
+        this.offset = undefined;
+    }
+}
+
+class GeometryDracoOptions {
+    constructor() {
+        this.positionCompressionQuantizationBits = 16;
+        this.normalCompressionQuantizationBits = 10;
+        this.colorCompressionQuantizationBits = 16;
+        this.texcoordCompressionQuantizationBits = 11;
+        this.genericQuantizationBits = 32;
+
+        this.compressionLevel = 7;
+        this.encodingMethod = "EDGEBREAKER";
+    }
+}
+
+class GeometryMeshOptOptions {
+    constructor() {
+        this.positionCompressionQuantizationBits = 16;
+        this.normalCompressionQuantizationBits = 8;
+        this.colorCompressionQuantizationBits = 16;
+        this.texcoordCompressionQuantizationBits = 12;
+
+        this.positionFilter = "NONE";
+        this.positionFilterMode = "Separate";
+        this.positionFilterBits = 16;
+        this.normalFilter = "NONE";
+        this.normalFilterMode = "Separate";
+        this.normalFilterBits = 16;
+        this.tangentFilter = "NONE";
+        this.tangentFilterMode = "Separate";
+        this.tangentFilterBits = 16;
+        this.tex0Filter = "NONE";
+        this.tex0FilterMode = "Separate";
+        this.tex0FilterBits = 16;
+        this.tex1Filter = "NONE";
+        this.tex1FilterMode = "Separate";
+        this.tex1FilterBits = 16;
+        this.reorder = false;
+
+        this.positionCompression = 0; // all available formats
+        this.positionCompressionNormalized = true;
+
+        this.normalsCompression = 0; // float, byte/short normalized
+        this.normalsCompressionNormalized = false;
+
+        this.texcoord0Compression = 0; // all available formats except unsigned normalized
+        this.texcoord0CompressionNormalized = true;
+        this.texcoord0CompressionOffset = undefined;
+        this.texcoord0CompressionScale = undefined;
+
+        this.texcoord1Compression = 0; // all available formats except unsigned normalized
+        this.texcoord1CompressionNormalized = true;
+        this.texcoord1CompressionOffset = undefined;
+        this.texcoord1CompressionScale = undefined;
+
+        this.tangentsCompression = 0; // float, byte/short normalized
+        this.tangentsCompressionNormalized = false;
+        this.scale = undefined;
+        this.offset = undefined;
+    }
+}
+
+const ComponentDataType = {
+    FLOAT: 5126 /*f32*/, 
+    SHORT: 5122 /*int16*/, UNSIGNED_SHORT: 5123 /*uint16*/,
+    BYTE: 5120 /*int8*/, UNSIGNED_BYTE: 5121 /*uint8*/
+};
+
+function getComponentDataType(type) {
+    var component = 0; // case "NONE"
+    switch (type)
+    {
+    case "FLOAT":
+        component = ComponentDataType.FLOAT;
+        break;
+    case "SHORT":
+    case "SHORT_NORMALIZED":
+        component = ComponentDataType.SHORT;
+        break;
+    case "UNSIGNED_SHORT":
+    case "UNSIGNED_SHORT_NORMALIZED":
+        component = ComponentDataType.UNSIGNED_SHORT;
+        break;
+    case "BYTE":
+    case "BYTE_NORMALIZED":
+        component = ComponentDataType.BYTE;
+        break;
+    case "UNSIGNED_BYTE":
+    case "UNSIGNED_BYTE_NORMALIZED":
+        component = ComponentDataType.UNSIGNED_BYTE;
+        break;
+    }
+
+    return component;
+}
+
+function isComponentDataTypeNormalized(type) {
+    return type === "SHORT_NORMALIZED" || type === "UNSIGNED_SHORT_NORMALIZED" || type === "BYTE_NORMALIZED" || type === "UNSIGNED_BYTE_NORMALIZED";
+}
+
+const NumberOfComponentsMap = {
+    SCALAR: 1,
+    VEC2: 2,
+    VEC3: 3,
+    VEC4: 4,
+    MAT2: 4,
+    MAT3: 9,
+    MAT4: 16
+};
+
+const gl_ARRAY_BUFFER = 34962;
+
+const to_int16 = (value)  => Math.round(value * 32767.0);
+const to_uint16 = (value) => Math.round(value * 65535.0); 
+const to_int8 = (value)   => Math.round(value * 127.0);
+const to_uint8 = (value)  => Math.round(value * 255.0);
+
+const clamp = (value, minValue, maxValue) => Math.max(minValue, Math.min(value, maxValue));
+
+function isComponentDataTypeUnsigned(type) {
+    return type % 2 == 1;
+}
+function getComponentDataTypeSize(type) {
+    return type == GL.FLOAT? 4 : type == GL.SHORT || type == GL.UNSIGNED_SHORT? 2 : 1;
+}
+function getComponentDataTypeDistinctIntegerNumbers(type) {
+    return type == GL.SHORT || type == GL.UNSIGNED_SHORT? 65535 : type == GL.BYTE || type == GL.UNSIGNED_BYTE? 255 : 1;
+}
+
+function fillQuantizedBufferNormalized(inputFloatArray, outputBuffer, componentType, numberOfComponents, count, stride)
+{
+    const quantizeFunc = 
+        componentType == GL.BYTE? to_int8 : 
+        componentType == GL.UNSIGNED_BYTE? to_uint8 :
+        componentType == GL.SHORT? to_int16 :
+        componentType == GL.UNSIGNED_SHORT? to_uint16 : null;
+
+    const compressedTypedView = 
+        componentType == GL.BYTE? new Int8Array(outputBuffer) : 
+        componentType == GL.UNSIGNED_BYTE? new Uint8Array(outputBuffer) :
+        componentType == GL.SHORT? new Int16Array(outputBuffer) :
+        componentType == GL.UNSIGNED_SHORT? new Uint16Array(outputBuffer) : new Float32Array(outputBuffer);
+
+    // convert types
+    let originalIndex = 0;
+    let targetIndex = 0;
+    while(originalIndex < numberOfComponents * count)
+    {
+        for(let j = 0; j < numberOfComponents; j++)
+        {
+            compressedTypedView[targetIndex + j] = quantizeFunc(inputFloatArray[originalIndex++]);
+        }
+        targetIndex += stride;
+    }
+}
+
+function fillQuantizedBuffer(inputFloatArray, outputBuffer, componentType, numberOfComponents, count, stride)
+{
+    if(componentType == GL.FLOAT)
+    {
+        const compressedTypedViewF32 = new Float32Array(outputBuffer);
+        compressedTypedViewF32.set(inputFloatArray);
+        return;
+    }
+
+    const quantizeFunc = 
+        componentType == GL.BYTE? (val) => clamp(val, -128, 127) : 
+        componentType == GL.UNSIGNED_BYTE? (val) => clamp(val, 0, 255) : 
+        componentType == GL.SHORT? (val) => clamp(val, -32768, 32767) : 
+        componentType == GL.UNSIGNED_SHORT? (val) => clamp(val, 0, 65535) : null;
+
+    const compressedTypedView = 
+        componentType == GL.BYTE? new Int8Array(outputBuffer) : 
+        componentType == GL.UNSIGNED_BYTE? new Uint8Array(outputBuffer) :
+        componentType == GL.SHORT? new Int16Array(outputBuffer) :
+        componentType == GL.UNSIGNED_SHORT? new Uint16Array(outputBuffer) : new Float32Array(outputBuffer);
+
+    // convert types
+    let originalIndex = 0;
+    let targetIndex = 0;
+    while(originalIndex < numberOfComponents * count)
+    {
+        for(let j = 0; j < numberOfComponents; j++)
+        {
+            compressedTypedView[targetIndex + j] = quantizeFunc(inputFloatArray[originalIndex++]);
+        }
+        targetIndex += stride;
+    }
+}
+
+function quantize(gltf, inputAccessor, componentType, normalized, offset, scale)
+{
+    const componentTypeByteSize = getComponentDataTypeSize(componentType);
+    const numberOfComponents = NumberOfComponentsMap[`${inputAccessor.type}`];
+
+    // 4 byte aligned
+    const byteStride = 4 * (Math.floor((componentTypeByteSize * numberOfComponents - 1) / 4) + 1);
+
+    let inputFloatArrayView = inputAccessor.getNormalizedDeinterlacedView(gltf);
+    if(scale !== undefined)
+    {
+        inputFloatArrayView = inputFloatArrayView.map((v,i) => (v + offset[i % numberOfComponents]) * scale); // inverse of T*R*S
+    }
+
+    // create a new buffer
+    const buffer = new gltfBuffer();
+    buffer.byteLength = inputAccessor.count * byteStride;
+    buffer.buffer = new ArrayBuffer(buffer.byteLength);
+    buffer.name = "Quantized buffer";
+    gltf.buffers.push(buffer);
+
+    // convert to the requested quantization format
+    if(normalized)
+        fillQuantizedBufferNormalized(inputFloatArrayView, buffer.buffer, componentType, numberOfComponents, inputAccessor.count, byteStride / componentTypeByteSize);
+    else
+        fillQuantizedBuffer(inputFloatArrayView, buffer.buffer, componentType, numberOfComponents, inputAccessor.count, byteStride / componentTypeByteSize);
+
+    // create a new bufferView
+    const bufferView = new gltfBufferView();
+    bufferView.buffer = gltf.buffers.length - 1;
+    bufferView.byteOffset = 0;
+    bufferView.byteLength = buffer.byteLength;
+    bufferView.byteStride = byteStride;
+    bufferView.target = gl_ARRAY_BUFFER;
+    bufferView.name = "Quantized"+inputAccessor.name;
+    gltf.bufferViews.push(bufferView);
+
+    // create a new accessor
+    const accessor = new gltfAccessor();
+    accessor.bufferView = gltf.bufferViews.length - 1;
+    accessor.byteOffset = 0;
+    accessor.componentType = componentType;
+    accessor.normalized = normalized;
+    accessor.count = inputAccessor.count;
+    accessor.type = inputAccessor.type;
+    accessor.max = inputAccessor.max;
+    accessor.min = inputAccessor.min;
+    accessor.sparse = undefined;
+    accessor.name = "Quantized "+inputAccessor.name;
+    gltf.accessors.push(accessor);
+
+    const minValue = new Array(numberOfComponents).fill(Number.MAX_VALUE);
+    const maxValue = new Array(numberOfComponents).fill(-Number.MAX_VALUE);
+
+    const quantizedFloatArrayView = accessor.getNormalizedDeinterlacedView(gltf);
+    quantizedFloatArrayView.forEach((v, i) => {
+        const comp = i % numberOfComponents;
+        minValue[comp] = Math.min(minValue[comp], v);
+        maxValue[comp] = Math.max(maxValue[comp], v);        
+    });
+    accessor.min = minValue;
+    accessor.max = maxValue;
+
+    return gltf.accessors.length - 1;
+}
+
 class gltfPrimitive extends GltfObject
 {
     constructor()
     {
         super();
-        this.attributes = [];
+        this.attributes = {};
         this.targets = [];
         this.indices = undefined;
         this.material = undefined;
@@ -20915,6 +21806,10 @@ class gltfPrimitive extends GltfObject
 
         // The primitive centroid is used for depth sorting.
         this.centroid = undefined;
+
+        // gltf-Compressor
+        this.originalMaterial = -1; // index to the uncompressed material
+        this.isHighlighted = false;
     }
 
     initGl(gltf, webGlContext)
@@ -20930,9 +21825,10 @@ class gltfPrimitive extends GltfObject
         const maxAttributes = webGlContext.getParameter(GL.MAX_VERTEX_ATTRIBS);
 
         // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#meshes
-
+        console.log('this', this);
         if (this.extensions !== undefined)
         {
+            // Decode Draco compressed mesh:
             if (this.extensions.KHR_draco_mesh_compression !== undefined)
             {
                 const dracoDecoder = new DracoDecoder();
@@ -20949,6 +21845,15 @@ class gltfPrimitive extends GltfObject
             }
         }
 
+        /*if (this.attributes.TANGENT === undefined)
+        {
+            console.info("Generating tangents using the MikkTSpace algorithm.");
+            console.time("Tangent generation");
+            //this.unweld(gltf);
+            //this.generateTangents(gltf);
+            console.timeEnd("Tangent generation");
+        }*/
+
         // VERTEX ATTRIBUTES
         for (const attribute of Object.keys(this.attributes))
         {
@@ -20960,6 +21865,7 @@ class gltfPrimitive extends GltfObject
 
             const idx = this.attributes[attribute];
             this.glAttributes.push({ attribute: attribute, name: "a_" + attribute.toLowerCase(), accessor: idx });
+
             this.defines.push(`HAS_${attribute}_${gltf.accessors[idx].type} 1`);
             switch (attribute)
             {
@@ -21153,14 +22059,15 @@ class gltfPrimitive extends GltfObject
     computeCentroid(gltf)
     {
         const positionsAccessor = gltf.accessors[this.attributes.POSITION];
-        const positions = positionsAccessor.getNormalizedTypedView(gltf);
-
+        //const positions = positionsAccessor.getNormalizedTypedView(gltf);
+        const positions = positionsAccessor.getNormalizedDeinterlacedView(gltf);
+        console.log('this.indices', this.indices);
         if(this.indices !== undefined)
         {
             // Primitive has indices.
 
             const indicesAccessor = gltf.accessors[this.indices];
-
+            console.log('indicesAccessor', indicesAccessor);
             const indices = indicesAccessor.getTypedView(gltf);
 
             const acc = new Float32Array(3);
@@ -21602,6 +22509,748 @@ class gltfPrimitive extends GltfObject
         };
 
     }
+
+    /**
+     * Unwelds this primitive, i.e. applies the index mapping.
+     * This is required for generating tangents using the MikkTSpace algorithm,
+     * because the same vertex might be mapped to different tangents.
+     * @param {*} gltf The glTF document.
+     */
+    unweld(gltf) {
+        // Unwelding is an idempotent operation.
+        if (this.indices === undefined) {
+            return;
+        }
+        
+        const indices = gltf.accessors[this.indices].getTypedView(gltf);
+
+        // Unweld attributes:
+        for (const [attribute, accessorIndex] of Object.entries(this.attributes)) {
+            this.attributes[attribute] = this.unweldAccessor(gltf, gltf.accessors[accessorIndex], indices);
+        }
+
+        // Unweld morph targets:
+        for (const target of this.targets) {
+            for (const [attribute, accessorIndex] of Object.entries(target)) {
+                target[attribute] = this.unweldAccessor(gltf, gltf.accessors[accessorIndex], indices);
+            }
+        }
+
+        // Dipose the indices:
+        this.indices = undefined;
+    }
+
+    /**
+     * Unwelds a single accessor. Used by {@link unweld}.
+     * @param {*} gltf The glTF document.
+     * @param {*} accessor The accessor to unweld.
+     * @param {*} typedIndexView A typed view of the indices.
+     * @returns A new accessor index containing the unwelded attribute.
+     */
+    unweldAccessor(gltf, accessor, typedIndexView) {
+        const componentCount = accessor.getComponentCount(accessor.type);
+        
+        const weldedAttribute = accessor.getDeinterlacedView(gltf);
+        // Create new array with same type as weldedAttribute
+        const unweldedAttribute = new weldedAttribute.constructor(gltf.accessors[this.indices].count * componentCount);
+
+        // Apply the index mapping.
+        for (let i = 0; i < typedIndexView.length; i++) {
+            for (let j = 0; j < componentCount; j++) {
+                unweldedAttribute[i * componentCount + j] = weldedAttribute[typedIndexView[i] * componentCount + j];
+            }
+        }
+
+        // Create a new buffer and buffer view for the unwelded attribute:
+        const unweldedBuffer = new gltfBuffer();
+        unweldedBuffer.byteLength = unweldedAttribute.byteLength;
+        unweldedBuffer.buffer = unweldedAttribute.buffer;
+        gltf.buffers.push(unweldedBuffer);
+
+        const unweldedBufferView = new gltfBufferView();
+        unweldedBufferView.buffer = gltf.buffers.length - 1;
+        unweldedBufferView.byteLength = unweldedAttribute.byteLength;
+        unweldedBufferView.target = GL.ARRAY_BUFFER;
+        gltf.bufferViews.push(unweldedBufferView);
+
+        // Create a new accessor for the unwelded attribute:
+        const unweldedAccessor = new gltfAccessor();
+        unweldedAccessor.bufferView = gltf.bufferViews.length - 1;
+        unweldedAccessor.byteOffset = 0;
+        unweldedAccessor.count = typedIndexView.length;
+        unweldedAccessor.type = accessor.type;
+        unweldedAccessor.componentType = accessor.componentType;
+        unweldedAccessor.min = accessor.min;
+        unweldedAccessor.max = accessor.max;
+        unweldedAccessor.normalized = accessor.normalized;
+        gltf.accessors.push(unweldedAccessor);
+
+        // Update the primitive to use the unwelded attribute:
+        return gltf.accessors.length - 1;
+    }
+
+    generateTangents(gltf) {
+        if(this.attributes.NORMAL === undefined || this.attributes.TEXCOORD_0 === undefined)
+        {
+            return;
+        }
+
+        const positions = gltf.accessors[this.attributes.POSITION].getTypedView(gltf);
+        const normals = gltf.accessors[this.attributes.NORMAL].getTypedView(gltf);
+        const texcoords = gltf.accessors[this.attributes.TEXCOORD_0].getTypedView(gltf);
+
+        const tangents = generateTangents(positions, normals, texcoords);
+
+        // Create a new buffer and buffer view for the tangents:
+        const tangentBuffer = new gltfBuffer();
+        tangentBuffer.byteLength = tangents.byteLength;
+        tangentBuffer.buffer = tangents.buffer;
+        gltf.buffers.push(tangentBuffer);
+
+        const tangentBufferView = new gltfBufferView();
+        tangentBufferView.buffer = gltf.buffers.length - 1;
+        tangentBufferView.byteLength = tangents.byteLength;
+        tangentBufferView.target = GL.ARRAY_BUFFER;
+        gltf.bufferViews.push(tangentBufferView);
+
+        // Create a new accessor for the tangents:
+        const tangentAccessor = new gltfAccessor();
+        tangentAccessor.bufferView = gltf.bufferViews.length - 1;
+        tangentAccessor.byteOffset = 0;
+        tangentAccessor.count = tangents.length / 4;
+        tangentAccessor.type = "VEC4";
+        tangentAccessor.componentType = GL.FLOAT;
+
+        // Update the primitive to use the tangents:
+        this.attributes.TANGENT = gltf.accessors.length;
+        gltf.accessors.push(tangentAccessor);
+
+    }
+
+    compressGeometryDRACO(options, gltf) {
+        const encoderModule = gltf.dracoEncoder.module;
+        const indices = (this.indices !== undefined) ? gltf.accessors[this.indices].getTypedView(gltf) : null;
+        let attr_count = 0;
+        const accessor = (this.indices !== undefined) ? gltf.accessors[this.indices] : undefined;
+        const mesh_builder = new encoderModule.MeshBuilder();
+        const mesh = new encoderModule.Mesh();
+        const encoder = new encoderModule.ExpertEncoder(mesh);
+        const draco_attributes = {};
+        for (const glAttribute of this.glAttributes) {
+            const accessor = gltf.accessors[glAttribute.accessor];
+            const data = accessor.getTypedView(gltf);
+            const compCount = accessor.getComponentCount(accessor.type);
+            const compSize = accessor.getComponentSize(accessor.componentType);
+            const byteStride = compSize * compCount;
+            attr_count = data.byteLength / byteStride;
+        }
+        const face_count = (this.indices !== undefined) ? indices.length / 3 : attr_count / 3;
+
+        const indices32 = (indices) ? new Uint32Array(indices.length) : new Uint32Array(face_count * 3);
+        for(var i = 0; i < indices32.length; i++) {
+            indices32[i] = (indices) ? indices[i] : i;
+        }
+        console.log('this.indices', this.indices);
+        console.log('indices32', indices32);
+        console.log('face_count', face_count);
+        console.log('attr_count', attr_count);
+        if (face_count > 0) mesh_builder.AddFacesToMesh(mesh, face_count, indices32);
+
+        encoder.SetTrackEncodedProperties(true);
+        for (const glAttribute of this.glAttributes) {
+            const accessor = gltf.accessors[glAttribute.accessor];
+            const attribute = glAttribute.attribute;
+            const data = accessor.getTypedView(gltf);
+            const compType = accessor.componentType;
+            const compCount = accessor.getComponentCount(accessor.type);
+            const compSize = accessor.getComponentSize(accessor.componentType);
+            accessor.getComponentBitCount(accessor.componentType);
+            const byteStride = compSize * compCount;
+            const attr_count = data.byteLength / byteStride;
+            const attribute_type = gltf.dracoEncoder.getAttributeType(attribute);
+
+            const AddAttributeTable = {
+                [GL.BYTE]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddInt8Attribute(mesh, type, count, comps, data),
+                [GL.UNSIGNED_BYTE]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddUInt8Attribute(mesh, type, count, comps, data),
+                [GL.SHORT]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddInt16Attribute(mesh, type, count, comps, data),
+                [GL.UNSIGNED_SHORT]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddUInt16Attribute(mesh, type, count, comps, data),
+                [GL.UNSIGNED_INT]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddInt32Attribute(mesh, type, count, comps, data),
+                [GL.FLOAT]: (mesh_builder, mesh, type, count, comps, data) => mesh_builder.AddFloatAttributeToMesh(mesh, type, count, comps, data)
+            };
+            const attribute_id = AddAttributeTable[compType](mesh_builder, mesh, attribute_type, attr_count, compCount, data);
+            draco_attributes[attribute] = attribute_id;
+
+            if ("POSITION" === attribute)
+                encoder.SetAttributeQuantization(attribute_id, options.positionCompressionQuantizationBits);
+            else if ("NORMAL" === attribute)
+                encoder.SetAttributeQuantization(attribute_id, options.normalCompressionQuantizationBits);
+            else if ("COLOR" === attribute)
+                encoder.SetAttributeQuantization(attribute_id, options.colorCompressionQuantizationBits);
+            else if ("WEIGHTS_0" === attribute || "WEIGHTS_1" === attribute )
+                encoder.SetAttributeQuantization(attribute_id, options.weightQuantizationBits);
+            else if ("TEX_COORD_0" === attribute || "TEX_COORD_1" === attribute )
+                encoder.SetAttributeQuantization(attribute_id, options.texcoordCompressionQuantizationBits);
+            else if ("JOINTS_0" === attribute || "JOINTS_1" === attribute )
+                encoder.SetAttributeQuantization(attribute_id, options.jointQuantizationBits);
+            else
+                encoder.SetAttributeQuantization(attribute_id, options.genericQuantizationBits);
+        }
+        encoder.SetEncodingMethod(options.encodingMethod === "EDGEBREAKER" ? encoderModule.MESH_EDGEBREAKER_ENCODING : encoderModule.MESH_SEQUENTIAL_ENCODING);            
+        encoder.SetSpeedOptions(options.compressionSpeedDraco, options.decompressionSpeedDraco);            
+        
+        const draco_array = new encoderModule.DracoInt8Array();
+        const draco_array_len = encoder.EncodeToDracoBuffer(false, draco_array);
+        const compressed_buffer = new Uint8Array(draco_array_len);
+        for (var i = 0; i < draco_array_len; i++) {
+            compressed_buffer[i] = draco_array.GetValue(i);
+        }
+        
+        const draco_attr_count = encoder.GetNumberOfEncodedPoints();
+        const draco_face_count = encoder.GetNumberOfEncodedFaces();
+
+        encoderModule.destroy(mesh);
+        encoderModule.destroy(encoder);
+        encoderModule.destroy(mesh_builder);
+
+        const buffer = new gltfBuffer();
+        buffer.byteLength = compressed_buffer.byteLength;
+        buffer.buffer = compressed_buffer;
+        gltf.buffers.push(buffer);
+
+        // create a new bufferView
+        const bufferView = new gltfBufferView();
+        bufferView.buffer = gltf.buffers.length - 1;
+        bufferView.byteOffset = 0;
+        bufferView.byteLength = buffer.byteLength;
+        bufferView.name = "DRACO Compressed Data";
+        gltf.bufferViews.push(bufferView);
+        console.log('draco buffer', buffer);
+        console.log('draco bufferView', bufferView);
+        console.log('draco_face_count', draco_face_count);
+        console.log('draco_attr_count', draco_attr_count);
+        console.log('accessor', accessor);
+        // Create a new accessor for the indices:
+        const accessor_compressed = new gltfAccessor();
+        accessor_compressed.bufferView = gltf.bufferViews.length - 1;
+        accessor_compressed.byteOffset = 0;
+        accessor_compressed.count = draco_face_count * 3;
+        accessor_compressed.type = "SCALAR";
+        accessor_compressed.componentType = (accessor) ? accessor.componentType : GL.UNSIGNED_INT;
+        gltf.accessors.push(accessor_compressed);
+        
+        this.indices = gltf.accessors.length - 1;
+        this.extensions = { 
+            KHR_draco_mesh_compression: {
+                bufferView: gltf.bufferViews.length - 1,
+                attributes: draco_attributes
+            }
+        };
+
+        // Create new accessors for the draco attributes:
+        for (const glAttribute of this.glAttributes) {
+            const attribute = glAttribute.attribute;
+            const accessor = gltf.accessors[glAttribute.accessor];
+            const accessor_compressed = new gltfAccessor();
+            accessor_compressed.bufferView = accessor.bufferView;
+            accessor_compressed.byteOffset = accessor.byteOffset;
+            accessor_compressed.count = draco_attr_count;
+            accessor_compressed.type = accessor.type;
+            accessor_compressed.componentType = accessor.componentType;
+            gltf.accessors.push(accessor_compressed);
+
+            glAttribute.accessor = gltf.accessors.length - 1;
+            this.attributes[attribute] = glAttribute.accessor;
+        }
+
+        this.defines = [];
+        this.glAttributes = [];
+        this.initGl(gltf, gltf.view.context);
+    }
+
+    quantize(gltf, inputAccessor, componentType, normalized, remap, offset, scale) {
+        const componentTypeByteSize = getComponentDataTypeSize(componentType);
+        const numberOfComponents = NumberOfComponentsMap[`${inputAccessor.type}`];
+        const reorder = (reordered_data, data, remap, compCount) => {
+            for (let i = 0; i < (data.length / compCount); ++i)
+                for (let j = 0; j < compCount; ++j)
+                    reordered_data[compCount * remap[i] + j] = data[i * compCount + j];
+        };
+
+        // 4 byte aligned
+        const byteStride = 4 * (Math.floor((componentTypeByteSize * numberOfComponents - 1) / 4) + 1);
+    
+        let inputFloatArrayView = new Float32Array(inputAccessor.getNormalizedDeinterlacedView(gltf));
+        if(scale !== undefined)
+        {
+            inputFloatArrayView = inputFloatArrayView.map((v,i) => (v + offset[i % numberOfComponents]) * scale); // inverse of T*R*S
+        }
+
+        //console.log('inputAccessor', inputAccessor);
+        //console.log('remap', remap);
+        let inputArrayView = inputFloatArrayView;
+        let reorderedInputArrayView = inputArrayView;
+        if (remap.length > 0) {
+            reorderedInputArrayView = new Float32Array(inputAccessor.count * numberOfComponents);
+            reorder(reorderedInputArrayView, inputArrayView, remap, numberOfComponents);
+        }
+
+        //console.log('inputFloatArrayView', inputFloatArrayView);
+        //console.log('inputArrayView', inputArrayView);
+        //console.log('reorderedInputArrayView', reorderedInputArrayView);
+        const quantized_data_length = inputAccessor.count * byteStride;
+        const quantized_data = new ArrayBuffer(quantized_data_length);
+
+        // convert to the requested quantization format
+        if(normalized)
+            fillQuantizedBufferNormalized(reorderedInputArrayView, quantized_data, componentType, numberOfComponents, inputAccessor.count, byteStride / componentTypeByteSize);
+        else
+            fillQuantizedBuffer(reorderedInputArrayView, quantized_data, componentType, numberOfComponents, inputAccessor.count, byteStride / componentTypeByteSize);
+
+        return quantized_data;
+    }
+
+    compressGeometryMeshopt(options, gltf) {
+        const align4Bytes = (num) => 4 * Math.floor((num - 1) / 4) + 4;
+        const should_reorder = options.reorder;
+        gltf.moptDecoder;
+        const moptEncoder = gltf.moptEncoder;
+        const moptFilters = {
+            'NONE': (source, count, stride, bits, mode) => source,
+            'OCTAHEDRAL': (source, count, stride, bits, mode) => moptEncoder.encodeFilterOct(source, count, stride, bits),
+            'QUATERNION': (source, count, stride, bits, mode) => moptEncoder.encodeFilterQuat(source, count, stride, bits),
+            'EXPONENTIAL': (source, count, stride, bits, mode) => moptEncoder.encodeFilterExp(source, count, stride, bits, mode)
+        };
+        const moptFilterMethods = {
+            'NORMAL': (options) => options.normalFilter,
+            'POSITION': (options) => options.positionFilter,
+            'TANGENT': (options) => options.tangentFilter,
+            'TEXCOORD_0': (options) => options.tex0Filter,
+            'TEXCOORD_1': (options) => options.tex1Filter
+        };
+        const moptFilterModes = {
+            'NORMAL': (options) => options.normalFilterMode,
+            'POSITION': (options) => options.positionFilterMode,
+            'TANGENT': (options) => options.tangentFilterMode,
+            'TEXCOORD_0': (options) => options.tex0FilterMode,
+            'TEXCOORD_1': (options) => options.tex1FilterMode
+        };
+        const moptFilterBits = {
+            'NORMAL': (options) => options.normalFilterBits,
+            'POSITION': (options) => options.positionFilterBits,
+            'TANGENT': (options) => options.tangentFilterBits,
+            'TEXCOORD_0': (options) => options.tex0FilterBits,
+            'TEXCOORD_1': (options) => options.tex1FilterBits
+        };
+        const reorder = (reordered_data, data, remap, compCount) => {
+            for (let i = 0; i < (data.length / compCount); ++i)
+                for (let j = 0; j < compCount; ++j)
+                    reordered_data[compCount * remap[i] + j] = data[i * compCount + j];
+        };
+
+        const indices = (this.indices !== undefined) ? gltf.accessors[this.indices].getTypedView(gltf) : null;
+        const face_count = (this.indices !== undefined) ? indices.length / 3 : 0;
+        let unique_ids = -1;
+        let remap = [];
+        if (indices) {
+            const accessor = gltf.accessors[this.indices];
+            const byteStride = indices.byteLength / indices.length;
+            if (should_reorder) {
+                const indices32 = new Uint32Array(indices);
+                [remap, unique_ids] = (should_reorder) ? gltf.moptEncoder.reorderMesh(indices32, /* triangles= */ true, /* optsize= */ true) : null;
+                for(var i = 0; i < indices32.length; i++) indices[i] = indices32[i];
+            }
+           
+            const indices_encoded = moptEncoder.encodeGltfBuffer(indices, indices.length, byteStride, 'TRIANGLES');
+
+            // create a new buffer
+            const buffer = new gltfBuffer();
+            buffer.byteLength = indices_encoded.byteLength;
+            buffer.buffer = indices_encoded;
+            gltf.buffers.push(buffer);
+
+            // create a new bufferView
+            const bufferView = new gltfBufferView();
+            bufferView.buffer = undefined;
+            bufferView.byteOffset = 0;
+            bufferView.byteLength = buffer.byteLength;
+            bufferView.byteStride = byteStride;
+            bufferView.target = GL.ELEMENT_ARRAY_BUFFER;
+            bufferView.name = "Compressed " + this.indices.toString();
+            bufferView.extensions = { 
+                EXT_meshopt_compression: {
+                    buffer: gltf.buffers.length - 1,
+                    byteOffset: 0,
+                    byteLength: buffer.byteLength,
+                    byteStride: byteStride,
+                    mode: "TRIANGLES",
+                    filter: undefined,
+                    count: face_count * 3
+                }
+            };
+            gltf.bufferViews.push(bufferView);
+
+            // Create a new accessor for the tangents:
+            const accessor_compressed = new gltfAccessor();
+            accessor_compressed.bufferView = gltf.bufferViews.length - 1;
+            accessor_compressed.byteOffset = 0;
+            accessor_compressed.count = face_count * 3;
+            accessor_compressed.type = "SCALAR";
+            accessor_compressed.componentType = accessor.componentType;
+            accessor_compressed.max = accessor.max;
+            accessor_compressed.min = accessor.min;
+            this.indices = gltf.accessors.length;
+            gltf.accessors.push(accessor_compressed);
+        }
+
+        for (const glAttribute of this.glAttributes) {
+            const attribute = glAttribute.attribute;
+            const accessor = gltf.accessors[glAttribute.accessor];
+            const compCount = accessor.getComponentCount(accessor.type);
+            let compSize = accessor.getComponentSize(accessor.componentType);
+            let compType = accessor.componentType;
+            let byteStride = compSize * compCount;
+            let data = accessor.getTypedView(gltf);
+            let normalized = undefined;
+
+            if(attribute == "NORMAL" && options.normalsCompression !== 0) {
+                data = new Uint8Array(this.quantize(gltf, accessor, options.normalsCompression, options.normalsCompressionNormalized, remap));
+                compType = options.normalsCompression;
+                compSize = getComponentDataTypeSize(options.normalsCompression);
+                byteStride = align4Bytes(compSize * compCount);
+                normalized = options.normalsCompressionNormalized;
+            } else if(attribute == "POSITION" && options.positionCompression !== 0) {
+                data = new Uint8Array(this.quantize(gltf, accessor, options.positionCompression, options.positionCompressionNormalized, remap, options.offset, options.scale));
+                compType = options.positionCompression;
+                compSize = getComponentDataTypeSize(options.positionCompression);
+                byteStride = align4Bytes(compSize * compCount);
+                normalized = options.positionCompressionNormalized;
+            } else if(attribute == "TEXCOORD_0" && options.texcoord0Compression !== 0) {
+                data = new Uint8Array(this.quantize(gltf, accessor, options.texcoord0Compression, options.texcoord0CompressionNormalized, remap, options.texcoord0CompressionOffset, options.texcoord0CompressionScale));
+                compType = options.texcoord0Compression;
+                compSize = getComponentDataTypeSize(options.texcoord0Compression);
+                byteStride = align4Bytes(compSize * compCount);
+                normalized = options.texcoord0CompressionNormalized;
+            } else if(attribute == "TEXCOORD_1" && options.texcoord1Compression !== 0) {
+                data = new Uint8Array(this.quantize(gltf, accessor, options.texcoord1Compression, options.texcoord1CompressionNormalized, remap, options.texcoord1CompressionOffset, options.texcoord1CompressionScale));
+                compType = options.texcoord1Compression;
+                compSize = getComponentDataTypeSize(options.texcoord1Compression);
+                byteStride = align4Bytes(compSize * compCount);
+                normalized = options.texcoord1CompressionNormalized;
+            } else if (attribute == "TANGENT" && options.tangentsCompression !== 0) {
+                data = new Uint8Array(this.quantize(gltf, accessor, options.tangentsCompression, options.tangentsCompressionNormalized, remap));
+                compType = options.tangentsCompression;
+                compSize = getComponentDataTypeSize(options.tangentsCompression);
+                byteStride = align4Bytes(compSize * compCount);
+                normalized = options.tangentsCompressionNormalized;
+            }
+            
+            const filterMethod = moptFilterMethods[attribute](options);
+            const filterMode = moptFilterModes[attribute](options);
+            const filterBits = moptFilterBits[attribute](options);
+
+            const attr_count = (unique_ids >= 0) ? unique_ids : data.byteLength / byteStride;
+            let data_encoded = null;
+            let reordered_data = data;
+            switch (compType)
+            {
+            case GL.BYTE: break;
+            case GL.UNSIGNED_BYTE: 
+                if (remap.length > 0) {
+                    reordered_data = new Uint8Array(attr_count * compCount);
+                    reorder(reordered_data, data, remap, compCount);
+                }
+                break;
+            case GL.SHORT: break;
+            case GL.UNSIGNED_SHORT: break;
+            case GL.UNSIGNED_INT: break;
+            case GL.FLOAT:
+                if (remap.length > 0) {
+                    reordered_data = new Float32Array(attr_count * compCount);
+                    reorder(reordered_data, data, remap, compCount);
+                }
+                break;
+            }
+            
+            const reordered_filtered_data = moptFilters[filterMethod](reordered_data, attr_count, byteStride, filterBits, filterMode);
+            data_encoded = moptEncoder.encodeGltfBuffer(reordered_filtered_data, attr_count, byteStride, 'ATTRIBUTES');
+    
+            console.log('filterMethod', filterMethod);
+            console.log('filterMode', filterMode);
+            console.log('filterBits', filterBits);
+            console.log('byteStride', byteStride);
+            console.log('data_encoded', data_encoded);
+            
+            // create a new buffer
+            const buffer = new gltfBuffer();
+            buffer.byteLength = data_encoded.byteLength;
+            buffer.buffer = data_encoded;
+            gltf.buffers.push(buffer);
+
+            // create a new bufferView
+            const bufferView = new gltfBufferView();
+            bufferView.buffer = undefined;
+            bufferView.byteOffset = 0;
+            bufferView.byteLength = buffer.byteLength;
+            bufferView.byteStride = byteStride;
+            bufferView.target = GL.ARRAY_BUFFER;
+            bufferView.name = "Meshopt Compressed " + glAttribute.accessor.toString();
+            bufferView.extensions = {
+                EXT_meshopt_compression: {
+                    buffer: gltf.buffers.length - 1,
+                    byteOffset: 0,
+                    byteLength: buffer.byteLength,
+                    byteStride: byteStride,
+                    mode: "ATTRIBUTES",
+                    filter: filterMethod,
+                    count: attr_count
+                }
+            };
+            gltf.bufferViews.push(bufferView);
+
+            // Create a new accessor for the tangents:
+            const accessor_compressed = new gltfAccessor();
+            accessor_compressed.bufferView = gltf.bufferViews.length - 1;
+            accessor_compressed.byteOffset = 0;
+            accessor_compressed.count = attr_count;
+            accessor_compressed.type = accessor.type;
+            accessor_compressed.componentType = compType;
+            accessor_compressed.normalized = normalized;
+            accessor_compressed.min = accessor.min;
+            accessor_compressed.max = accessor.max;
+            gltf.accessors.push(accessor_compressed);
+            
+            glAttribute.accessor = gltf.accessors.length - 1;
+            this.attributes[attribute] = glAttribute.accessor;
+        }
+    }
+
+    compressGeometryQuantize(options, gltf){
+        
+        for (const glAttribute of this.glAttributes)
+        {
+            const attribute = glAttribute.attribute;
+            const idx = this.attributes[attribute];
+            let cidx = idx;
+            // Compressor - Debug (Create fake buffers)
+            if(attribute == "NORMAL" && options.normalsCompression !== 0)
+            {
+                cidx = quantize(gltf, gltf.accessors[idx], options.normalsCompression, options.normalsCompressionNormalized);
+            }
+            else if(attribute == "POSITION" && options.positionCompression !== 0)
+            {
+                cidx = quantize(gltf, gltf.accessors[idx], options.positionCompression, options.positionCompressionNormalized, options.offset, options.scale);
+            }
+            else if(attribute == "TEXCOORD_0" && options.texcoord0Compression !== 0)
+            {
+                cidx = quantize(gltf, gltf.accessors[idx], options.texcoord0Compression, options.texcoord0CompressionNormalized, options.texcoord0CompressionOffset, options.texcoord0CompressionScale);
+            }
+            else if(attribute == "TEXCOORD_1" && options.texcoord1Compression !== 0)
+            {
+                cidx = quantize(gltf, gltf.accessors[idx], options.texcoord1Compression, options.texcoord1CompressionNormalized, options.texcoord1CompressionOffset, options.texcoord1CompressionScale);
+            }
+            else if(attribute == "TANGENT" && options.tangentsCompression !== 0)
+            {
+                cidx = quantize(gltf, gltf.accessors[idx], options.tangentsCompression, options.tangentsCompressionNormalized);
+            }
+            glAttribute.accessor = cidx;
+            this.attributes[attribute] = cidx;
+        }
+    }
+
+    compressGeometry(type, options, gltf)
+    {    
+        if(type === GEOMETRY_COMPRESSION_TYPE.QUANTIZATION)
+            this.compressGeometryQuantize(options, gltf);
+        else if(type === GEOMETRY_COMPRESSION_TYPE.DRACO)
+            this.compressGeometryDRACO(options, gltf);
+        else
+            this.compressGeometryMeshopt(options, gltf);
+
+        this.computeCentroid(gltf);
+    }
+
+    getGPUSize(gltf) {
+        let size = 0;
+        for (const glAttribute of this.glAttributes)
+        {
+            const attribute = glAttribute.attribute;
+            const idx = this.attributes[attribute];
+
+            size += gltf.accessors[idx].getSize();
+        }
+        return size;
+    }
+
+    getSize(gltf)
+    {
+        let size = 0;
+        if (this.extensions && this.extensions.KHR_draco_mesh_compression) {
+            const bufferView = this.extensions.KHR_draco_mesh_compression.bufferView;
+            return gltf.bufferViews[bufferView].byteLength;
+        }
+        for (const glAttribute of this.glAttributes)
+        {
+            const attribute = glAttribute.attribute;
+            const idx = this.attributes[attribute];
+            const accessor   = gltf.accessors[idx];
+            const bufferView = gltf.bufferViews[accessor.bufferView];
+            if (bufferView.extensions && bufferView.extensions.EXT_meshopt_compression) {
+                size += bufferView.extensions.EXT_meshopt_compression.byteLength;
+            } else {
+                size += accessor.getSize();
+            }
+        }
+
+        // AV: Compute Animation & Morph Target size ?
+        // size += ...
+
+        return size;
+    }
+
+    getAABB(gltf) 
+    {
+        const positionsAccessor = gltf.accessors[this.attributes.POSITION];
+        //const positions = positionsAccessor.getNormalizedTypedView(gltf);
+        const positions = positionsAccessor.getNormalizedDeinterlacedView(gltf);
+
+        const minValue = new Float32Array([Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE]);
+        const maxValue = new Float32Array([-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE]);
+
+        if(this.indices !== undefined)
+        {
+            // Primitive has indices.
+            const indicesAccessor = gltf.accessors[this.indices];
+            const indices = indicesAccessor.getTypedView(gltf);
+
+            for(let i = 0; i < indices.length; i++) {
+                const offset = 3 * indices[i];
+                minValue[0] = Math.min(minValue[0], positions[offset]);
+                minValue[1] = Math.min(minValue[1], positions[offset + 1]);
+                minValue[2] = Math.min(minValue[2], positions[offset + 2]);
+                maxValue[0] = Math.max(maxValue[0], positions[offset]);
+                maxValue[1] = Math.max(maxValue[1], positions[offset + 1]);
+                maxValue[2] = Math.max(maxValue[2], positions[offset + 2]);
+            }
+        }
+        else
+        {
+            // Primitive does not have indices.
+            for(let i = 0; i < positions.length; i += 3) {
+                minValue[0] = Math.min(minValue[0], positions[i]);
+                minValue[1] = Math.min(minValue[1], positions[i + 1]);
+                minValue[2] = Math.min(minValue[2], positions[i + 2]);
+                maxValue[0] = Math.max(maxValue[0], positions[i]);
+                maxValue[1] = Math.max(maxValue[1], positions[i + 1]);
+                maxValue[2] = Math.max(maxValue[2], positions[i + 2]);
+            }
+        }
+        return {minValue, maxValue};
+    }
+
+    // texcoord should be TEXCOORD_0 or TEXCOORD_1
+    getTexcoordsAABB(gltf, texcoord) 
+    {
+        if(
+            (texcoord === "TEXCOORD_0" && this.attributes.TEXCOORD_0 === undefined) ||
+            (texcoord === "TEXCOORD_1" && this.attributes.TEXCOORD_1 === undefined)
+        )
+        {
+            return {bboxMin: null, bboxMax: null, hasTexcoord: false};
+        }
+
+        const texcoordAccessor = texcoord === "TEXCOORD_0"? gltf.accessors[this.attributes.TEXCOORD_0] : gltf.accessors[this.attributes.TEXCOORD_1];
+        //const texcoords = texcoordAccessor.getNormalizedTypedView(gltf);
+        const texcoords = texcoordAccessor.getNormalizedDeinterlacedView(gltf);
+
+        const minValue = new Float32Array([Number.MAX_VALUE, Number.MAX_VALUE]);
+        const maxValue = new Float32Array([-Number.MAX_VALUE, -Number.MAX_VALUE]);
+
+        if(this.indices !== undefined)
+        {
+            // Primitive has indices.
+            const indicesAccessor = gltf.accessors[this.indices];
+            const indices = indicesAccessor.getTypedView(gltf);
+
+            for(let i = 0; i < indices.length; i++) {
+                const offset = 2 * indices[i];
+                minValue[0] = Math.min(minValue[0], texcoords[offset]);
+                minValue[1] = Math.min(minValue[1], texcoords[offset + 1]);
+                maxValue[0] = Math.max(maxValue[0], texcoords[offset]);
+                maxValue[1] = Math.max(maxValue[1], texcoords[offset + 1]);
+            }
+        }
+        else
+        {
+            // Primitive does not have indices.
+            for(let i = 0; i < texcoords.length; i += 2) {
+                minValue[0] = Math.min(minValue[0], texcoords[i]);
+                minValue[1] = Math.min(minValue[1], texcoords[i + 1]);
+                maxValue[0] = Math.max(maxValue[0], texcoords[i]);
+                maxValue[1] = Math.max(maxValue[1], texcoords[i + 1]);
+            }
+        }
+        return {minValue, maxValue, hasTexcoord: true};
+    }
+
+    copyFromPrimitive(originalPrimitive)
+    {
+        /*for (let k of Object.keys(originalPrimitive)) {
+            this[k] = originalPrimitive[k];
+        }*/
+        this.attributes = {...originalPrimitive.attributes};
+        this.targets = originalPrimitive.targets;
+        this.indices = originalPrimitive.indices;
+        this.material = originalPrimitive.material;
+        this.mode = originalPrimitive.mode;
+
+        // non gltf
+        this.glAttributes = originalPrimitive.glAttributes.map(prim => {
+            return {...prim};
+        });
+        this.morphTargetTextureInfo = originalPrimitive.morphTargetTextureInfo;
+        this.defines = originalPrimitive.defines;
+        this.skip = originalPrimitive.skip;
+        this.hasWeights = originalPrimitive.hasWeights;
+        this.hasJoints = originalPrimitive.hasJoints;
+        this.hasNormals = originalPrimitive.hasNormals;
+        this.hasTangents = originalPrimitive.hasTangents;
+        this.hasTexcoord = originalPrimitive.hasTexcoord;
+        this.hasColor = originalPrimitive.hasColor;
+
+        // The primitive centroid is used for depth sorting.
+        this.centroid = originalPrimitive.centroid;
+
+        this.originalMaterial = originalPrimitive.originalMaterial;
+        this.isHighlighted = originalPrimitive.isHighlighted;
+    }
+
+    isMeshQuantized(gltf){
+        for (const attribute of this.glAttributes)
+            if (attribute !== undefined){
+                let isQuantized = (attribute.attribute === 'POSITION'   && gltf.accessors[attribute.accessor].componentType !== GL.FLOAT) ||
+                                  (attribute.attribute === 'NORMAL'     && gltf.accessors[attribute.accessor].componentType !== GL.FLOAT) ||
+                                  (attribute.attribute === 'TANGENT'    && gltf.accessors[attribute.accessor].componentType !== GL.FLOAT) || 
+                                  ((attribute.attribute === 'TEXCOORD_0' || attribute.attribute === 'TEXCOORD_1')  && [GL.FLOAT, GL.UNSIGNED_BYTE, GL.UNSIGNED_SHORT].includes(gltf.accessors[attribute.accessor].componentType) === false);
+                if(isQuantized)
+                    return true;
+            }
+        return false;
+    }
+
+    isDracoMeshCompressed(){
+        return (this.extensions !== undefined) ? this.extensions.KHR_draco_mesh_compression !== undefined : false;
+    }
+
+    isMeshOptCompressed(gltf){       
+        for (const bufferView of gltf.bufferViews){
+            if( bufferView !== undefined && 
+                bufferView.extensions !== undefined &&
+                bufferView.extensions.EXT_meshopt_compression !== undefined
+            )
+                return true;
+        }
+        return false;
+    }
 }
 
 class gltfMesh extends GltfObject
@@ -21615,6 +23264,9 @@ class gltfMesh extends GltfObject
 
         // non gltf
         this.weightsAnimated = undefined;
+
+        // GLTF-Compressor
+        this.isCompressed = false;
     }
 
     fromJson(jsonMesh)
@@ -21637,6 +23289,245 @@ class gltfMesh extends GltfObject
     getWeightsAnimated()
     {
         return this.weightsAnimated !== undefined ? this.weightsAnimated : this.weights;
+    }
+
+    getAABB(gltf)
+    {
+        const bboxMin = new Float32Array([Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE]);
+        const bboxMax = new Float32Array([-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE]);
+        
+        // compute the AABB of all primitives
+        for(const primitive of this.primitives)
+        {            
+            const {minValue, maxValue} = primitive.getAABB(gltf);
+            bboxMin[0] = Math.min(bboxMin[0], minValue[0]);
+            bboxMin[1] = Math.min(bboxMin[1], minValue[1]);
+            bboxMin[2] = Math.min(bboxMin[2], minValue[2]);
+
+            bboxMax[0] = Math.max(bboxMax[0], maxValue[0]);
+            bboxMax[1] = Math.max(bboxMax[1], maxValue[1]);
+            bboxMax[2] = Math.max(bboxMax[2], maxValue[2]);
+        }
+        return {bboxMin, bboxMax};
+    }
+
+    getTexcoordsAABB(gltf, texcoord)
+    {
+        const bboxMin = new Float32Array([Number.MAX_VALUE, Number.MAX_VALUE]);
+        const bboxMax = new Float32Array([-Number.MAX_VALUE, -Number.MAX_VALUE]);
+        let meshHasTexcoord = false;
+        
+        // compute the AABB of all primitives
+        for(const primitive of this.primitives)
+        {            
+            const {minValue, maxValue, hasTexcoord} = primitive.getTexcoordsAABB(gltf, texcoord);
+            if(!hasTexcoord)
+                continue;
+            
+            meshHasTexcoord = true;
+            bboxMin[0] = Math.min(bboxMin[0], minValue[0]);
+            bboxMin[1] = Math.min(bboxMin[1], minValue[1]);
+
+            bboxMax[0] = Math.max(bboxMax[0], maxValue[0]);
+            bboxMax[1] = Math.max(bboxMax[1], maxValue[1]);
+        }
+        return {bboxMin, bboxMax, hasTexcoord: meshHasTexcoord};
+    }
+
+    compressGeometry(type, options, gltf)
+    {     
+        for(const primitive of this.primitives)
+        {
+            const originalIndex = gltf.findPrimitive(primitive);
+            gltf.primitives[originalIndex];
+            const compressed = gltf.compressedPrimitives[originalIndex];
+
+            // if version is different, compress the primtive, else copy from the compressed one
+            if(compressed.compress_revision != gltf.compressionVersion)
+            {                
+                primitive.compressGeometry(type, options, gltf);
+                primitive.compress_revision = gltf.compressionVersion;
+                gltf.compressedPrimitives[originalIndex] = primitive;
+            }
+            else
+            {
+                const originalMaterial = primitive.material;
+                primitive.copyFromPrimitive(compressed);  
+                primitive.material = originalMaterial;              
+            } 
+        }
+
+        const hasTexcoord0 = this.primitives.some(e => e.attributes.TEXCOORD_0 !== undefined);
+        const hasTexcoord1 = this.primitives.some(e => e.attributes.TEXCOORD_1 !== undefined);
+        const hasVolume = this.primitives.some(e => gltf.materials[e.material].hasVolume);
+
+        // update materials. // TODO: Also make it work for texcoord1
+        if(hasVolume || (options.texcoord0Compression && hasTexcoord0) || (options.texcoord1Compression && hasTexcoord1))
+        {
+            const materialIDs = new Map(); //(old, new)
+            for(const primitive of this.primitives)
+            {
+                // (key, value)
+                if(primitive.originalMaterial === -1)
+                {
+                    materialIDs.set(primitive.material, -1);
+                }
+                else
+                {
+                    // TODO: Need rethinking for the case of recompression
+                    materialIDs.set(primitive.originalMaterial, primitive.material);
+                }
+            }
+            // (value, key)
+            materialIDs.forEach((cid, id) => {
+                // create a new material
+                const material = gltfMaterial.createDefault();
+                material.copyFromMaterial(gltf.materials[id]);
+                if(material.hasVolume)
+                {
+                    let thicknessFactor = material.extensions.KHR_materials_volume.thicknessFactor ?? 0.0;
+                    thicknessFactor = thicknessFactor * (options.scale? options.scale : 1.0);
+                    material.extensions.KHR_materials_volume.thicknessFactor = thicknessFactor;
+                    material.properties.set("u_ThicknessFactor", thicknessFactor);
+                }
+                const extension0 = options.texcoord0Compression && options.texcoord0Compression != ComponentDataType.FLOAT && {
+                    extensions: {
+                        KHR_texture_transform: {
+                          offset: [-options.texcoord0CompressionOffset[0], -options.texcoord0CompressionOffset[1]],
+                          scale: [1.0 / options.texcoord0CompressionScale, 1.0 / options.texcoord0CompressionScale]
+                        }
+                    }
+                };
+                const extension1 = options.texcoord1Compression && options.texcoord1Compression != ComponentDataType.FLOAT && {
+                    extensions: {
+                        KHR_texture_transform: {
+                          offset: [-options.texcoord1CompressionOffset[0], -options.texcoord1CompressionOffset[1]],
+                          scale: [1.0 / options.texcoord1CompressionScale, 1.0 / options.texcoord1CompressionScale]
+                        }
+                    }
+                };
+                // TODO: Need to merge with existing Transform Extension
+                const mergeTextureTransform = (textureInfo, textureKey) => {
+                    if(textureInfo)
+                    {
+                        // merge
+                        if(textureInfo.extensions && textureInfo.extensions.KHR_texture_transform)
+                        {
+                            const originalTextureTransform = textureInfo.extensions.KHR_texture_transform;
+                            const texCoord = textureInfo.texCoord?? 0;
+                            const newTextureTransform = texCoord == 0? extension0.extensions.KHR_texture_transform : extension1.extensions.KHR_texture_transform;
+                            const merged = {...originalTextureTransform, ...newTextureTransform};
+
+                            const originalOffset = (originalTextureTransform.offset !== undefined)? originalTextureTransform.offset : [0,0];
+                            const originalScale = (originalTextureTransform.scale !== undefined)? originalTextureTransform.scale : [1,1];
+                            //const s = (originalTextureTransform.rotation !== undefined)? Math.sin(originalTextureTransform.rotation) : 0;
+                            //const c = (originalTextureTransform.rotation !== undefined)? Math.cos(originalTextureTransform.rotation) : 1;
+
+                            merged.offset = [
+                                originalScale[0] * newTextureTransform.offset[0] + originalOffset[0],
+                                originalScale[1] * newTextureTransform.offset[1] + originalOffset[1]
+                            ];                          
+                            
+                            if(originalTextureTransform.rotation !== undefined)
+                            {
+                                const s =  Math.sin(originalTextureTransform.rotation);
+                                const c =  Math.cos(originalTextureTransform.rotation);                              
+
+                                merged.offset = [
+                                    originalScale[0] * (c * newTextureTransform.offset[0] + s * newTextureTransform.offset[1]) + originalOffset[0],
+                                    originalScale[1] * (-s * newTextureTransform.offset[0] + c * newTextureTransform.offset[1]) + originalOffset[1]
+                                ];
+                                /*merged.offset = [
+                                    (c * originalScale[0] * newTextureTransform.offset[0] + s * originalScale[1] * newTextureTransform.offset[1]) + originalOffset[0],
+                                    (-s * originalScale[0] * newTextureTransform.offset[0] + c * originalScale[1] * newTextureTransform.offset[1]) + originalOffset[1]
+                                ]*/
+                            }                            
+                            merged.rotation = originalTextureTransform.rotation;
+                            merged.scale = [
+                                newTextureTransform.scale[0] * originalScale[0],
+                                newTextureTransform.scale[1] * originalScale[1]
+                            ];
+
+                            textureInfo.extensions.KHR_texture_transform = merged;
+                            material.parseTextureInfoExtensions(textureInfo, textureKey);
+                        }
+                        else
+                        {
+                            if(options.texcoord0Compression)
+                                material.parseTextureInfoExtensions(extension0, textureKey);
+                            else if(options.texcoord1Compression)
+                                material.parseTextureInfoExtensions(extension1, textureKey);
+                        }
+
+                    }
+
+                };
+                mergeTextureTransform(material.baseColorTexture, "BaseColor");
+                mergeTextureTransform(material.normalTexture, "Normal");
+                mergeTextureTransform(material.occlusionTexture, "Occlusion");
+                mergeTextureTransform(material.emissiveTexture, "Emissive");
+                mergeTextureTransform(material.metallicRoughnessTexture, "MetallicRoughness");
+
+                mergeTextureTransform(material.specularGlossinessTexture, "SpecularGlossiness");
+                mergeTextureTransform(material.diffuseTexture, "Diffuse");
+                mergeTextureTransform(material.specularTexture, "Specular");
+                mergeTextureTransform(material.specularColorTexture, "SpecularColor");
+
+                mergeTextureTransform(material.clearcoatTexture, "Clearcoat");
+                mergeTextureTransform(material.clearcoatRoughnessTexture, "ClearcoatRoughness");
+                mergeTextureTransform(material.clearcoatNormalTexture, "ClearcoatNormal");
+
+                mergeTextureTransform(material.sheenRoughnessTexture, "SheenRoughness");
+                mergeTextureTransform(material.sheenColorTexture, "SheenColor");
+
+                mergeTextureTransform(material.transmissionTexture, "Transmission");
+
+                mergeTextureTransform(material.thicknessTexture, "Thickness");
+
+                mergeTextureTransform(material.iridescenceTexture, "Iridescence");
+                mergeTextureTransform(material.iridescenceThicknessTexture, "IridescenceThickness");
+
+                mergeTextureTransform(material.anisotropyTexture, "Anisotropy");
+
+                if(cid == -1)
+                {
+                    cid = gltf.materials.length;
+                    gltf.materials.push(material);
+                }
+                else
+                {
+                    gltf.materials[cid] = material;
+                }
+                materialIDs[id] = cid;
+            });
+            for(const primitive of this.primitives)
+            {
+                primitive.originalMaterial = primitive.material;
+                primitive.material = materialIDs[primitive.material];                
+            }
+        }
+    }
+
+    copyFromMesh(originalMesh)
+    {
+        this.primitives = originalMesh.primitives.map(prim => { 
+            const p = new gltfPrimitive();
+            p.copyFromPrimitive(prim);
+            return p;
+        });
+        this.name = "Compressed "+originalMesh.name;
+        this.weights = originalMesh.weights;
+        this.weightsAnimated = originalMesh.weightsAnimated;
+        this.extensions = originalMesh.extensions;
+        this.extras = originalMesh.extras;
+    }
+
+    setHighlight(isSelected = true)
+    {     
+        for(const primitive of this.primitives)
+        {
+            primitive.isHighlighted = isSelected;
+        }
     }
 }
 
@@ -21669,6 +23560,11 @@ class gltfNode extends GltfObject
         this.animationRotation = undefined;
         this.animationTranslation = undefined;
         this.animationScale = undefined;
+
+        // GLTF-Compressor
+        this.compressedNode = undefined;
+        this.isCompressedHelperNode = false;
+        this.compressedMesh = undefined; // object
     }
 
     initGl()
@@ -21767,6 +23663,172 @@ class gltfNode extends GltfObject
 
         return clone$1(this.transform);
     }
+
+    // gltf compressor
+    compressGeometry(type, options, gltf)
+    {
+        //debugger;
+        // if the node has a mesh that we can compress. If compressedMesh exists, then we are in a compressedHelperNode
+        if(this.mesh != undefined && this.compressedMesh == undefined)
+        {
+            const currentMesh = gltf.meshes[this.mesh];
+            // first check if we have not already compressed this mesh
+            if(this.compressedNode === undefined)
+            {
+                // create a compression node
+                const node = new gltfNode();
+                this.compressedNode = node;
+                node.isCompressedHelperNode = true;
+
+                // add as a children
+                this.children.push(gltf.nodes.length);
+                // add to the global pool of nodes
+                gltf.nodes.push(node);
+
+                // create a new compressed mesh 
+                node.compressedMesh = new gltfMesh();
+                node.compressedMesh.copyFromMesh(currentMesh);
+                node.compressedMesh.isCompressed = true;
+                node.compressedMesh.mesh = gltf.meshes.length;
+                node.compressedMesh.original_mesh = this.mesh;
+                node.skin = this.skin;
+                node.weights = this.weights;
+                
+                gltf.meshes.push(node.compressedMesh);
+            }
+            const node = this.compressedNode;
+            node.compressedMesh.copyFromMesh(currentMesh);
+
+
+            {
+                const {bboxMin, bboxMax} = gltf.meshes[this.mesh].getAABB(gltf);
+                const {bboxMin: texcoord0bboxMin, bboxMax: texcoord0bboxMax, hasTexcoord: texcoord0HasTexcoord} = gltf.meshes[this.mesh].getTexcoordsAABB(gltf, "TEXCOORD_0");
+                const {bboxMin: texcoord1bboxMin, bboxMax: texcoord1bboxMax, hasTexcoord: texcoord1HasTexcoord} = gltf.meshes[this.mesh].getTexcoordsAABB(gltf, "TEXCOORD_1");
+
+                if(options.texcoord0Compression !== 0 && options.texcoord0Compression !== ComponentDataType.FLOAT && texcoord0HasTexcoord)
+                {
+                    const maxComponentDataRange = options.texcoord0CompressionNormalized? 1 : getComponentDataTypeDistinctIntegerNumbers(options.texcoord0Compression);
+                    const scaleMultiplier = isComponentDataTypeUnsigned(options.texcoord0Compression)? 1.0 : 0.5;
+                    const center = fromValues(
+                        0.5 * (texcoord0bboxMin[0] + texcoord0bboxMax[0]),
+                        0.5 * (texcoord0bboxMin[1] + texcoord0bboxMax[1])
+                    );
+                    
+                    options.texcoord0CompressionOffset = negate(create$3(), isComponentDataTypeUnsigned(options.texcoord0Compression)? texcoord0bboxMin : center);
+                    // Scale uniformly similar to positions
+                    options.texcoord0CompressionScale = maxComponentDataRange / Math.max(
+                        scaleMultiplier * (texcoord0bboxMax[0] - texcoord0bboxMin[0]),
+                        scaleMultiplier * (texcoord0bboxMax[1] - texcoord0bboxMin[1]),
+                    );
+                }
+                if(options.texcoord1Compression !== 0 && options.texcoord1Compression !== ComponentDataType.FLOAT && texcoord1HasTexcoord)
+                {
+                    const maxComponentDataRange = options.texcoord1CompressionNormalized? 1 : getComponentDataTypeDistinctIntegerNumbers(options.texcoord1Compression);
+                    const scaleMultiplier = isComponentDataTypeUnsigned(options.texcoord1Compression)? 1.0 : 0.5;
+                    const center = fromValues(
+                        0.5 * (texcoord1bboxMin[0] + texcoord1bboxMax[0]),
+                        0.5 * (texcoord1bboxMin[1] + texcoord1bboxMax[1])
+                    );
+                    
+                    options.texcoord1CompressionOffset = negate(create$3(), isComponentDataTypeUnsigned(options.texcoord1Compression)? texcoord1bboxMin : center);
+                    options.texcoord1CompressionScale = maxComponentDataRange / Math.max(
+                        scaleMultiplier * (texcoord1bboxMax[0] - texcoord1bboxMin[0]),
+                        scaleMultiplier * (texcoord1bboxMax[1] - texcoord1bboxMin[1]),
+                    );
+                }
+
+                if(options.positionCompressionNormalized && options.positionCompression !== 0)
+                {
+                    // rescale into [-1...1]
+                    const center = fromValues$3(
+                        0.5 * (bboxMin[0] + bboxMax[0]),
+                        0.5 * (bboxMin[1] + bboxMax[1]),
+                        0.5 * (bboxMin[2] + bboxMax[2])
+                    );
+
+                    Math.max(
+                        bboxMax[0] - bboxMin[0],
+                        bboxMax[1] - bboxMin[1],
+                        bboxMax[2] - bboxMin[2]
+                    );
+
+                    let scaleToOriginal = 0.5*Math.max(
+                        bboxMax[0] - bboxMin[0],
+                        bboxMax[1] - bboxMin[1],
+                        bboxMax[2] - bboxMin[2]
+                    );
+
+                    if(isComponentDataTypeUnsigned(options.positionCompression))
+                    {
+                        scaleToOriginal *= 2.0;
+                    }
+
+                    const origin = isComponentDataTypeUnsigned(options.positionCompression)? fromValues$3(bboxMin[0], bboxMin[1], bboxMin[2]) : center;
+
+                    const scaleToUnitLength = 1.0 / scaleToOriginal; // S = 2 / (max-min)                                
+                    const translationToUnitLength = negate$1(create$3(), origin);
+                
+                    // TRS matrix order
+                    node.translation = negate$1(create$3(), translationToUnitLength);
+                    node.scale = fromValues$3(scaleToOriginal, scaleToOriginal, scaleToOriginal);
+                    node.changed = true;
+
+                    node.compressedMesh.compressGeometry(type, {...options, offset: translationToUnitLength, scale: scaleToUnitLength}, gltf);
+
+                    const {bboxMin: compressed_bboxMin, bboxMax: compressed_bboxMax} = node.compressedMesh.getAABB(gltf);
+                    node.compressedMesh.getTexcoordsAABB(gltf, "TEXCOORD_0");
+                    node.compressedMesh.getTexcoordsAABB(gltf, "TEXCOORD_1");
+
+                    let scaled_compressed_bbox_min = multiply(create$3(), compressed_bboxMin, fromValues$3(scaleToOriginal,scaleToOriginal,scaleToOriginal));
+                    scaled_compressed_bbox_min = add$2(create$3(), scaled_compressed_bbox_min, origin);
+                    let scaled_compressed_bbox_max = multiply(create$3(), compressed_bboxMax, fromValues$3(scaleToOriginal,scaleToOriginal,scaleToOriginal));
+                    scaled_compressed_bbox_max = add$2(create$3(), scaled_compressed_bbox_max, origin);
+
+                    this.bboxDiffError = {
+                        bboxMin: subtract(create$3(), bboxMin, scaled_compressed_bbox_min),
+                        bboxMax: subtract(create$3(), bboxMax, scaled_compressed_bbox_max)
+                    };       
+                }
+                else
+                {                    
+                    // TRS matrix order
+                    node.translation = create$3();
+                    node.scale = fromValues$3(1,1,1);
+                    node.changed = true;
+
+                    node.compressedMesh.compressGeometry(type, options, gltf);
+
+                    const {bboxMin, bboxMax} = gltf.meshes[this.mesh].getAABB(gltf);
+                    const {bboxMin: compressed_bboxMin, bboxMax: compressed_bboxMax} = node.compressedMesh.getAABB(gltf);
+
+                    this.bboxDiffError = {
+                        bboxMin: subtract(create$3(), bboxMin, compressed_bboxMin),
+                        bboxMax: subtract(create$3(), bboxMax, compressed_bboxMax)
+                    };
+                }                
+            }
+        }
+
+        for(const child of this.children)
+        {
+            gltf.nodes[child].compressGeometry(type, options, gltf);
+        }
+    }
+
+    // select a node for highlighting
+    selectNode(gltf, isSelected = true)
+    {
+        // if the node has a mesh. highlight it
+        if(this.mesh != undefined)
+        {
+            gltf.meshes[this.mesh].setHighlight(isSelected);
+        }
+
+        for(const child of this.children)
+        {
+            gltf.nodes[child].selectNode(gltf, isSelected);
+        }
+    }
 }
 
 class gltfScene extends GltfObject
@@ -21797,7 +23859,7 @@ class gltfScene extends GltfObject
     {
         function applyTransform(gltf, node, parentTransform)
         {
-            multiply(node.worldTransform, parentTransform, node.getLocalTransform());
+            multiply$1(node.worldTransform, parentTransform, node.getLocalTransform());
             invert(node.inverseWorldTransform, node.worldTransform);
             transpose(node.normalMatrix, node.inverseWorldTransform);
 
@@ -22004,7 +24066,7 @@ class gltfInterpolator
         // Wrap t around, so the animation loops.
         // Make sure that t is never earlier than the first keyframe and never later then the last keyframe.
         t = t % maxTime;
-        t = clamp(t, input[0], input[input.length - 1]);
+        t = clamp$1(t, input[0], input[input.length - 1]);
 
         if (this.prevT > t)
         {
@@ -22019,11 +24081,11 @@ class gltfInterpolator
         {
             if (t <= input[i])
             {
-                nextKey = clamp(i, 1, input.length - 1);
+                nextKey = clamp$1(i, 1, input.length - 1);
                 break;
             }
         }
-        this.prevKey = clamp(nextKey - 1, 0, nextKey);
+        this.prevKey = clamp$1(nextKey - 1, 0, nextKey);
 
         const keyDelta = input[nextKey] - input[this.prevKey];
 
@@ -22144,18 +24206,30 @@ class gltfAnimation extends GltfObject
             switch(channel.target.path)
             {
             case InterpolationPath.TRANSLATION:
-                node.applyTranslationAnimation(interpolator.interpolate(gltf, channel, sampler, totalTime, 3, this.maxTime));
+                const translate = interpolator.interpolate(gltf, channel, sampler, totalTime, 3, this.maxTime);
+                node.applyTranslationAnimation(translate);
+                if (!node.compressedNode) break;
+                node.compressedNode.applyTranslationAnimation(translate);
                 break;
             case InterpolationPath.ROTATION:
-                node.applyRotationAnimation(interpolator.interpolate(gltf, channel, sampler, totalTime, 4, this.maxTime));
+                const rotate = interpolator.interpolate(gltf, channel, sampler, totalTime, 4, this.maxTime);
+                node.applyRotationAnimation(rotate);
+                if (!node.compressedNode) break;
+                node.compressedNode.applyRotationAnimation(rotate);
                 break;
             case InterpolationPath.SCALE:
-                node.applyScaleAnimation(interpolator.interpolate(gltf, channel, sampler, totalTime, 3, this.maxTime));
+                const scale = interpolator.interpolate(gltf, channel, sampler, totalTime, 3, this.maxTime);
+                node.applyScaleAnimation(scale);
+                if (!node.compressedNode) break;
+                node.compressedNode.applyScaleAnimation(scale);
                 break;
             case InterpolationPath.WEIGHTS:
             {
                 const mesh = gltf.meshes[node.mesh];
                 mesh.weightsAnimated = interpolator.interpolate(gltf, channel, sampler, totalTime, mesh.weights.length, this.maxTime);
+                if (!node.compressedNode) break;
+                const c_mesh = node.compressedNode.compressedMesh;
+                c_mesh.weightsAnimated = mesh.weightsAnimated && mesh.weightsAnimated.map((e, i) => e / node.compressedNode.scale[i % 3]);
                 break;
             }
             }
@@ -22316,8 +24390,11 @@ class glTF extends GltfObject
         this.skins = [];
         this.path = file;
 
-        // GSV-KTX
+        // gltfCompressor
         this.originalJSON = undefined;
+        this.compressionVersion = 0;
+        this.primitives = [];
+        this.compressedPrimitives = [];
     }
 
     initGl(webGlContext)
@@ -22433,6 +24510,41 @@ class glTF extends GltfObject
         }
 
         return nonDisjointAnimations;
+    }
+
+    findPrimitive(prim)
+    {
+        return this.primitives.findIndex(e => {
+            const sameMode = e.mode == prim.mode;
+            const sameIndices = e.indices == prim.indices;
+            const samePositions = e.attributes.POSITION == prim.attributes.POSITION;
+            const sameNormals = e.attributes.NORMAL == prim.attributes.NORMAL;
+            const sameTangents = e.attributes.TANGENT == prim.attributes.TANGENT;
+            const sameTEXCOORD_0 = e.attributes.TEXCOORD_0 == prim.attributes.TEXCOORD_0;
+            const sameTEXCOORD_1 = e.attributes.TEXCOORD_1 == prim.attributes.TEXCOORD_1;
+            const sameCOLOR_0 = e.attributes.COLOR_0 == prim.attributes.COLOR_0;
+            const sameJOINTS_0 = e.attributes.JOINTS_0 == prim.attributes.JOINTS_0;
+            const sameWEIGHTS_0 = e.attributes.WEIGHTS_0 == prim.attributes.WEIGHTS_0;
+
+            return sameMode && sameIndices && samePositions && sameNormals && sameTangents && sameTEXCOORD_0 && sameTEXCOORD_1 && sameCOLOR_0 && sameJOINTS_0 && sameWEIGHTS_0;
+        });
+    }
+
+    fillPrimitiveList()
+    {
+        this.compressionVersion = 0;
+        for(const mesh of this.meshes)
+        {
+            for(const primitive of mesh.primitives)
+            {
+                if(this.findPrimitive(primitive) == -1)
+                {
+                    primitive.compress_revision = -1;
+                    this.primitives.push(primitive);
+                    this.compressedPrimitives.push(primitive);
+                }
+            }
+        }
     }
 }
 
@@ -22655,7 +24767,7 @@ class gltfLoader
     {
         if (appendix && appendix.length > 0)
         {
-            if (appendix[0] instanceof Type)
+            if (appendix[0] instanceof Type || appendix[0][1] instanceof Type)
             {
                 return appendix;
             }
@@ -23120,6 +25232,576 @@ class iblSampler
     }
 }
 
+function _loadWasmModule (sync, filepath, src, imports) {
+  function _instantiateOrCompile(source, imports, stream) {
+    var instantiateFunc = stream ? WebAssembly.instantiateStreaming : WebAssembly.instantiate;
+    var compileFunc = stream ? WebAssembly.compileStreaming : WebAssembly.compile;
+
+    if (imports) {
+      return instantiateFunc(source, imports)
+    } else {
+      return compileFunc(source)
+    }
+  }
+
+  
+var buf = null;
+var isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+
+if (filepath && isNode) {
+  
+var fs = require("fs");
+var path = require("path");
+
+return new Promise((resolve, reject) => {
+  fs.readFile(path.resolve(__dirname, filepath), (error, buffer) => {
+    if (error != null) {
+      reject(error);
+    } else {
+      resolve(_instantiateOrCompile(buffer, imports, false));
+    }
+  });
+});
+
+} else if (filepath) {
+  
+return _instantiateOrCompile(fetch(filepath), imports, true);
+
+}
+
+if (isNode) {
+  
+buf = Buffer.from(src, 'base64');
+
+} else {
+  
+var raw = globalThis.atob(src);
+var rawLength = raw.length;
+buf = new Uint8Array(new ArrayBuffer(rawLength));
+for(var i = 0; i < rawLength; i++) {
+   buf[i] = raw.charCodeAt(i);
+}
+
+}
+
+
+  if(sync) {
+    var mod = new WebAssembly.Module(buf);
+    return imports ? new WebAssembly.Instance(mod, imports) : mod
+  } else {
+    return _instantiateOrCompile(buf, imports, false)
+  }
+}
+
+function mikktspace(imports){return _loadWasmModule(0, '62b6c493308d7b10.wasm', null, imports)}
+
+// This file is part of meshoptimizer library and is distributed under the terms of MIT License.
+// Copyright (C) 2016-2023, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+var MeshoptEncoder = (function() {
+
+	// Built with clang version 15.0.6
+	// Built from meshoptimizer 0.19
+	var wasm = "b9H79TebbbeJq9Geueu9Geub9Gbb9Gvuuuuueu9Gduueu9Gluuuueu9Gvuuuuub9Gouuuuuub9Gluuuub9GiuuueuiLQdilevlevlooroowwvbDDbelve9Weiiviebeoweuec:G;kekr;qiHo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bb8A9TW79O9V9Wt9FW9U9J9V9KW9wWVtW949c919M9MWVbe8F9TW79O9V9Wt9FW9U9J9V9KW9wWVtW949c919M9MWV9c9V919U9KbdE9TW79O9V9Wt9FW9U9J9V9KW9wWVtW949wWV79P9V9UbiY9TW79O9V9Wt9FW9U9J9V9KW69U9KW949c919M9MWVbl8E9TW79O9V9Wt9FW9U9J9V9KW69U9KW949c919M9MWV9c9V919U9Kbv8A9TW79O9V9Wt9FW9U9J9V9KW69U9KW949wWV79P9V9UboE9TW79O9V9Wt9FW9U9J9V9KW69U9KW949tWG91W9U9JWbra9TW79O9V9Wt9FW9U9J9V9KW69U9KW949tWG91W9U9JW9c9V919U9KbwL9TW79O9V9Wt9FW9U9J9V9KWS9P2tWV9p9JtbDK9TW79O9V9Wt9FW9U9J9V9KWS9P2tWV9r919HtbqL9TW79O9V9Wt9FW9U9J9V9KWS9P2tWVT949WbkE9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94J9H9J9OWbPa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94J9H9J9OW9ttV9P9Wbsa9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbzl79IV9RbHDwebcekdXCq:fSQdbk:fxeYu8Jjjjjbcjo9Rgv8Kjjjjbcbhodnalcefae0mbabcbRb:q:kjjbc:GeV86bbavcjdfcbcjdz:tjjjb8AdnaiTmbavcjdfadalzMjjjb8Akabaefhrabcefhwavalfcbcbcjdal9RalcFe0Ez:tjjjb8AavavcjdfalzMjjjbhDcj;abal9UhodndndndndnalTmbaoc;WFbGgecjdaecjd6Ehqcbhkdninakai9pmiaDcjlfcbcjdz:tjjjb8Aaqaiak9Rakaqfai6Egxcsfgecl4cifcd4hmadakal2fhPdndndndndnaec9WGgsTmbcbhzcehHaPhOawhAxekdnaxTmbcbhAcehHaPhCinaDaAfRbbhXaDcjlfheaChoaxhQinaeaoRbbgLaX9RgXcetaXcKtcK91cr4786bbaoalfhoaecefheaLhXaQcufgQmbkaraw9Ram6miawcbamz:tjjjbgeTmiaCcefhCaeamfhwaAcefgAal6hHaAal9hmbxvkkaraw9Ram6mvawcbamz:tjjjb8AceheinawgXamfhwalaegoSmldnaraw9Ram6mbaocefheawcbamz:tjjjb8AaXmekkcbhwaoal6mvxikindnaxTmbaDazfRbbhXaDcjlfheaOhoaxhQinaeaoRbbgLaX9RgXcetaXcKtcK91cr4786bbaoalfhoaecefheaLhXaQcufgQmbkkaraA9Ram6mearaAcbamz:tjjjbgKamfgw9RcK6mdcbhYaDcjlfhAinaDcjlfaYfh8AcwhCczhLcehQindndnaQce9hmbcuhoa8ARbbmecbhodninaogecsSmeaecefhoaAaefcefRbbTmbkkcucbaecs6EhoxekaQcetc;:FFFeGhocuaQtcu7cFeGhXcbheinaoaXaAaefRbb9nfhoaecefgecz9hmbkkaoaLaoaL6geEhLaQaCaeEhCaQcetgQcw6mbkdndndndnaCcufPdiebkaKaYco4fgeaeRbbcdciaCclSEaYci4coGtV86bbaCcw9hmeawa8A8Pbb83bbawcwfa8Acwf8Pbb83bbawczfhwxdkaKaYco4fgeaeRbbceaYci4coGtV86bbkdncwaC9TgEmbinawcb86bbawcefhwxbkkcuaCtcu7h8Acbh3aAh5ina5heaEhQcbhoinaeRbbgLa8AcFeGgXaLaX6EaoaCtVhoaecefheaQcufgQmbkawao86bba5aEfh5awcefhwa3aEfg3cz6mbkcbheindnaAaefRbbgoaX6mbawao86bbawcefhwkaecefgecz9hmbkkdnaYczfgYas9pmbaAczfhAaraw9RcL0mekkaYas6meawTmeaOcefhOazcefgzal6hHawhAazalSmixbkkcbhwaHceGTmexikcbhwaHceGmdkaDaPaxcufal2falzMjjjb8AaxakfhkawmbkcbhoxokcbhoxvkaiTmekcbhoaraw9Ralcaalca0E6mialc8F9nmexdkcbhoaecufca6mdkawcbcaal9Rgez:tjjjbaefhwkawaDcjdfalzMjjjbalfab9Rhokavcjof8Kjjjjbaok9heeuaecaaeca0Eabcj;abae9Uc;WFbGgdcjdadcjd6Egdfcufad9Uae2adcl4cifcd4adV2fcefkmbcbabBd:q:kjjbk;use3u8Jjjjjbc;ae9Rgl8Kjjjjbcbhvdnaici9UgocHfae0mbabcbydN:kjjbgrc;GeV86bbalc;abfcFecjez:tjjjb8AalcUfgw9cu83ibalc8WfgD9cu83ibalcyfgq9cu83ibalcafgk9cu83ibalcKfgx9cu83ibalczfgm9cu83ibal9cu83iwal9cu83ibabaefc9WfhPabcefgsaofhednaiTmbcmcsarcb9kgzEhHcbhOcbhAcbhCcbhXcbhQindnaeaP9nmbcbhvxikaQcufhvadaCcdtfgoydbhLaocwfydbhKaoclfydbhYcbh8Adndninalc;abfavcsGcitfgoydlhEdndndnaoydbgoaL9hmbaEaYSmekdnaoaY9hmbaEaK9hmba8Acefh8AxekaoaK9hmeaEaL9hmea8Acdfh8Aka8Ac870mdaXcufhvada8AciGcx2goc:y1jjbfydbaCfcdtfydbhEadaocN1jjbfydbaCfcdtfydbhKadaoc:q1jjbfydbaCfcdtfydbhLcbhodnindnalavcsGcdtfydbaE9hmbaohYxdkcuhYavcufhvaocefgocz9hmbkkaEaOSgvaYcb9kaYaH9iGgoce7Gh3dndndndndnaYcbcsavEaoEgvcs9hmbarce9imbaEaEaAaEcefaASgvEgAcefSmecmcsavEhvkasava8Acdtc;WeGV86bbavcs9hmeaEaA9Rgvcetavc8F917hvinaeavcFb0crtavcFbGV86bbaecefheavcje6hoavcr4hvaoTmbkaEhAxdkcPhvasa8AcdtcPV86bbaEhAkavTmbavaH9imekalaXcdtfaEBdbaXcefcsGhXkaOa3fhOalc;abfaQcitfgvaKBdlavaEBdbalc;abfaQcefcsGgvcitfgoaEBdlaoaLBdbavcefhoxikavcufhva8Aclfg8Ac;ab9hmbkkdnadceaKaOScetaYaOSEcx2gvc:q1jjbfydbaCfcdtfydbgLTadavcN1jjbfydbaCfcdtfydbg8AceSGadavc:y1jjbfydbaCfcdtfydbgYcdSGaOcb9hGazGg5ce9hmbaw9cu83ibaD9cu83ibaq9cu83ibak9cu83ibax9cu83ibam9cu83ibal9cu83iwal9cu83ibcbhOkcbhEaXcufgvhodnindnalaocsGcdtfydba8A9hmbaEhKxdkcuhKaocufhoaEcefgEcz9hmbkkcbhodnindnalavcsGcdtfydbaY9hmbaohExdkcuhEavcufhvaocefgocz9hmbkkaOaLaOSg8Efh3dndnaKcm0mbaKcefhKxekcbcsa8Aa3SgvEhKa3avfh3kdndnaEcm0mbaEcefhExekcbcsaYa3SgvEhEa3avfh3kc9:cua8EEh8FaEaKcltVhocbhvdndndninavcj1jjbfRbbaocFeGSmeavcefgvcz9hmbxdkkaLaO9havcm0Va5Vmbasavc;WeV86bbxekasa8F86bbaeao86bbaecefhekdna8EmbaLaA9Rgvcetavc8F917hvinaeavcFb0gocrtavcFbGV86bbavcr4hvaecefheaombkaLhAkdnaKcs9hmba8AaA9Rgvcetavc8F917hvinaeavcFb0gocrtavcFbGV86bbavcr4hvaecefheaombka8AhAkdnaEcs9hmbaYaA9Rgvcetavc8F917hvinaeavcFb0gocrtavcFbGV86bbavcr4hvaecefheaombkaYhAkalaXcdtfaLBdbaXcefcsGhvdndnaKPzbeeeeeeeeeeeeeebekalavcdtfa8ABdbaXcdfcsGhvkdndnaEPzbeeeeeeeeeeeeeebekalavcdtfaYBdbavcefcsGhvkalc;abfaQcitfgoaLBdlaoa8ABdbalc;abfaQcefcsGcitfgoa8ABdlaoaYBdbalc;abfaQcdfcsGcitfgoaYBdlaoaLBdbaQcifhoavhXa3hOkascefhsaocsGhQaCcifgCai6mbkkcbhvaeaP0mbcbhvinaeavfavcj1jjbfRbb86bbavcefgvcz9hmbkaeab9Ravfhvkalc;aef8KjjjjbavkZeeucbhddninadcefgdc8F0meceadtae6mbkkadcrfcFeGcr9Uci2cdfabci9U2cHfkmbcbabBdN:kjjbk:ydewu8Jjjjjbcz9Rhlcbhvdnaicvfae0mbcbhvabcbRbN:kjjbc;qeV86bbal9cb83iwabcefhoabaefc98fhrdnaiTmbcbhwcbhDindnaoar6mbcbskadaDcdtfydbgqalcwfawaqav9Rgvavc8F91gv7av9Rc507gwcdtfgkydb9Rgvc8E91c9:Gavcdt7awVhvinaoavcFb0gecrtavcFbGV86bbavcr4hvaocefhoaembkakaqBdbaqhvaDcefgDai9hmbkkcbhvaoar0mbaocbBbbaoab9RclfhvkavkBeeucbhddninadcefgdc8F0meceadtae6mbkkadcwfcFeGcr9Uab2cvfk:dvli99dui99ludnaeTmbcuadcetcuftcu7:Yhvdndncuaicuftcu7:YgoJbbbZMgr:lJbbb9p9DTmbar:Ohwxekcjjjj94hwkcbhicbhDinalclfIdbgrJbbbbJbbjZalIdbgq:lar:lMalcwfIdbgk:lMgr:varJbbbb9BEgrNhxaqarNhralcxfIdbhqdndnakJbbbb9GTmbaxhkxekJbbjZar:l:tgkak:maxJbbbb9GEhkJbbjZax:l:tgxax:marJbbbb9GEhrkdndnaqJbbj:;aqJbbj:;9GEgxJbbjZaxJbbjZ9FEavNJbbbZJbbb:;aqJbbbb9GEMgq:lJbbb9p9DTmbaq:Ohmxekcjjjj94hmkdndnakJbbj:;akJbbj:;9GEgqJbbjZaqJbbjZ9FEaoNJbbbZJbbb:;akJbbbb9GEMgq:lJbbb9p9DTmbaq:OhPxekcjjjj94hPkdndnarJbbj:;arJbbj:;9GEgqJbbjZaqJbbjZ9FEaoNJbbbZJbbb:;arJbbbb9GEMgr:lJbbb9p9DTmbar:Ohsxekcjjjj94hskdndnadcl9hmbabaDfgzas86bbazcifam86bbazcdfaw86bbazcefaP86bbxekabaifgzas87ebazcofam87ebazclfaw87ebazcdfaP87ebkalczfhlaicwfhiaDclfhDaecufgembkkk;klld99eud99eudnaeTmbdndncuaicuftcu7:YgvJbbbZMgo:lJbbb9p9DTmbao:Ohixekcjjjj94hikaic;8FiGhrinabcofcicdalclfIdb:lalIdb:l9EgialcwfIdb:lalaicdtfIdb:l9EEgialcxfIdb:lalaicdtfIdb:l9EEgiarV87ebdndnalaicefciGcdtfIdbJ;Zl:1ZNJbbj:;JbbjZalaicdtfIdbJbbbb9DEgoNgwJbbj:;awJbbj:;9GEgDJbbjZaDJbbjZ9FEavNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohqxekcjjjj94hqkabaq87ebdndnaoalaicdfciGcdtfIdbJ;Zl:1ZNNgwJbbj:;awJbbj:;9GEgDJbbjZaDJbbjZ9FEavNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohqxekcjjjj94hqkabcdfaq87ebdndnaoalaicufciGcdtfIdbJ;Zl:1ZNNgoJbbj:;aoJbbj:;9GEgwJbbjZawJbbjZ9FEavNJbbbZJbbb:;aoJbbbb9GEMgo:lJbbb9p9DTmbao:Ohixekcjjjj94hikabclfai87ebabcwfhbalczfhlaecufgembkkk:Hvdxue998Jjjjjbcjd9Rgo8Kjjjjbadcd4hrdndndndnavcd9hmbadcl6mearcearce0EhwaohDinaDc:CuBdbaDclfhDawcufgwmbkaeTmiadcl6mdarcearce0EhqarcdthkalhxcbhminaohDaxhwaqhPinaDaDydbgsawydbgzcL4cFeGc:cufcbazEgzasaz9kEBdbawclfhwaDclfhDaPcufgPmbkaxakfhxamcefgmae9hmbkkaeTmdxekaeTmekavcb9hadcl6gqVhHarcearce0Ehkarcdthrceai9Rhmcbhdindndndnavce9hmbaqmdc:CuhwalhDakhPinawaDydbgscL4cFeGc:cufcbasEgsawas9kEhwaDclfhDaPcufgPmbxdkkc:CuhwaHmbaohDalhPakhsinaDaPydbgzcL4cFeGgxc8Aaxc8A9kEc:cufcbazEBdbaPclfhPaDclfhDascufgsmbkkaqmbcbhDakhsinawhPdnavceSmbaoaDfydbhPkdndnalaDfIdbgOcjjj;8iamaPfgPcLt9R::NJbbbZJbbb:;aOJbbbb9GEMgO:lJbbb9p9DTmbaO:Ohzxekcjjjj94hzkabaDfazcFFFrGaPcKtVBdbaDclfhDascufgsmbkkabarfhbalarfhladcefgdae9hmbkkaocjdf8Kjjjjbk;TkdCui998Jjjjjbc:qd9Rgv8Kjjjjbavc:Oefcbc;Kbz:tjjjb8AcbhodnadTmbcbhoaiTmbdnabae9hmbavcuadcdtgoadcFFFFi0Ecbyd1:kjjbHjjjjbbgeBd:OeavceBd1daeabaozMjjjb8Akavc:yefcwfcbBdbav9cb83i:yeavc:yefaeadaiavc:Oefz:njjjbcuaicdtgraicFFFFi0Egwcbyd1:kjjbHjjjjbbhoavc:Oefavyd1dgDcdtfaoBdbavaDcefgqBd1daoavyd:yegkarzMjjjbhxavc:Oefaqcdtfadci9Ugmcbyd1:kjjbHjjjjbbgoBdbavaDcdfgrBd1daocbamz:tjjjbhPavc:Oefarcdtfawcbyd1:kjjbHjjjjbbgsBdbavaDcifgqBd1daxhoashrinaralIdbalaoydbgwcwawcw6Ecdtfc;ebfIdbMUdbaoclfhoarclfhraicufgimbkavc:OefaqcdtfcuamcdtadcFFFF970Ecbyd1:kjjbHjjjjbbgqBdbavaDclfBd1ddnadci6mbamceamce0EhiaehoaqhrinarasaoydbcdtfIdbasaoclfydbcdtfIdbMasaocwfydbcdtfIdbMUdbaocxfhoarclfhraicufgimbkkavc;mbfhzavhoavyd:CehHavyd:GehOcbhwcbhrcbhAcehCinaohXcihQaearci2gLcdtfgocwfydbhKaoydbhdabaAcx2fgiclfaoclfydbgDBdbaiadBdbaicwfaKBdbaParfce86bbazaKBdwazaDBdlazadBdbaqarcdtfcbBdbdnawTmbcihQaXhiindnaiydbgoadSmbaoaDSmbaoaKSmbazaQcdtfaoBdbaQcefhQkaiclfhiawcufgwmbkkaAcefhAaxadcdtfgoaoydbcufBdbaxaDcdtfgoaoydbcufBdbaxaKcdtfgoaoydbcufBdbcbhwinaOaHaeawaLfcdtfydbcdtgifydbcdtfgKhoakaifgDydbgdhidnadTmbdninaoydbarSmeaoclfhoaicufgiTmdxbkkaoadcdtaKfc98fydbBdbaDaDydbcufBdbkawcefgwci9hmbkdndndnaQTmbcuhrJbbbbhYcbhoinasazaocdtfydbcdtgifgwIdbh8AawalcbaocefgDaocs0EcdtfIdbalaxaifydbgocwaocw6Ecdtfc;ebfIdbMgEUdbdnakaifydbgwTmbaEa8A:thEaOaHaifydbcdtfhoawcdthiinaqaoydbgwcdtfgdaEadIdbMg8AUdba8AaYaYa8A9DgdEhYawaradEhraoclfhoaic98fgimbkkaDhoaDaQ9hmbkarcu9hmekaCam9pmeindnaPaCfRbbmbaChrxdkamaCcefgC9hmbxdkkaQczaQcz6EhwazhoaXhzarcu9hmekkavyd1dhokaocdtavc:Oeffc98fhrdninaoTmearydbcbyd:e:kjjbH:bjjjbbarc98fhraocufhoxbkkavc:qdf8Kjjjjbk;UlevucuaicdtgvaicFFFFi0Egocbyd1:kjjbHjjjjbbhralalyd9GgwcdtfarBdbalawcefBd9GabarBdbaocbyd1:kjjbHjjjjbbhralalyd9GgocdtfarBdbalaocefBd9GabarBdlcuadcdtadcFFFFi0Ecbyd1:kjjbHjjjjbbhralalyd9GgocdtfarBdbalaocefBd9GabarBdwabydbcbavz:tjjjb8Aadci9UhwdnadTmbabydbhoaehladhrinaoalydbcdtfgvavydbcefBdbalclfhlarcufgrmbkkdnaiTmbabydbhlabydlhrcbhvaihoinaravBdbarclfhralydbavfhvalclfhlaocufgombkkdnadci6mbawceawce0EhDabydlhrabydwhvcbhlinaecwfydbhoaeclfydbhdaraeydbcdtfgwawydbgwcefBdbavawcdtfalBdbaradcdtfgdadydbgdcefBdbavadcdtfalBdbaraocdtfgoaoydbgocefBdbavaocdtfalBdbaecxfheaDalcefgl9hmbkkdnaiTmbabydlheabydbhlinaeaeydbalydb9RBdbalclfhlaeclfheaicufgimbkkkQbabaeadaic:01jjbz:mjjjbkQbabaeadaic:C:jjjbz:mjjjbk9DeeuabcFeaicdtz:tjjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk9teiucbcbyd:m:kjjbgeabcifc98GfgbBd:m:kjjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd:m:kjjbgeabcrfc94GfgbBd:m:kjjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik9:eiuZbhedndncbyd:m:kjjbgdaecztgi9nmbcuheadai9RcFFifcz4nbcuSmekadhekcbabae9Rcifc98Gcbyd:m:kjjbfgdBd:m:kjjbdnadZbcztge9nmbadae9RcFFifcz4nb8Akkk:Eddbcjwk:edb4:h9w9N94:P:gW:j9O:ye9Pbbbbbbebbbdbbbebbbdbbbbbbbdbbbbbbbebbbbbbb:l29hZ;69:9kZ;N;76Z;rg97Z;z;o9xZ8J;B85Z;:;u9yZ;b;k9HZ:2;Z9DZ9e:l9mZ59A8KZ:r;T3Z:A:zYZ79OHZ;j4::8::Y:D9V8:bbbb9s:49:Z8R:hBZ9M9M;M8:L;z;o8:;8:PG89q;x:J878R:hQ8::M:B;e87bbbbbbjZbbjZbbjZ:E;V;N8::Y:DsZ9i;H;68:xd;R8:;h0838:;W:NoZbbbb:WV9O8:uf888:9i;H;68:9c9G;L89;n;m9m89;D8Ko8:bbbbf:8tZ9m836ZS:2AZL;zPZZ818EZ9e:lxZ;U98F8:819E;68:bc:eqkxebbbdbbbaWbb";
+
+	var wasmpack = new Uint8Array([32,0,65,2,1,106,34,33,3,128,11,4,13,64,6,253,10,7,15,116,127,5,8,12,40,16,19,54,20,9,27,255,113,17,42,67,24,23,146,148,18,14,22,45,70,69,56,114,101,21,25,63,75,136,108,28,118,29,73,115]);
+
+	if (typeof WebAssembly !== 'object') {
+		return {
+			supported: false,
+		};
+	}
+
+	var instance;
+
+	var ready =
+		WebAssembly.instantiate(unpack(wasm), {})
+		.then(function(result) {
+			instance = result.instance;
+			instance.exports.__wasm_call_ctors();
+			instance.exports.meshopt_encodeVertexVersion(0);
+			instance.exports.meshopt_encodeIndexVersion(1);
+		});
+
+	function unpack(data) {
+		var result = new Uint8Array(data.length);
+		for (var i = 0; i < data.length; ++i) {
+			var ch = data.charCodeAt(i);
+			result[i] = ch > 96 ? ch - 97 : ch > 64 ? ch - 39 : ch + 4;
+		}
+		var write = 0;
+		for (var i = 0; i < data.length; ++i) {
+			result[write++] = (result[i] < 60) ? wasmpack[result[i]] : (result[i] - 60) * 64 + result[++i];
+		}
+		return result.buffer.slice(0, write);
+	}
+
+	function assert(cond) {
+		if (!cond) {
+			throw new Error("Assertion failed");
+		}
+	}
+
+	function bytes(view) {
+		return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+	}
+
+	function reorder(indices, vertices, optf) {
+		var sbrk = instance.exports.sbrk;
+		var ip = sbrk(indices.length * 4);
+		var rp = sbrk(vertices * 4);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		var indices8 = bytes(indices);
+		heap.set(indices8, ip);
+		if (optf) {
+			optf(ip, ip, indices.length, vertices);
+		}
+		var unique = instance.exports.meshopt_optimizeVertexFetchRemap(rp, ip, indices.length, vertices);
+		// heap may have grown
+		heap = new Uint8Array(instance.exports.memory.buffer);
+		var remap = new Uint32Array(vertices);
+		new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
+		indices8.set(heap.subarray(ip, ip + indices.length * 4));
+		sbrk(ip - sbrk(0));
+
+		for (var i = 0; i < indices.length; ++i)
+			indices[i] = remap[indices[i]];
+
+		return [remap, unique];
+	}
+
+	function encode(fun, bound, source, count, size) {
+		var sbrk = instance.exports.sbrk;
+		var tp = sbrk(bound);
+		var sp = sbrk(count * size);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		heap.set(bytes(source), sp);
+		var res = fun(tp, bound, sp, count, size);
+		var target = new Uint8Array(res);
+		target.set(heap.subarray(tp, tp + res));
+		sbrk(tp - sbrk(0));
+		return target;
+	}
+
+	function maxindex(source) {
+		var result = 0;
+		for (var i = 0; i < source.length; ++i) {
+			var index = source[i];
+			result = result < index ? index : result;
+		}
+		return result;
+	}
+
+	function index32(source, size) {
+		assert(size == 2 || size == 4);
+		if (size == 4) {
+			return new Uint32Array(source.buffer, source.byteOffset, source.byteLength / 4);
+		} else {
+			var view = new Uint16Array(source.buffer, source.byteOffset, source.byteLength / 2);
+			return new Uint32Array(view); // copies each element
+		}
+	}
+
+	function filter(fun, source, count, stride, bits, insize, mode) {
+		var sbrk = instance.exports.sbrk;
+		var tp = sbrk(count * stride);
+		var sp = sbrk(count * insize);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		heap.set(bytes(source), sp);
+		fun(tp, count, stride, bits, sp, mode);
+		var target = new Uint8Array(count * stride);
+		target.set(heap.subarray(tp, tp + count * stride));
+		sbrk(tp - sbrk(0));
+		return target;
+	}
+
+	return {
+		ready: ready,
+		supported: true,
+		reorderMesh: function(indices, triangles, optsize) {
+			var optf = triangles ? (optsize ? instance.exports.meshopt_optimizeVertexCacheStrip : instance.exports.meshopt_optimizeVertexCache) : undefined;
+			return reorder(indices, maxindex(indices) + 1, optf);
+		},
+		encodeVertexBuffer: function(source, count, size) {
+			assert(size > 0 && size <= 256);
+			assert(size % 4 == 0);
+			var bound = instance.exports.meshopt_encodeVertexBufferBound(count, size);
+			return encode(instance.exports.meshopt_encodeVertexBuffer, bound, source, count, size);
+		},
+		encodeIndexBuffer: function(source, count, size) {
+			assert(size == 2 || size == 4);
+			assert(count % 3 == 0);
+			var indices = index32(source, size);
+			var bound = instance.exports.meshopt_encodeIndexBufferBound(count, maxindex(indices) + 1);
+			return encode(instance.exports.meshopt_encodeIndexBuffer, bound, indices, count, 4);
+		},
+		encodeIndexSequence: function(source, count, size) {
+			assert(size == 2 || size == 4);
+			var indices = index32(source, size);
+			var bound = instance.exports.meshopt_encodeIndexSequenceBound(count, maxindex(indices) + 1);
+			return encode(instance.exports.meshopt_encodeIndexSequence, bound, indices, count, 4);
+		},
+		encodeGltfBuffer: function(source, count, size, mode) {
+			var table = {
+				ATTRIBUTES: this.encodeVertexBuffer,
+				TRIANGLES: this.encodeIndexBuffer,
+				INDICES: this.encodeIndexSequence,
+			};
+			assert(table[mode]);
+			return table[mode](source, count, size);
+		},
+		encodeFilterOct: function(source, count, stride, bits) {
+			assert(stride == 4 || stride == 8);
+			assert(bits >= 1 && bits <= 16);
+			return filter(instance.exports.meshopt_encodeFilterOct, source, count, stride, bits, 16);
+		},
+		encodeFilterQuat: function(source, count, stride, bits) {
+			assert(stride == 8);
+			assert(bits >= 4 && bits <= 16);
+			return filter(instance.exports.meshopt_encodeFilterQuat, source, count, stride, bits, 16);
+		},
+		encodeFilterExp: function(source, count, stride, bits, mode) {
+			assert(stride > 0 && stride % 4 == 0);
+			assert(bits >= 1 && bits <= 24);
+			var table = {
+				Separate: 0,
+				SharedVector: 1,
+				SharedComponent: 2,
+			};
+			return filter(instance.exports.meshopt_encodeFilterExp, source, count, stride, bits, stride, mode ? table[mode] : 1);
+		},
+	};
+})();
+
+// This file is part of meshoptimizer library and is distributed under the terms of MIT License.
+// Copyright (C) 2016-2023, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+var MeshoptDecoder = (function() {
+
+	// Built with clang version 15.0.6
+	// Built from meshoptimizer 0.19
+	var wasm_base = "b9H79Tebbbe8Fv9Gbb9Gvuuuuueu9Giuuub9Geueu9Giuuueuikqbeeedddillviebeoweuec:q;iekr;leDo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bb8A9TW79O9V9Wt9F9KW9J9V9KW9wWVtW949c919M9MWVbeY9TW79O9V9Wt9F9KW9J9V9KW69U9KW949c919M9MWVbdE9TW79O9V9Wt9F9KW9J9V9KW69U9KW949tWG91W9U9JWbiL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9p9JtblK9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9r919HtbvL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWVT949Wbol79IV9Rbrq:78Yqdbk:qzezu8Jjjjjbcj;eb9Rgv8Kjjjjbc9:hodnadcefal0mbcuhoaiRbbc:Ge9hmbavaialfgrad9Radz1jjjbhwcj;abad9UhlaicefhodnadTmbalc;WFbGglcjdalcjd6EhDcbhqinaqae9pmeaDaeaq9RaqaDfae6Egkcsfglcl4cifcd4hxdndndndnalc9WGgmTmbcbhPcehsawcjdfhzaohHinaraH9Rax6midnaraHaxfgo9RcK6mbczhlinalgic9Wfglawcj;cbffhOdndndndndnaHalco4fRbbalci4coG4ciGPlbedibkaO9cb83ibaOcwf9cb83ibxikaOaoRblaoRbbgAco4glalciSgCE86bbawcj;cbfaifglcGfaoclfaCfgORbbaAcl4ciGgCaCciSgCE86bbalcVfaOaCfgORbbaAcd4ciGgCaCciSgCE86bbalc7faOaCfgORbbaAciGgAaAciSgAE86bbalctfaOaAfgARbbaoRbegOco4gCaCciSgCE86bbalc91faAaCfgARbbaOcl4ciGgCaCciSgCE86bbalc4faAaCfgARbbaOcd4ciGgCaCciSgCE86bbalc93faAaCfgARbbaOciGgOaOciSgOE86bbalc94faAaOfgARbbaoRbdgOco4gCaCciSgCE86bbalc95faAaCfgARbbaOcl4ciGgCaCciSgCE86bbalc96faAaCfgARbbaOcd4ciGgCaCciSgCE86bbalc97faAaCfgARbbaOciGgOaOciSgOE86bbalc98faAaOfgORbbaoRbigoco4gAaAciSgAE86bbalc99faOaAfgORbbaocl4ciGgAaAciSgAE86bbalc9:faOaAfgORbbaocd4ciGgAaAciSgAE86bbalcufaOaAfglRbbaociGgoaociSgoE86bbalaofhoxdkaOaoRbwaoRbbgAcl4glalcsSgCE86bbawcj;cbfaifglcGfaocwfaCfgORbbaAcsGgAaAcsSgAE86bbalcVfaOaAfgORbbaoRbegAcl4gCaCcsSgCE86bbalc7faOaCfgORbbaAcsGgAaAcsSgAE86bbalctfaOaAfgORbbaoRbdgAcl4gCaCcsSgCE86bbalc91faOaCfgORbbaAcsGgAaAcsSgAE86bbalc4faOaAfgORbbaoRbigAcl4gCaCcsSgCE86bbalc93faOaCfgORbbaAcsGgAaAcsSgAE86bbalc94faOaAfgORbbaoRblgAcl4gCaCcsSgCE86bbalc95faOaCfgORbbaAcsGgAaAcsSgAE86bbalc96faOaAfgORbbaoRbvgAcl4gCaCcsSgCE86bbalc97faOaCfgORbbaAcsGgAaAcsSgAE86bbalc98faOaAfgORbbaoRbogAcl4gCaCcsSgCE86bbalc99faOaCfgORbbaAcsGgAaAcsSgAE86bbalc9:faOaAfgORbbaoRbrgocl4gAaAcsSgAE86bbalcufaOaAfglRbbaocsGgoaocsSgoE86bbalaofhoxekaOao8Pbb83bbaOcwfaocwf8Pbb83bbaoczfhokdnaiam9pmbaiczfhlarao9RcL0mekkaiam6miaoTmidnakTmbawaPfRbbhOawcj;cbfhlazhiakhHinaialRbbgAce4cbaAceG9R7aOfgO86bbaiadfhialcefhlaHcufgHmbkkazcefhzaPcefgPad6hsaohHaPad9hmexvkkcbhoasceGmdxikaoaxad2fhPdnakTmbcbhmcehsawcjdfhCinarao9Rax6miaoTmdaoaxfhoawamfRbbhOawcj;cbfhlaChiakhHinaialRbbgAce4cbaAceG9R7aOfgO86bbaiadfhialcefhlaHcufgHmbkaCcefhCamcefgmad6hsamad9hmbkaPhoxikcbhlcehsinarao9Rax6mdaoTmeaoaxfhoalcefglad6hsadal9hmbkaPhoxdkcbhoasceGTmekc9:hoxikabaqad2fawcjdfakad2z1jjjb8Aawawcjdfakcufad2fadz1jjjb8Aakaqfhqaombkc9:hoxekcbc99arao9Radcaadca0ESEhokavcj;ebf8Kjjjjbaok;xzeHu8Jjjjjbc;ae9Rgv8Kjjjjbc9:hodnaeci9UgrcHfal0mbcuhoaiRbbgwc;WeGc;Ge9hmbawcsGgDce0mbavc;abfcFecjez:jjjjb8AavcUf9cu83ibavc8Wf9cu83ibavcyf9cu83ibavcaf9cu83ibavcKf9cu83ibavczf9cu83ibav9cu83iwav9cu83ibaialfc9WfhqaicefgwarfhodnaeTmbcmcsaDceSEhkcbhxcbhmcbhrcbhicbhlindnaoaq9nmbc9:hoxikdndnawRbbgDc;Ve0mbavc;abfalaDcu7gPcl4fcsGcitfgsydlhzasydbhHdnaDcsGgDak9pmbavaiaPfcsGcdtfydbaxaDEhsaDThDdndnadcd9hmbabarcetfgPaH87ebaPcdfaz87ebaPclfas87ebxekabarcdtfgPaHBdbaPclfazBdbaPcwfasBdbkaxaDfhxavc;abfalcitfgPasBdbaPazBdlavaicdtfasBdbavc;abfalcefcsGglcitfgPaHBdbaPasBdlaiaDfhialcefhlxdkdndnaDcsSmbamaDfaDc987fcefhmxekaocefhDao8SbbgscFeGhPdndnascu9mmbaDhoxekaocvfhoaPcFbGhPcrhsdninaD8SbbgOcFbGastaPVhPaOcu9kmeaDcefhDascrfgsc8J9hmbxdkkaDcefhokaPce4cbaPceG9R7amfhmkdndnadcd9hmbabarcetfgDaH87ebaDcdfaz87ebaDclfam87ebxekabarcdtfgDaHBdbaDclfazBdbaDcwfamBdbkavc;abfalcitfgDamBdbaDazBdlavaicdtfamBdbavc;abfalcefcsGglcitfgDaHBdbaDamBdlaicefhialcefhlxekdnaDcpe0mbaxcefgOavaiaqaDcsGfRbbgscl49RcsGcdtfydbascz6gPEhDavaias9RcsGcdtfydbaOaPfgzascsGgOEhsaOThOdndnadcd9hmbabarcetfgHax87ebaHcdfaD87ebaHclfas87ebxekabarcdtfgHaxBdbaHclfaDBdbaHcwfasBdbkavaicdtfaxBdbavc;abfalcitfgHaDBdbaHaxBdlavaicefgicsGcdtfaDBdbavc;abfalcefcsGcitfgHasBdbaHaDBdlavaiaPfcsGgicdtfasBdbavc;abfalcdfcsGglcitfgDaxBdbaDasBdlalcefhlaiaOfhiazaOfhxxekaxcbaoRbbgHEgAaDc;:eSgDfhzaHcsGhCaHcl4hXdndnaHcs0mbazcefhOxekazhOavaiaX9RcsGcdtfydbhzkdndnaCmbaOcefhxxekaOhxavaiaH9RcsGcdtfydbhOkdndnaDTmbaocefhDxekaocdfhDao8SbegPcFeGhsdnaPcu9kmbaocofhAascFbGhscrhodninaD8SbbgPcFbGaotasVhsaPcu9kmeaDcefhDaocrfgoc8J9hmbkaAhDxekaDcefhDkasce4cbasceG9R7amfgmhAkdndnaXcsSmbaDhsxekaDcefhsaD8SbbgocFeGhPdnaocu9kmbaDcvfhzaPcFbGhPcrhodninas8SbbgDcFbGaotaPVhPaDcu9kmeascefhsaocrfgoc8J9hmbkazhsxekascefhskaPce4cbaPceG9R7amfgmhzkdndnaCcsSmbashoxekascefhoas8SbbgDcFeGhPdnaDcu9kmbascvfhOaPcFbGhPcrhDdninao8SbbgscFbGaDtaPVhPascu9kmeaocefhoaDcrfgDc8J9hmbkaOhoxekaocefhokaPce4cbaPceG9R7amfgmhOkdndnadcd9hmbabarcetfgDaA87ebaDcdfaz87ebaDclfaO87ebxekabarcdtfgDaABdbaDclfazBdbaDcwfaOBdbkavc;abfalcitfgDazBdbaDaABdlavaicdtfaABdbavc;abfalcefcsGcitfgDaOBdbaDazBdlavaicefgicsGcdtfazBdbavc;abfalcdfcsGcitfgDaABdbaDaOBdlavaiaHcz6aXcsSVfgicsGcdtfaOBdbaiaCTaCcsSVfhialcifhlkawcefhwalcsGhlaicsGhiarcifgrae6mbkkcbc99aoaqSEhokavc;aef8Kjjjjbaok:flevu8Jjjjjbcz9Rhvc9:hodnaecvfal0mbcuhoaiRbbc;:eGc;qe9hmbav9cb83iwaicefhraialfc98fhwdnaeTmbdnadcdSmbcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcdtfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfglBdbaoalBdbaDcefgDae9hmbxdkkcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcetfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfgl87ebaoalBdbaDcefgDae9hmbkkcbc99arawSEhokaok:Lvoeue99dud99eud99dndnadcl9hmbaeTmeindndnabcdfgd8Sbb:Yab8Sbbgi:Ygl:l:tabcefgv8Sbbgo:Ygr:l:tgwJbb;:9cawawNJbbbbawawJbbbb9GgDEgq:mgkaqaicb9iEalMgwawNakaqaocb9iEarMgqaqNMM:r:vglNJbbbZJbbb:;aDEMgr:lJbbb9p9DTmbar:Ohixekcjjjj94hikadai86bbdndnaqalNJbbbZJbbb:;aqJbbbb9GEMgq:lJbbb9p9DTmbaq:Ohdxekcjjjj94hdkavad86bbdndnawalNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohdxekcjjjj94hdkabad86bbabclfhbaecufgembxdkkaeTmbindndnabclfgd8Ueb:Yab8Uebgi:Ygl:l:tabcdfgv8Uebgo:Ygr:l:tgwJb;:FSawawNJbbbbawawJbbbb9GgDEgq:mgkaqaicb9iEalMgwawNakaqaocb9iEarMgqaqNMM:r:vglNJbbbZJbbb:;aDEMgr:lJbbb9p9DTmbar:Ohixekcjjjj94hikadai87ebdndnaqalNJbbbZJbbb:;aqJbbbb9GEMgq:lJbbb9p9DTmbaq:Ohdxekcjjjj94hdkavad87ebdndnawalNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohdxekcjjjj94hdkabad87ebabcwfhbaecufgembkkk;siliui99iue99dnaeTmbcbhiabhlindndnJ;Zl81Zalcof8UebgvciV:Y:vgoal8Ueb:YNgrJb;:FSNJbbbZJbbb:;arJbbbb9GEMgw:lJbbb9p9DTmbaw:OhDxekcjjjj94hDkalclf8Uebhqalcdf8UebhkabavcefciGaiVcetfaD87ebdndnaoak:YNgwJb;:FSNJbbbZJbbb:;awJbbbb9GEMgx:lJbbb9p9DTmbax:Ohkxekcjjjj94hkkabavcdfciGaiVcetfak87ebdndnaoaq:YNgoJb;:FSNJbbbZJbbb:;aoJbbbb9GEMgx:lJbbb9p9DTmbax:Ohqxekcjjjj94hqkabavcufciGaiVcetfaq87ebdndnJbbjZararN:tawawN:taoaoN:tgrJbbbbarJbbbb9GE:rJb;:FSNJbbbZMgr:lJbbb9p9DTmbar:Ohqxekcjjjj94hqkabavciGaiVcetfaq87ebalcwfhlaiclfhiaecufgembkkk9mbdnadcd4ae2gdTmbinababydbgecwtcw91:Yaece91cjjj;8ifcjjj98G::NUdbabclfhbadcufgdmbkkk9teiucbcbydj1jjbgeabcifc98GfgbBdj1jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabkkkebcjwklz9Kbb";
+	var wasm_simd = "b9H79TebbbeKl9Gbb9Gvuuuuueu9Giuuub9Geueuikqbbebeedddilve9Weeeviebeoweuec:q;Aekr;leDo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bb8A9TW79O9V9Wt9F9KW9J9V9KW9wWVtW949c919M9MWVbdY9TW79O9V9Wt9F9KW9J9V9KW69U9KW949c919M9MWVblE9TW79O9V9Wt9F9KW9J9V9KW69U9KW949tWG91W9U9JWbvL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9p9JtboK9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9r919HtbrL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWVT949Wbwl79IV9RbDq;a9tqlbzik9:evu8Jjjjjbcz9Rhbcbheincbhdcbhiinabcwfadfaicjuaead4ceGglE86bbaialfhiadcefgdcw9hmbkaec:q:yjjbfai86bbaecitc:q1jjbfab8Piw83ibaecefgecjd9hmbkk;d8JlHud97euo978Jjjjjbcj;kb9Rgv8Kjjjjbc9:hodnadcefal0mbcuhoaiRbbc:Ge9hmbavaialfgrad9Rad;8qbbcj;abad9UhoaicefhldnadTmbaoc;WFbGgocjdaocjd6EhwcbhDinaDae9pmeawaeaD9RaDawfae6Egqcsfgoc9WGgkci2hxakcethmaocl4cifcd4hPabaDad2fhscbhzdnincehHalhOcbhAdninaraO9RaP6miavcj;cbfaAak2fhCaOaPfhlcbhidnakc;ab6mbaral9Rc;Gb6mbcbhoinaCaofhidndndndndnaOaoco4fRbbgXciGPlbedibkaipxbbbbbbbbbbbbbbbbpklbxikaialpbblalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbalclfaYpQbfaKc:q:yjjbfRbbfhlxdkaialpbbwalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbalcwfaYpQbfaKc:q:yjjbfRbbfhlxekaialpbbbpklbalczfhlkdndndndndnaXcd4ciGPlbedibkaipxbbbbbbbbbbbbbbbbpklzxikaialpbblalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklzalclfaYpQbfaKc:q:yjjbfRbbfhlxdkaialpbbwalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklzalcwfaYpQbfaKc:q:yjjbfRbbfhlxekaialpbbbpklzalczfhlkdndndndndnaXcl4ciGPlbedibkaipxbbbbbbbbbbbbbbbbpklaxikaialpbblalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklaalclfaYpQbfaKc:q:yjjbfRbbfhlxdkaialpbbwalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklaalcwfaYpQbfaKc:q:yjjbfRbbfhlxekaialpbbbpklaalczfhlkdndndndndnaXco4Plbedibkaipxbbbbbbbbbbbbbbbbpkl8WxikaialpbblalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibaXc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkl8WalclfaYpQbfaXc:q:yjjbfRbbfhlxdkaialpbbwalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibaXc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkl8WalcwfaYpQbfaXc:q:yjjbfRbbfhlxekaialpbbbpkl8Walczfhlkaoc;abfhiaocjefak0meaihoaral9Rc;Fb0mbkkdndnaiak9pmbaici4hoinaral9RcK6mdaCaifhXdndndndndnaOaico4fRbbaocoG4ciGPlbedibkaXpxbbbbbbbbbbbbbbbbpklbxikaXalpbblalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbalclfaYpQbfaKc:q:yjjbfRbbfhlxdkaXalpbbwalpbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbalcwfaYpQbfaKc:q:yjjbfRbbfhlxekaXalpbbbpklbalczfhlkaocdfhoaiczfgiak6mbkkalTmbaAci6hHalhOaAcefgAclSmdxekkcbhlaHceGmdkdnakTmbavcjdfazfhiavazfpbdbhYcbhXinaiavcj;cbfaXfgopblbgLcep9TaLpxeeeeeeeeeeeeeeeegQp9op9Hp9rgLaoakfpblbg8Acep9Ta8AaQp9op9Hp9rg8ApmbzeHdOiAlCvXoQrLgEaoamfpblbg3cep9Ta3aQp9op9Hp9rg3aoaxfpblbg5cep9Ta5aQp9op9Hp9rg5pmbzeHdOiAlCvXoQrLg8EpmbezHdiOAlvCXorQLgQaQpmbedibedibedibediaYp9UgYp9AdbbaiadfgoaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaoadfgoaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaoadfgoaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaoadfgoaYaEa8EpmwDKYqk8AExm35Ps8E8FgQaQpmbedibedibedibedip9UgYp9AdbbaoadfgoaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaoadfgoaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaoadfgoaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaoadfgoaYaLa8ApmwKDYq8AkEx3m5P8Es8FgLa3a5pmwKDYq8AkEx3m5P8Es8Fg8ApmbezHdiOAlvCXorQLgQaQpmbedibedibedibedip9UgYp9AdbbaoadfgoaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaoadfgoaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaoadfgoaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaoadfgoaYaLa8ApmwDKYqk8AExm35Ps8E8FgQaQpmbedibedibedibedip9UgYp9AdbbaoadfgoaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaoadfgoaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaoadfgoaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaoadfhiaXczfgXak6mbkkazclfgzad6mbkasavcjdfaqad2;8qbbavavcjdfaqcufad2fad;8qbbaqaDfhDc9:hoalmexikkc9:hoxekcbc99aral9Radcaadca0ESEhokavcj;kbf8Kjjjjbaokwbz:bjjjbk;tzeHu8Jjjjjbc;ae9Rgv8Kjjjjbc9:hodnaeci9UgrcHfal0mbcuhoaiRbbgwc;WeGc;Ge9hmbawcsGgDce0mbavc;abfcFecje;8kbavcUf9cu83ibavc8Wf9cu83ibavcyf9cu83ibavcaf9cu83ibavcKf9cu83ibavczf9cu83ibav9cu83iwav9cu83ibaialfc9WfhqaicefgwarfhodnaeTmbcmcsaDceSEhkcbhxcbhmcbhrcbhicbhlindnaoaq9nmbc9:hoxikdndnawRbbgDc;Ve0mbavc;abfalaDcu7gPcl4fcsGcitfgsydlhzasydbhHdnaDcsGgDak9pmbavaiaPfcsGcdtfydbaxaDEhsaDThDdndnadcd9hmbabarcetfgPaH87ebaPcdfaz87ebaPclfas87ebxekabarcdtfgPaHBdbaPclfazBdbaPcwfasBdbkaxaDfhxavc;abfalcitfgPasBdbaPazBdlavaicdtfasBdbavc;abfalcefcsGglcitfgPaHBdbaPasBdlaiaDfhialcefhlxdkdndnaDcsSmbamaDfaDc987fcefhmxekaocefhDao8SbbgscFeGhPdndnascu9mmbaDhoxekaocvfhoaPcFbGhPcrhsdninaD8SbbgOcFbGastaPVhPaOcu9kmeaDcefhDascrfgsc8J9hmbxdkkaDcefhokaPce4cbaPceG9R7amfhmkdndnadcd9hmbabarcetfgDaH87ebaDcdfaz87ebaDclfam87ebxekabarcdtfgDaHBdbaDclfazBdbaDcwfamBdbkavc;abfalcitfgDamBdbaDazBdlavaicdtfamBdbavc;abfalcefcsGglcitfgDaHBdbaDamBdlaicefhialcefhlxekdnaDcpe0mbaxcefgOavaiaqaDcsGfRbbgscl49RcsGcdtfydbascz6gPEhDavaias9RcsGcdtfydbaOaPfgzascsGgOEhsaOThOdndnadcd9hmbabarcetfgHax87ebaHcdfaD87ebaHclfas87ebxekabarcdtfgHaxBdbaHclfaDBdbaHcwfasBdbkavaicdtfaxBdbavc;abfalcitfgHaDBdbaHaxBdlavaicefgicsGcdtfaDBdbavc;abfalcefcsGcitfgHasBdbaHaDBdlavaiaPfcsGgicdtfasBdbavc;abfalcdfcsGglcitfgDaxBdbaDasBdlalcefhlaiaOfhiazaOfhxxekaxcbaoRbbgHEgAaDc;:eSgDfhzaHcsGhCaHcl4hXdndnaHcs0mbazcefhOxekazhOavaiaX9RcsGcdtfydbhzkdndnaCmbaOcefhxxekaOhxavaiaH9RcsGcdtfydbhOkdndnaDTmbaocefhDxekaocdfhDao8SbegPcFeGhsdnaPcu9kmbaocofhAascFbGhscrhodninaD8SbbgPcFbGaotasVhsaPcu9kmeaDcefhDaocrfgoc8J9hmbkaAhDxekaDcefhDkasce4cbasceG9R7amfgmhAkdndnaXcsSmbaDhsxekaDcefhsaD8SbbgocFeGhPdnaocu9kmbaDcvfhzaPcFbGhPcrhodninas8SbbgDcFbGaotaPVhPaDcu9kmeascefhsaocrfgoc8J9hmbkazhsxekascefhskaPce4cbaPceG9R7amfgmhzkdndnaCcsSmbashoxekascefhoas8SbbgDcFeGhPdnaDcu9kmbascvfhOaPcFbGhPcrhDdninao8SbbgscFbGaDtaPVhPascu9kmeaocefhoaDcrfgDc8J9hmbkaOhoxekaocefhokaPce4cbaPceG9R7amfgmhOkdndnadcd9hmbabarcetfgDaA87ebaDcdfaz87ebaDclfaO87ebxekabarcdtfgDaABdbaDclfazBdbaDcwfaOBdbkavc;abfalcitfgDazBdbaDaABdlavaicdtfaABdbavc;abfalcefcsGcitfgDaOBdbaDazBdlavaicefgicsGcdtfazBdbavc;abfalcdfcsGcitfgDaABdbaDaOBdlavaiaHcz6aXcsSVfgicsGcdtfaOBdbaiaCTaCcsSVfhialcifhlkawcefhwalcsGhlaicsGhiarcifgrae6mbkkcbc99aoaqSEhokavc;aef8Kjjjjbaok:flevu8Jjjjjbcz9Rhvc9:hodnaecvfal0mbcuhoaiRbbc;:eGc;qe9hmbav9cb83iwaicefhraialfc98fhwdnaeTmbdnadcdSmbcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcdtfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfglBdbaoalBdbaDcefgDae9hmbxdkkcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcetfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfgl87ebaoalBdbaDcefgDae9hmbkkcbc99arawSEhokaok:wPliuo97eue978Jjjjjbca9Rhiaec98Ghldndnadcl9hmbdnalTmbcbhvabhdinadadpbbbgocKp:RecKp:Sep;6egraocwp:RecKp:Sep;6earp;Geaoczp:RecKp:Sep;6egwp;Gep;Kep;LegDpxbbbbbbbbbbbbbbbbp:2egqarpxbbbjbbbjbbbjbbbjgkp9op9rp;Kegrpxbb;:9cbb;:9cbb;:9cbb;:9cararp;MeaDaDp;Meawaqawakp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFbbbFbbbFbbbFbbbp9oaopxbbbFbbbFbbbFbbbFp9op9qarawp;Meaqp;Kecwp:RepxbFbbbFbbbFbbbFbbp9op9qaDawp;Meaqp;Keczp:RepxbbFbbbFbbbFbbbFbp9op9qpkbbadczfhdavclfgval6mbkkalae9pmeaipxbbbbbbbbbbbbbbbbgqpklbaiabalcdtfgdaeciGglcdtgv;8qbbdnalTmbaiaipblbgocKp:RecKp:Sep;6egraocwp:RecKp:Sep;6earp;Geaoczp:RecKp:Sep;6egwp;Gep;Kep;LegDaqp:2egqarpxbbbjbbbjbbbjbbbjgkp9op9rp;Kegrpxbb;:9cbb;:9cbb;:9cbb;:9cararp;MeaDaDp;Meawaqawakp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFbbbFbbbFbbbFbbbp9oaopxbbbFbbbFbbbFbbbFp9op9qarawp;Meaqp;Kecwp:RepxbFbbbFbbbFbbbFbbp9op9qaDawp;Meaqp;Keczp:RepxbbFbbbFbbbFbbbFbp9op9qpklbkadaiav;8qbbskdnalTmbcbhvabhdinadczfgxaxpbbbgopxbbbbbbFFbbbbbbFFgkp9oadpbbbgDaopmlvorxmPsCXQL358E8FpxFubbFubbFubbFubbp9op;6eaDaopmbediwDqkzHOAKY8AEgoczp:Sep;6egrp;Geaoczp:Reczp:Sep;6egwp;Gep;Kep;Legopxb;:FSb;:FSb;:FSb;:FSawaopxbbbbbbbbbbbbbbbbp:2egqawpxbbbjbbbjbbbjbbbjgmp9op9rp;Kegwawp;Meaoaop;Mearaqaramp9op9rp;Kegoaop;Mep;Kep;Kep;Jep;Negrp;Mepxbbn0bbn0bbn0bbn0gqp;Keczp:Reawarp;Meaqp;KepxFFbbFFbbFFbbFFbbp9op9qgwaoarp;Meaqp;KepxFFbbFFbbFFbbFFbbp9ogopmwDKYqk8AExm35Ps8E8Fp9qpkbbadaDakp9oawaopmbezHdiOAlvCXorQLp9qpkbbadcafhdavclfgval6mbkkalae9pmbaiaeciGgvcitgdfcbcaad9R;8kbaiabalcitfglad;8qbbdnavTmbaiaipblzgopxbbbbbbFFbbbbbbFFgkp9oaipblbgDaopmlvorxmPsCXQL358E8FpxFubbFubbFubbFubbp9op;6eaDaopmbediwDqkzHOAKY8AEgoczp:Sep;6egrp;Geaoczp:Reczp:Sep;6egwp;Gep;Kep;Legopxb;:FSb;:FSb;:FSb;:FSawaopxbbbbbbbbbbbbbbbbp:2egqawpxbbbjbbbjbbbjbbbjgmp9op9rp;Kegwawp;Meaoaop;Mearaqaramp9op9rp;Kegoaop;Mep;Kep;Kep;Jep;Negrp;Mepxbbn0bbn0bbn0bbn0gqp;Keczp:Reawarp;Meaqp;KepxFFbbFFbbFFbbFFbbp9op9qgwaoarp;Meaqp;KepxFFbbFFbbFFbbFFbbp9ogopmwDKYqk8AExm35Ps8E8Fp9qpklzaiaDakp9oawaopmbezHdiOAlvCXorQLp9qpklbkalaiad;8qbbkk;4wllue97euv978Jjjjjbc8W9Rhidnaec98GglTmbcbhvabhoinaiaopbbbgraoczfgwpbbbgDpmlvorxmPsCXQL358E8Fgqczp:Segkclp:RepklbaopxbbjZbbjZbbjZbbjZpx;Zl81Z;Zl81Z;Zl81Z;Zl81Zakpxibbbibbbibbbibbbp9qp;6ep;NegkaraDpmbediwDqkzHOAKY8AEgrczp:Reczp:Sep;6ep;MegDaDp;Meakarczp:Sep;6ep;Megxaxp;Meakaqczp:Reczp:Sep;6ep;Megqaqp;Mep;Kep;Kep;Lepxbbbbbbbbbbbbbbbbp:4ep;Jepxb;:FSb;:FSb;:FSb;:FSgkp;Mepxbbn0bbn0bbn0bbn0grp;KepxFFbbFFbbFFbbFFbbgmp9oaxakp;Mearp;Keczp:Rep9qgxaqakp;Mearp;Keczp:ReaDakp;Mearp;Keamp9op9qgkpmbezHdiOAlvCXorQLgrp5baipblbpEb:T:j83ibaocwfarp5eaipblbpEe:T:j83ibawaxakpmwDKYqk8AExm35Ps8E8Fgkp5baipblbpEd:T:j83ibaocKfakp5eaipblbpEi:T:j83ibaocafhoavclfgval6mbkkdnalae9pmbaiaeciGgvcitgofcbcaao9R;8kbaiabalcitfgwao;8qbbdnavTmbaiaipblbgraipblzgDpmlvorxmPsCXQL358E8Fgqczp:Segkclp:RepklaaipxbbjZbbjZbbjZbbjZpx;Zl81Z;Zl81Z;Zl81Z;Zl81Zakpxibbbibbbibbbibbbp9qp;6ep;NegkaraDpmbediwDqkzHOAKY8AEgrczp:Reczp:Sep;6ep;MegDaDp;Meakarczp:Sep;6ep;Megxaxp;Meakaqczp:Reczp:Sep;6ep;Megqaqp;Mep;Kep;Kep;Lepxbbbbbbbbbbbbbbbbp:4ep;Jepxb;:FSb;:FSb;:FSb;:FSgkp;Mepxbbn0bbn0bbn0bbn0grp;KepxFFbbFFbbFFbbFFbbgmp9oaxakp;Mearp;Keczp:Rep9qgxaqakp;Mearp;Keczp:ReaDakp;Mearp;Keamp9op9qgkpmbezHdiOAlvCXorQLgrp5baipblapEb:T:j83ibaiarp5eaipblapEe:T:j83iwaiaxakpmwDKYqk8AExm35Ps8E8Fgkp5baipblapEd:T:j83izaiakp5eaipblapEi:T:j83iKkawaiao;8qbbkk:Pddiue978Jjjjjbc;ab9Rhidnadcd4ae2glc98GgvTmbcbheabhdinadadpbbbgocwp:Recwp:Sep;6eaocep:SepxbbjZbbjZbbjZbbjZp:UepxbbjFbbjFbbjFbbjFp9op;Mepkbbadczfhdaeclfgeav6mbkkdnaval9pmbaialciGgecdtgdVcbc;abad9R;8kbaiabavcdtfgvad;8qbbdnaeTmbaiaipblbgocwp:Recwp:Sep;6eaocep:SepxbbjZbbjZbbjZbbjZp:UepxbbjFbbjFbbjFbbjFp9op;Mepklbkavaiad;8qbbkk9teiucbcbydj1jjbgeabcifc98GfgbBdj1jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikkkebcjwklz9Tbb";
+
+	var detector = new Uint8Array([0,97,115,109,1,0,0,0,1,4,1,96,0,0,3,3,2,0,0,5,3,1,0,1,12,1,0,10,22,2,12,0,65,0,65,0,65,0,252,10,0,0,11,7,0,65,0,253,15,26,11]);
+	var wasmpack = new Uint8Array([32,0,65,2,1,106,34,33,3,128,11,4,13,64,6,253,10,7,15,116,127,5,8,12,40,16,19,54,20,9,27,255,113,17,42,67,24,23,146,148,18,14,22,45,70,69,56,114,101,21,25,63,75,136,108,28,118,29,73,115]);
+
+	if (typeof WebAssembly !== 'object') {
+		return {
+			supported: false,
+		};
+	}
+
+	var wasm = WebAssembly.validate(detector) ? wasm_simd : wasm_base;
+
+	var instance;
+
+	var ready =
+		WebAssembly.instantiate(unpack(wasm), {})
+		.then(function(result) {
+			instance = result.instance;
+			instance.exports.__wasm_call_ctors();
+		});
+
+	function unpack(data) {
+		var result = new Uint8Array(data.length);
+		for (var i = 0; i < data.length; ++i) {
+			var ch = data.charCodeAt(i);
+			result[i] = ch > 96 ? ch - 97 : ch > 64 ? ch - 39 : ch + 4;
+		}
+		var write = 0;
+		for (var i = 0; i < data.length; ++i) {
+			result[write++] = (result[i] < 60) ? wasmpack[result[i]] : (result[i] - 60) * 64 + result[++i];
+		}
+		return result.buffer.slice(0, write);
+	}
+
+	function decode(fun, target, count, size, source, filter) {
+		var sbrk = instance.exports.sbrk;
+		var count4 = (count + 3) & ~3;
+		var tp = sbrk(count4 * size);
+		var sp = sbrk(source.length);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		heap.set(source, sp);
+		var res = fun(tp, count, size, sp, source.length);
+		if (res == 0 && filter) {
+			filter(tp, count4, size);
+		}
+		target.set(heap.subarray(tp, tp + count * size));
+		sbrk(tp - sbrk(0));
+		if (res != 0) {
+			throw new Error("Malformed buffer data: " + res);
+		}
+	}
+
+	var filters = {
+		NONE: "",
+		OCTAHEDRAL: "meshopt_decodeFilterOct",
+		QUATERNION: "meshopt_decodeFilterQuat",
+		EXPONENTIAL: "meshopt_decodeFilterExp",
+	};
+
+	var decoders = {
+		ATTRIBUTES: "meshopt_decodeVertexBuffer",
+		TRIANGLES: "meshopt_decodeIndexBuffer",
+		INDICES: "meshopt_decodeIndexSequence",
+	};
+
+	var workers = [];
+	var requestId = 0;
+
+	function createWorker(url) {
+		var worker = {
+			object: new Worker(url),
+			pending: 0,
+			requests: {}
+		};
+
+		worker.object.onmessage = function(event) {
+			var data = event.data;
+
+			worker.pending -= data.count;
+			worker.requests[data.id][data.action](data.value);
+
+			delete worker.requests[data.id];
+		};
+
+		return worker;
+	}
+
+	function initWorkers(count) {
+		var source =
+			"var instance; var ready = WebAssembly.instantiate(new Uint8Array([" + new Uint8Array(unpack(wasm)) + "]), {})" +
+			".then(function(result) { instance = result.instance; instance.exports.__wasm_call_ctors(); });" +
+			"self.onmessage = workerProcess;" +
+			decode.toString() + workerProcess.toString();
+
+		var blob = new Blob([source], {type: 'text/javascript'});
+		var url = URL.createObjectURL(blob);
+
+		for (var i = 0; i < count; ++i) {
+			workers[i] = createWorker(url);
+		}
+
+		URL.revokeObjectURL(url);
+	}
+
+	function decodeWorker(count, size, source, mode, filter) {
+		var worker = workers[0];
+
+		for (var i = 1; i < workers.length; ++i) {
+			if (workers[i].pending < worker.pending) {
+				worker = workers[i];
+			}
+		}
+
+		return new Promise(function (resolve, reject) {
+			var data = new Uint8Array(source);
+			var id = requestId++;
+
+			worker.pending += count;
+			worker.requests[id] = { resolve: resolve, reject: reject };
+			worker.object.postMessage({ id: id, count: count, size: size, source: data, mode: mode, filter: filter }, [ data.buffer ]);
+		});
+	}
+
+	function workerProcess(event) {
+		ready.then(function() {
+			var data = event.data;
+			try {
+				var target = new Uint8Array(data.count * data.size);
+				decode(instance.exports[data.mode], target, data.count, data.size, data.source, instance.exports[data.filter]);
+				self.postMessage({ id: data.id, count: data.count, action: "resolve", value: target }, [ target.buffer ]);
+			} catch (error) {
+				self.postMessage({ id: data.id, count: data.count, action: "reject", value: error });
+			}
+		});
+	}
+
+	return {
+		ready: ready,
+		supported: true,
+		useWorkers: function(count) {
+			initWorkers(count);
+		},
+		decodeVertexBuffer: function(target, count, size, source, filter) {
+			decode(instance.exports.meshopt_decodeVertexBuffer, target, count, size, source, instance.exports[filters[filter]]);
+		},
+		decodeIndexBuffer: function(target, count, size, source) {
+			decode(instance.exports.meshopt_decodeIndexBuffer, target, count, size, source);
+		},
+		decodeIndexSequence: function(target, count, size, source) {
+			decode(instance.exports.meshopt_decodeIndexSequence, target, count, size, source);
+		},
+		decodeGltfBuffer: function(target, count, size, source, mode, filter) {
+			decode(instance.exports[decoders[mode]], target, count, size, source, instance.exports[filters[filter]]);
+		},
+		decodeGltfBufferAsync: function(count, size, source, mode, filter) {
+			if (workers.length > 0) {
+				return decodeWorker(count, size, source, decoders[mode], filters[filter]);
+			}
+
+			return ready.then(function() {
+				var target = new Uint8Array(count * size);
+				decode(instance.exports[decoders[mode]], target, count, size, source, instance.exports[filters[filter]]);
+				return target;
+			});
+		}
+	};
+})();
+
+// This file is part of meshoptimizer library and is distributed under the terms of MIT License.
+// Copyright (C) 2016-2023, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+var MeshoptSimplifier = (function() {
+
+	// Built with clang version 15.0.6
+	// Built from meshoptimizer 0.19
+	var wasm = "b9H79TebbbecD9Geueu9Geub9Gbb9Gquuuuuuu99uueu9Gvuuuuub9Gluuuue999Giuuue999Gluuuueu9Giuuueuimxdilvorbwwbewlve9Weiiviebeoweuecj;jekr7oo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bbz9TW79O9V9Wt9F79P9T9W29P9M95beX9TW79O9V9Wt9F79P9T9W29P9M959t9J9H2Wbla9TW79O9V9Wt9F9V9Wt9P9T9P96W9wWVtW94SWt9J9O9sW9T9H9Wbvl79IV9RboDwebcekdDqq:XJxdbkp8WiKuP99Hu8Jjjjjbcj;bb9Rgq8KjjjjbaqcKfcbc;Kbz1jjjb8AaqcualcdtgkalcFFFFi0Egxcbyd;S1jjbHjjjjbbgmBdKaqceBd94aqamBdwaqaxcbyd;S1jjbHjjjjbbgPBd3aqcdBd94aqaPBdxaqcuadcitadcFFFFe0Ecbyd;S1jjbHjjjjbbgsBdaaqciBd94aqasBdzaqcwfaeadalcbz:cjjjbaqaxcbyd;S1jjbHjjjjbbgzBd8KaqclBd94aqaxcbyd;S1jjbHjjjjbbgHBdyaqcvBd94alcd4alfhOcehAinaAgCcethAaCaO6mbkcbhXaqcuaCcdtgAaCcFFFFi0Ecbyd;S1jjbHjjjjbbgOBd8SaqcoBd94aOcFeaAz1jjjbhQdnalTmbavcd4hLaCcufhKinaiaXaL2cdtfgYydlgCcH4aC7c:F:b:DD2aYydbgCcH4aC7c;D;O:B8J27aYydwgCcH4aC7c:3F;N8N27hOcbhCdndninaQaOaKGgOcdtfg8AydbgAcuSmeaiaAaL2cdtfaYcxz:ljjjbTmdaCcefgCaOfhOaCaK9nmbxdkka8AaXBdbaXhAkazaXcdtfaABdbaXcefgXal9hmbkcbhCaHhAinaAaCBdbaAclfhAalaCcefgC9hmbkcbhCazhAaHhOindnaCaAydbgKSmbaOaHaKcdtfgKydbBdbaKaCBdbkaAclfhAaOclfhOalaCcefgC9hmbkkcbhOaqalcbyd;S1jjbHjjjjbbgYBd8WaqcrBd94aqaxcbyd;S1jjbHjjjjbbgCBd80aqcwBd94aqaxcbyd;S1jjbHjjjjbbgABdUaqcDBd94aCcFeakz1jjjbhEaAcFeakz1jjjbh3dnalTmbascwfh5indnamaOcdtgCfydbg8ETmbasaPaCfydbcitfh8Fa3aCfhaaEaCfhXcbhLindndna8FaLcitfydbgQaO9hmbaXaOBdbaaaOBdbxekdnamaQcdtgkfydbghTmbasaPakfydbcitgCfydbaOSmeahcufh8Aa5aCfhAcbhCina8AaCSmeaCcefhCaAydbhKaAcwfhAaKaO9hmbkaCah6meka3akfgCaOaQaCydbcuSEBdbaXaQaOaXydbcuSEBdbkaLcefgLa8E9hmbkkaOcefgOal9hmbkazhAaHhOa3hKaEhLcbhCindndnaCaAydbg8A9hmbdnaCaOydbg8A9hmbaLydbh8AdnaKydbgQcu9hmba8Acu9hmbaYaCfcb86bbxikaYaCfhXdnaCaQSmbaCa8ASmbaXce86bbxikaXcl86bbxdkdnaCaHa8AcdtgQfydb9hmbdnaKydbgXcuSmbaCaXSmbaLydbgkcuSmbaCakSmba3aQfydbg8EcuSmba8Ea8ASmbaEaQfydbgQcuSmbaQa8ASmbdnazaXcdtfydbazaQcdtfydb9hmbazakcdtfydbaza8Ecdtfydb9hmbaYaCfcd86bbxlkaYaCfcl86bbxikaYaCfcl86bbxdkaYaCfcl86bbxekaYaCfaYa8AfRbb86bbkaAclfhAaOclfhOaKclfhKaLclfhLalaCcefgC9hmbkawceGTmbaYhCalhAindnaCRbbce9hmbaCcl86bbkaCcefhCaAcufgAmbkkcbhLcualcx2alc;v:Q;v:Qe0Ecbyd;S1jjbHjjjjbbhmaqcKfaqyd94gCcdtfamBdbaqaCcefgABd94amaialavz:djjjb8AaqcKfaAcdtfcualc8S2gAalc;D;O;f8U0Ecbyd;S1jjbHjjjjbbgOBdbaqaCcdfBd94aOcbaAz1jjjbhsdnadTmbaehAindnamaAclfydbg8Acx2fgCIdbamaAydbgQcx2fgOIdbgg:tg8JamaAcwfydbgXcx2fgKIdlaOIdlg8K:tg8LNaKIdbag:tg8MaCIdla8K:tg8NN:tgyayNa8NaKIdwaOIdwg8P:tgINa8LaCIdwa8P:tg8NN:tg8La8LNa8Na8MNaIa8JN:tg8Ja8JNMM:rg8MJbbbb9ETmbaya8M:vhya8Ja8M:vh8Ja8La8M:vh8LkasazaQcdtfydbc8S2fgCa8La8M:rg8Ma8LNNg8NaCIdbMUdbaCa8Ja8Ma8JNg8RNgIaCIdlMUdlaCaya8MayNg8SNgRaCIdwMUdwaCa8Ra8LNg8RaCIdxMUdxaCa8Sa8LNg8UaCIdzMUdzaCa8Sa8JNg8SaCIdCMUdCaCa8La8Maya8PNa8LagNa8Ka8JNMM:mg8KNggNg8LaCIdKMUdKaCa8JagNg8JaCId3MUd3aCayagNgyaCIdaMUdaaCaga8KNggaCId8KMUd8KaCa8MaCIdyMUdyasaza8Acdtfydbc8S2fgCa8NaCIdbMUdbaCaIaCIdlMUdlaCaRaCIdwMUdwaCa8RaCIdxMUdxaCa8UaCIdzMUdzaCa8SaCIdCMUdCaCa8LaCIdKMUdKaCa8JaCId3MUd3aCayaCIdaMUdaaCagaCId8KMUd8KaCa8MaCIdyMUdyasazaXcdtfydbc8S2fgCa8NaCIdbMUdbaCaIaCIdlMUdlaCaRaCIdwMUdwaCa8RaCIdxMUdxaCa8UaCIdzMUdzaCa8SaCIdCMUdCaCa8LaCIdKMUdKaCa8JaCId3MUd3aCayaCIdaMUdaaCagaCId8KMUd8KaCa8MaCIdyMUdyaAcxfhAaLcifgLad6mbkcbh8AaehXincbhAinaYaeaAc:81jjbfydbgQa8AfcdtfydbgOfRbbhCdndnaYaXaAfydbgKfRbbgLc99fcFeGcpe0mbaCceSmbaCcd9hmekdnaLcufcFeGce0mbaEaKcdtfydbaO9hmekdnaCcufcFeGce0mba3aOcdtfydbaK9hmekdnaLcv2aCfc:G1jjbfRbbTmbazaOcdtfydbazaKcdtfydb0mekJbbacJbbjZaCceSEh8MaLceShkamaeaQcdtc:81jjbfydba8Afcdtfydbcx2fhCdnamaOcx2fgLIdwamaKcx2fgQIdwg8K:tg8La8LNaLIdbaQIdbg8P:tg8Ja8JNaLIdlaQIdlg8N:tgyayNMM:rggJbbbb9ETmba8Lag:vh8Layag:vhya8Jag:vh8JkJbbaca8MakEh8SdnaCIdwa8K:tg8Ma8La8Ma8LNaCIdba8P:tgRa8JNayaCIdla8N:tg8RNMMgIN:tg8Ma8MNaRa8JaIN:tg8La8LNa8RayaIN:tg8Ja8JNMM:rgyJbbbb9ETmba8May:vh8Ma8Jay:vh8Ja8Lay:vh8LkasazaKcdtfydbc8S2fgCa8La8SagNgya8LNNgIaCIdbMUdbaCa8Jaya8JNg8SNgRaCIdlMUdlaCa8Maya8MNggNg8RaCIdwMUdwaCa8Sa8LNg8SaCIdxMUdxaCaga8LNg8UaCIdzMUdzaCaga8JNg8VaCIdCMUdCaCa8Laya8Ma8KNa8La8PNa8Na8JNMM:mg8KNggNg8LaCIdKMUdKaCa8JagNg8JaCId3MUd3aCa8MagNg8MaCIdaMUdaaCaga8KNggaCId8KMUd8KaCayaCIdyMUdyasazaOcdtfydbc8S2fgCaIaCIdbMUdbaCaRaCIdlMUdlaCa8RaCIdwMUdwaCa8SaCIdxMUdxaCa8UaCIdzMUdzaCa8VaCIdCMUdCaCa8LaCIdKMUdKaCa8JaCId3MUd3aCa8MaCIdaMUdaaCagaCId8KMUd8KaCayaCIdyMUdykaAclfgAcx9hmbkaXcxfhXa8Acifg8Aad6mbkkdnabaeSmbabaeadcdtz:hjjjb8Akcuadcx2adc;v:Q;v:Qe0Ecbyd;S1jjbHjjjjbbhaaqcKfaqyd94gCcdtfaaBdbaqaCcefgABd94aqcKfaAcdtfcuadcdtadcFFFFi0Ecbyd;S1jjbHjjjjbbg5BdbaqaCcdfgABd94aqcKfaAcdtfaxcbyd;S1jjbHjjjjbbgiBdbaqaCcifgABd94aqcKfaAcdtfalcbyd;S1jjbHjjjjbbg8WBdbaqaCclfBd94JbbbbhRdnadao9nmbararNh8Saacwfh8Xaqydwh8Yaqydxh8Zaqydzh80JbbbbhRinaqcwfabadgPalazz:cjjjbcbhhabhXcbhkincbhCindnazaXaCfydbgOcdtgefydbgLazabaCc:81jjbfydbakfcdtfydbgAcdtfydbg8ASmbaYaAfRbbgQcv2aYaOfRbbgKfc;q1jjbfRbbg8FaKcv2aQfg8Ec;q1jjbfRbbgdVcFeGTmbdna8Ec:G1jjbfRbbTmba8AaL0mekdnaKaQ9hmbaKcufcFeGce0mbaEaefydbaA9hmekaaahcx2fgKaAaOadcFeGgLEBdlaKaOaAaLEBdbaKaLa8FGcb9hBdwahcefhhkaCclfgCcx9hmbkaXcxfhXakcifgkaP6mbkdndnahTmbaahAahh8AinaAcwfgQJbbbbJbbjZasazaAydbgOcdtfydbc8S2fgCIdyg8L:va8LJbbbb9BEaCIdwamaAclfgeydbgKcx2fgLIdwg8LNaCIdzaLIdbg8JNaCIdaMg8Ma8MMMa8LNaCIdlaLIdlg8MNaCIdCa8LNaCId3Mg8La8LMMa8MNaCIdba8JNaCIdxa8MNaCIdKMg8La8LMMa8JNaCId8KMMM:lNgyJbbbbJbbjZasazaKaOaQydbgLEgQcdtfydbc8S2fgCIdyg8L:va8LJbbbb9BEaCIdwamaOaKaLEgXcx2fgLIdwg8LNaCIdzaLIdbg8JNaCIdaMg8Ma8MMMa8LNaCIdlaLIdlg8MNaCIdCa8LNaCId3Mg8La8LMMa8MNaCIdba8JNaCIdxa8MNaCIdKMg8La8LMMa8JNaCId8KMMM:lNg8Laya8L9FgCEUdbaeaKaXaCEBdbaAaOaQaCEBdbaAcxfhAa8Acufg8Ambkaqcjefcbcj;abz1jjjb8Aa8XhCahhAinaqcjefaCydbcO4c;8ZGfgOaOydbcefBdbaCcxfhCaAcufgAmbkcbhCcbhAinaqcjefaCfgOydbhKaOaABdbaKaAfhAaCclfgCcj;ab9hmbkcbhCa8XhAinaqcjefaAydbcO4c;8ZGfgOaOydbgOcefBdba5aOcdtfaCBdbaAcxfhAahaCcefgC9hmbkaPao9RgOci9Uh81dnalTmbcbhCaihAinaAaCBdbaAclfhAalaCcefgC9hmbkkcbhBa8Wcbalz1jjjbh83aOcO9UhUa81ce4h85cbh86cbhkdninaaa5akcdtfydbcx2fgXIdwg8Ja8S9Emea86a819pmeJFFuuh8Ldna85ah9pmbaaa5a85cdtfydbcx2fIdwJbb;aZNh8Lkdna8Ja8L9ETmba86aU0mdkdna83azaXydlg87cdtg88fydbgOfg89Rbba83azaXydbgecdtg8:fydbgZfgnRbbVmbdna8YaZcdtgCfydbgKTmba80a8ZaCfydbcitfhCamaOcx2fg8Ecwfhda8EclfhxamaZcx2fg8Fcwfhva8FclfhwcbhAcehQdnindnaiaCydbcdtfydbgLaOSmbaiaCclfydbcdtfydbg8AaOSmbama8Acx2fg8AIdbamaLcx2fgLIdbg8M:tg8LawIdbaLIdlgy:tggNa8FIdba8M:tg8Ka8AIdlay:tg8JN:ta8LaxIdbay:tg8PNa8EIdba8M:tg8Na8JN:tNa8JavIdbaLIdwgy:tgINaga8AIdway:tg8MN:ta8JadIdbay:tgyNa8Pa8MN:tNa8Ma8KNaIa8LN:ta8Ma8NNaya8LN:tNMMJbbbb9DmdkaCcwfhCaAcefgAaK6hQaKaA9hmbkkaQceGTmba85cefh85xekaXcwfhKasaOc8S2fgCasaZc8S2fgAIdbaCIdbMUdbaCaAIdlaCIdlMUdlaCaAIdwaCIdwMUdwaCaAIdxaCIdxMUdxaCaAIdzaCIdzMUdzaCaAIdCaCIdCMUdCaCaAIdKaCIdKMUdKaCaAId3aCId3MUd3aCaAIdaaCIdaMUdaaCaAId8KaCId8KMUd8KaCaAIdyaCIdyMUdydndndndnaYaefgARbbc9:fPdebdkaehCinaiaCcdtgCfaOBdbaHaCfydbgCae9hmbxikkaHa88fydbhCaHa8:fydbheaia8:fa87BdbaCh87kaiaecdtfa87Bdbkance86bba89ce86bbaKIdbg8LaRaRa8L9DEhRaBcefhBcecdaARbbceSEa86fh86kakcefgkah9hmbkkaBTmbdnalTmbcbhAaEhCindnaCydbgOcuSmbdnaAaiaOcdtgKfydbgO9hmbaEaKfydbhOkaCaOBdbkaCclfhCalaAcefgA9hmbkcbhAa3hCindnaCydbgOcuSmbdnaAaiaOcdtgKfydbgO9hmba3aKfydbhOkaCaOBdbkaCclfhCalaAcefgA9hmbkkcbhdabhCcbhLindnaiaCydbcdtfydbgAaiaCclfydbcdtfydbgOSmbaAaiaCcwfydbcdtfydbgKSmbaOaKSmbabadcdtfg8AaABdba8AclfaOBdba8AcwfaKBdbadcifhdkaCcxfhCaLcifgLaP9pmdxbkkaPhdxdkadao0mbkkdnaDTmbaDaR:rUdbkaqyd94gCcdtaqcKffc98fhzdninaCTmeazydbcbyd;W1jjbH:bjjjbbazc98fhzaCcufhCxbkkaqcj;bbf8Kjjjjbadk;pleouabydbcbaicdtz1jjjb8Aadci9UhvdnadTmbabydbhodnalTmbaehradhwinaoalarydbcdtfydbcdtfgDaDydbcefBdbarclfhrawcufgwmbxdkkaehradhwinaoarydbcdtfgDaDydbcefBdbarclfhrawcufgwmbkkdnaiTmbabydbhrabydlhwcbhDaihoinawaDBdbawclfhwarydbaDfhDarclfhraocufgombkkdnadci6mbavceavce0EhqabydlhvabydwhrinaecwfydbhwaeclfydbhDaeydbhodnalTmbalawcdtfydbhwalaDcdtfydbhDalaocdtfydbhokaravaocdtfgdydbcitfaDBdbaradydbcitfawBdladadydbcefBdbaravaDcdtfgdydbcitfawBdbaradydbcitfaoBdladadydbcefBdbaravawcdtfgwydbcitfaoBdbarawydbcitfaDBdlawawydbcefBdbaecxfheaqcufgqmbkkdnaiTmbabydlhrabydbhwinararydbawydb9RBdbawclfhwarclfhraicufgimbkkk:3ldouv998Jjjjjbca9Rglczfcwfcbyd11jjbBdbalcb8Pdj1jjb83izalcwfcbydN1jjbBdbalcb8Pd:m1jjb83ibdnadTmbaicd4hvdnabTmbavcdthocbhraehwinabarcx2fgiaearav2cdtfgDIdbUdbaiaDIdlUdlaiaDIdwUdwcbhiinalczfaifgDawaifIdbgqaDIdbgkakaq9EEUdbalaifgDaqaDIdbgkakaq9DEUdbaiclfgicx9hmbkawaofhwarcefgrad9hmbxdkkavcdthrcbhwincbhiinalczfaifgDaeaifIdbgqaDIdbgkakaq9EEUdbalaifgDaqaDIdbgkakaq9DEUdbaiclfgicx9hmbkaearfheawcefgwad9hmbkkalIdbalIdzgk:tJbbbb:xgqalIdlalIdCgx:tgmamaq9DEgqalIdwalIdKgm:tgPaPaq9DEhPdnabTmbadTmbJbbbbJbbjZaP:vaPJbbbb9BEhqinabaqabIdbak:tNUdbabclfgiaqaiIdbax:tNUdbabcwfgiaqaiIdbam:tNUdbabcxfhbadcufgdmbkkaPk:Qdidui99ducbhi8Jjjjjbca9Rglczfcwfcbyd11jjbBdbalcb8Pdj1jjb83izalcwfcbydN1jjbBdbalcb8Pd:m1jjb83ibdndnaembJbbjFhvJbbjFhoJbbjFhrxekadcd4cdthwincbhdinalczfadfgDabadfIdbgoaDIdbgrarao9EEUdbaladfgDaoaDIdbgrarao9DEUdbadclfgdcx9hmbkabawfhbaicefgiae9hmbkalIdwalIdK:thralIdlalIdC:thoalIdbalIdz:thvkavJbbbb:xgvaoaoav9DEgoararao9DEk9DeeuabcFeaicdtz1jjjbhlcbhbdnadTmbindnalaeydbcdtfgiydbcu9hmbaiabBdbabcefhbkaeclfheadcufgdmbkkabk9teiucbcbyd;01jjbgeabcifc98GfgbBd;01jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabk9teiucbcbyd;01jjbgeabcrfc94GfgbBd;01jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik9:eiuZbhedndncbyd;01jjbgdaecztgi9nmbcuheadai9RcFFifcz4nbcuSmekadhekcbabae9Rcifc98Gcbyd;01jjbfgdBd;01jjbdnadZbcztge9nmbadae9RcFFifcz4nb8Akk6eiucbhidnadTmbdninabRbbglaeRbbgv9hmeaecefheabcefhbadcufgdmbxdkkalav9Rhikaikk:cedbcjwk9PFFuuFFuuFFuuFFuFFFuFFFuFbbbbbbbbeeebeebebbeeebebbbbbebebbbbbebbbdbbbbbbbbbbbbbbbeeeeebebbbbbebbbbbeebbbbbbc;Swkxebbbdbbbj9Kbb";
+
+	var wasmpack = new Uint8Array([32,0,65,2,1,106,34,33,3,128,11,4,13,64,6,253,10,7,15,116,127,5,8,12,40,16,19,54,20,9,27,255,113,17,42,67,24,23,146,148,18,14,22,45,70,69,56,114,101,21,25,63,75,136,108,28,118,29,73,115]);
+
+	if (typeof WebAssembly !== 'object') {
+		return {
+			supported: false,
+		};
+	}
+
+	var instance;
+
+	var ready =
+		WebAssembly.instantiate(unpack(wasm), {})
+		.then(function(result) {
+			instance = result.instance;
+			instance.exports.__wasm_call_ctors();
+		});
+
+	function unpack(data) {
+		var result = new Uint8Array(data.length);
+		for (var i = 0; i < data.length; ++i) {
+			var ch = data.charCodeAt(i);
+			result[i] = ch > 96 ? ch - 97 : ch > 64 ? ch - 39 : ch + 4;
+		}
+		var write = 0;
+		for (var i = 0; i < data.length; ++i) {
+			result[write++] = (result[i] < 60) ? wasmpack[result[i]] : (result[i] - 60) * 64 + result[++i];
+		}
+		return result.buffer.slice(0, write);
+	}
+
+	function assert(cond) {
+		if (!cond) {
+			throw new Error("Assertion failed");
+		}
+	}
+
+	function bytes(view) {
+		return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+	}
+
+	function reorder(indices, vertices) {
+		var sbrk = instance.exports.sbrk;
+		var ip = sbrk(indices.length * 4);
+		var rp = sbrk(vertices * 4);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		var indices8 = bytes(indices);
+		heap.set(indices8, ip);
+		var unique = instance.exports.meshopt_optimizeVertexFetchRemap(rp, ip, indices.length, vertices);
+		// heap may have grown
+		heap = new Uint8Array(instance.exports.memory.buffer);
+		var remap = new Uint32Array(vertices);
+		new Uint8Array(remap.buffer).set(heap.subarray(rp, rp + vertices * 4));
+		indices8.set(heap.subarray(ip, ip + indices.length * 4));
+		sbrk(ip - sbrk(0));
+
+		for (var i = 0; i < indices.length; ++i)
+			indices[i] = remap[indices[i]];
+
+		return [remap, unique];
+	}
+
+	function maxindex(source) {
+		var result = 0;
+		for (var i = 0; i < source.length; ++i) {
+			var index = source[i];
+			result = result < index ? index : result;
+		}
+		return result;
+	}
+
+	function simplify(fun, indices, index_count, vertex_positions, vertex_count, vertex_positions_stride, target_index_count, target_error, options) {
+		var sbrk = instance.exports.sbrk;
+		var te = sbrk(4);
+		var ti = sbrk(index_count * 4);
+		var sp = sbrk(vertex_count * vertex_positions_stride);
+		var si = sbrk(index_count * 4);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		heap.set(bytes(vertex_positions), sp);
+		heap.set(bytes(indices), si);
+		var result = fun(ti, si, index_count, sp, vertex_count, vertex_positions_stride, target_index_count, target_error, options, te);
+		// heap may have grown
+		heap = new Uint8Array(instance.exports.memory.buffer);
+		var target = new Uint32Array(result);
+		bytes(target).set(heap.subarray(ti, ti + result * 4));
+		var error = new Float32Array(1);
+		bytes(error).set(heap.subarray(te, te + 4));
+		sbrk(te - sbrk(0));
+		return [target, error[0]];
+	}
+
+	function simplifyScale(fun, vertex_positions, vertex_count, vertex_positions_stride) {
+		var sbrk = instance.exports.sbrk;
+		var sp = sbrk(vertex_count * vertex_positions_stride);
+		var heap = new Uint8Array(instance.exports.memory.buffer);
+		heap.set(bytes(vertex_positions), sp);
+		var result = fun(sp, vertex_count, vertex_positions_stride);
+		sbrk(sp - sbrk(0));
+		return result;
+	}
+
+	var simplifyOptions = {
+		LockBorder: 1,
+	};
+
+	return {
+		ready: ready,
+		supported: true,
+
+		compactMesh: function(indices) {
+			assert(indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array);
+			assert(indices.length % 3 == 0);
+
+			var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+			return reorder(indices32, maxindex(indices) + 1);
+		},
+
+		simplify: function(indices, vertex_positions, vertex_positions_stride, target_index_count, target_error, flags) {
+			assert(indices instanceof Uint32Array || indices instanceof Int32Array || indices instanceof Uint16Array || indices instanceof Int16Array);
+			assert(indices.length % 3 == 0);
+			assert(vertex_positions instanceof Float32Array);
+			assert(vertex_positions.length % vertex_positions_stride == 0);
+			assert(vertex_positions_stride >= 3);
+			assert(target_index_count % 3 == 0);
+			assert(target_error >= 0 && target_error <= 1);
+
+			var options = 0;
+			for (var i = 0; i < (flags ? flags.length : 0); ++i) {
+				options |= simplifyOptions[flags[i]];
+			}
+
+			var indices32 = indices.BYTES_PER_ELEMENT == 4 ? indices : new Uint32Array(indices);
+			var result = simplify(instance.exports.meshopt_simplify, indices32, indices.length, vertex_positions, vertex_positions.length / vertex_positions_stride, vertex_positions_stride * 4, target_index_count, target_error, options);
+			result[0] = (indices instanceof Uint32Array) ? result[0] : new indices.constructor(result[0]);
+
+			return result;
+		},
+
+		getScale: function(vertex_positions, vertex_positions_stride) {
+			assert(vertex_positions instanceof Float32Array);
+			assert(vertex_positions.length % vertex_positions_stride == 0);
+
+			return simplifyScale(instance.exports.meshopt_simplifyScale, vertex_positions, vertex_positions.length / vertex_positions_stride, vertex_positions_stride * 4);
+		},
+	};
+})();
+
 class KtxDecoder {
 
     constructor (context, externalKtxlib) {
@@ -23510,10 +26192,10 @@ class ResourceLoader
                 console.error("Only .glb files can be loaded from an array buffer");
             }
         }
-        else if (typeof (File) !== 'undefined' && gltfFile instanceof File)
+        else if (Array.isArray(gltfFile) && typeof(File) !== 'undefined' && gltfFile[1] instanceof File)
         {
-            let fileContent = gltfFile;
-            filename = gltfFile.name;
+            let fileContent = gltfFile[1];
+            filename = gltfFile[1].name;
             isGlb = getIsGlb(filename);
             if (isGlb)
             {
@@ -23542,10 +26224,18 @@ class ResourceLoader
         const gltf = new glTF(filename);
         gltf.ktxDecoder = this.view.ktxDecoder;
         gltf.ktxEncoder = this.view.ktxDecoder;
-        gltf.webpLibrary = this.view.webpLibrary; // TODO: Nick
+        gltf.webpLibrary = this.view.webpLibrary;
+        gltf.dracoEncoder = this.view.dracoEncoder;
+        gltf.dracoDecoder = this.view.dracoDecoder;
+        gltf.moptEncoder = MeshoptEncoder;
+        gltf.moptDecoder = MeshoptDecoder;
+        gltf.moptSimplifier = MeshoptSimplifier;
+        gltf.view = this.view;
+
         //Make sure draco decoder instance is ready
         gltf.fromJson(json);
-
+        console.log('json', json);
+        console.log('gltf', gltf);
         // because the gltf image paths are not relative
         // to the gltf, we have to resolve all image paths before that
         for (const image of gltf.images)
@@ -23553,7 +26243,9 @@ class ResourceLoader
             image.resolveRelativePath(getContainingFolder(gltf.path));
         }
 
+        await init(await mikktspace());
         await gltfLoader.load(gltf, this.view.context, buffers);
+        gltf.og_gltf = { buffers: [...gltf.buffers.slice(0, json.buffers.length)], accessors: [...gltf.accessors], bufferViews: [...gltf.bufferViews], images: [...gltf.images]  };
 
         return gltf;
     }
@@ -23626,7 +26318,22 @@ class ResourceLoader
         {
             await dracoDecoder.ready();
         }
+        this.view.dracoDecoder = dracoDecoder;
     }
+
+    /**
+     * initDracoEncodeLib must be called before compressing gltf files with draco
+     * @param {*} [externalDracoEncodeLib] external draco encode library (for example from a CDN)
+     */
+     async initDracoEncodeLib(externalDracoEncodeLib)
+     {
+         const dracoEncoder = new DracoEncoder(externalDracoEncodeLib);
+         if (dracoEncoder !== undefined)
+         {
+             await dracoEncoder.ready();
+         }
+         this.view.dracoEncoder = dracoEncoder;
+     }
 }
 
 async function _loadEnvironmentFromPanorama(imageHDR, view, luts)
@@ -23871,13 +26578,13 @@ class GltfView
      * @param {Object} [externalKtxLib] optional object of an external KTX library, e.g. from a CDN
      * @returns {ResourceLoader} ResourceLoader
      */
-    createResourceLoader(externalDracoLib = undefined, externalKtxLib = undefined, externalWebPLib = undefined)
+    createResourceLoader(externalDracoLib = undefined, externalDracoEncodeLib = undefined, externalKtxLib = undefined, externalWebPLib = undefined)
     {
         let resourceLoader = new ResourceLoader(this);
         resourceLoader.initKtxLib(externalKtxLib);
         resourceLoader.initDracoLib(externalDracoLib);
         resourceLoader.initWebPLib(externalWebPLib);
-        //resourceLoader.initToKtxLib(externalDracoLib);
+        resourceLoader.initDracoEncodeLib(externalDracoEncodeLib);
         return resourceLoader;
     }
 
@@ -23948,11 +26655,12 @@ class GltfView
             return {
                 meshCount: 0,
                 faceCount: 0,
+                geometryData: [],
+                geometrySize: 0,
                 opaqueMaterialsCount: 0,
                 transparentMaterialsCount: 0,
             };
         }
-
 
         const nodes = scene.gatherNodes(state.gltf);
         const activeMeshes = nodes.filter(node => node.mesh !== undefined).map(node => state.gltf.meshes[node.mesh]);
@@ -23965,39 +26673,171 @@ class GltfView
 
         const faceCount = activePrimitives
             .map(primitive => {
-                let verticesCount = 0;
-                if(primitive.indices !== undefined)
-                {
-                    verticesCount = state.gltf.accessors[primitive.indices].count;
+                let vertexCount = 0;
+                if (primitive.indices !== undefined) {
+                    vertexCount = state.gltf.accessors[primitive.indices].count;
                 }
-                if (verticesCount === 0)
-                {
+                else {
+                    vertexCount = state.gltf.accessors[primitive.attributes["POSITION"]].count;
+                }
+                if (vertexCount === 0) {
                     return 0;
                 }
 
                 // convert vertex count to point, line or triangle count
                 switch (primitive.mode) {
                 case GL.POINTS:
-                    return verticesCount;
+                    return vertexCount;
                 case GL.LINES:
-                    return verticesCount / 2;
+                    return vertexCount / 2;
                 case GL.LINE_LOOP:
-                    return verticesCount;
+                    return vertexCount;
                 case GL.LINE_STRIP:
-                    return verticesCount - 1;
+                    return vertexCount - 1;
                 case GL.TRIANGLES:
-                    return verticesCount / 3;
+                    return vertexCount / 3;
                 case GL.TRIANGLE_STRIP:
                 case GL.TRIANGLE_FAN:
-                    return verticesCount - 2;
+                    return vertexCount - 2;
                 }
             })
-            .reduce((acc, faceCount) => acc += faceCount);
+            .reduce((acc, faceCount) => acc + faceCount);
+
+        // gather data for geometry size
+        let geometrySize = 0;
+        activePrimitives.forEach(prim => geometrySize += prim.getSize(state.gltf));
+        geometrySize = toMb(geometrySize);
+
+        // Recursive add nodes
+        function addNodeToTree (gltf, i, data) {
+            const node = gltf.nodes[i];
+            const nodeName = node.name !== undefined ? node.name : "Node_" + i;
+            const meshName = node.mesh !== undefined && state.gltf.meshes[node.mesh].name !== undefined ? state.gltf.meshes[node.mesh].name : "Mesh_" + node.mesh;
+            
+            // Add to MeshNodeTree
+            if(node.children.length > 0 || node.mesh !== undefined){
+                data.children.push({
+                    name: nodeName, 
+                    mesh: node.mesh,
+                    meshName: meshName,
+                    meshInstances: node.meshInstances, 
+                    primitivesLength: node.primitivesLength,
+                    compressionFormatBefore: node.compressionFormatBefore,
+                    gpuSizeBefore: node.gpuSizeBefore,
+                    gpuSizeAfter: node.gpuSizeAfter,
+                    diskSizeBefore: node.diskSizeBefore,
+                    compressionFormatAfter: node.compressionFormatAfter,
+                    diskSizeAfter: node.diskSizeAfter,
+                    children: [],
+                });
+
+                // recurse into children
+                for(const j of node.children)
+                    addNodeToTree(gltf, j, data.children[data.children.length-1]);
+            }
+        }
+
+        // Root node
+        console.log(state.gltf);
+
+        function isMeshOptCompressed(gltf){       
+            for (const bufferView of gltf.bufferViews){
+                if( bufferView !== undefined && 
+                    bufferView.extensions !== undefined &&
+                    bufferView.extensions.EXT_meshopt_compression !== undefined
+                )
+                    return true;
+            }
+            return false;
+        }
+
+        // Compute info for tree mesh nodes
+        var isGeometryCompressed = false;
+        for(const i of state.gltf.nodes){
+
+            var primitives = i.mesh !== undefined ? state.gltf.meshes[i.mesh].primitives : [];
+
+            // Computer file size per node
+            if(i.mesh !== undefined){
+                var nodeSize = 0;
+                var nodeGPUSize = 0;
+                for(const prim of primitives) {
+                    nodeSize += prim.getSize(state.gltf);
+                    nodeGPUSize += prim.getGPUSize(state.gltf);
+                }
+                nodeSize = toMb(nodeSize);
+                nodeGPUSize = toMb(nodeGPUSize);
+                state.gltf.meshes[i.mesh].gpuSizeBefore = nodeGPUSize;
+                state.gltf.meshes[i.mesh].diskSizeBefore = nodeSize;
+                i.diskSizeBefore = state.gltf.meshes[i.mesh].diskSizeBefore.toFixed(2) + " mb";
+                i.gpuSizeBefore = state.gltf.meshes[i.mesh].gpuSizeBefore.toFixed(2) + " mb";
+            }
+            else {
+                i.diskSizeBefore = "";
+                i.gpuSizeBefore = "";
+            }
+            i.diskSizeAfter = "";
+            i.gpuSizeAfter = "";
+            
+            // Check for mesh primitives count
+            i.primitivesLength = primitives.length;
+
+            // Check for compression formats
+            var compressionUsedFormatsBefore = [false,false,false]; // "Draco", "MeshQuantization", "MeshOpt"
+            for(const primitive of primitives){
+                compressionUsedFormatsBefore[0] |= primitive.isDracoMeshCompressed();
+                compressionUsedFormatsBefore[1] |= primitive.isMeshQuantized(state.gltf);
+            }
+            compressionUsedFormatsBefore[2] |= isMeshOptCompressed(state.gltf);
+
+            if(i.mesh !== undefined){
+                const compressionTextFormats = ["Draco", "MeshQuantization", "MeshOpt"];
+                state.gltf.meshes[i.mesh].compressionFormatBefore = compressionTextFormats.filter((_, i) => compressionUsedFormatsBefore[i]).join(',') || 'None';
+                i.compressionFormatBefore = state.gltf.meshes[i.mesh].compressionFormatBefore;
+
+                if(i.compressionFormatBefore !== 'None')
+                    isGeometryCompressed = true;
+            } 
+            else
+                i.compressionFormatBefore = "";
+            i.compressionFormatAfter  = "";
+
+            // Find if mesh of this node is reused in other nodes    
+            let meshInstances = [];
+            const iName = i.name !== undefined ? i.name : "Node_" + i;
+            for(const j of state.gltf.nodes){
+                const jName = j.name !== undefined ? j.name : "Node_" + i;
+                if(jName !== iName && j.mesh !== undefined && j.mesh === i.mesh)
+                    meshInstances.push(jName);
+            }
+            
+            i.meshInstances = meshInstances;
+        }
+
+        let geometryData = {
+            name: scene.name !== undefined ? scene.name : "Root", 
+            mesh: undefined,
+            meshName: "",
+            meshInstances: [],
+            primitivesLength: 0,
+            compressionFormatBefore: "",
+            gpuSizeBefore: "",
+            gpuSizeAfter: "",
+            diskSizeBefore: "",
+            compressionFormatAfter: "",
+            diskSizeAfter: "",
+            children: [],
+        };
+        // Add children nodes
+        scene.nodes.forEach((node) => addNodeToTree(state.gltf, node, geometryData) );
 
         // assemble statistics object
         return {
             meshCount: activeMeshes.length,
             faceCount: faceCount,
+            geometryData: geometryData,
+            geometrySize: geometrySize,
+            isGeometryCompressed: isGeometryCompressed,
             opaqueMaterialsCount: opaqueMaterials.length,
             transparentMaterialsCount: transparentMaterials.length,
         };
@@ -24069,16 +26909,18 @@ class GltfView
             // KHR Extension: Iridescence
             setImageType(material.iridescenceTexture, ImageType.NONCOLOR, "iridescence");
             setImageType(material.iridescenceThicknessTexture, ImageType.NONCOLOR, "iridescence thickness");
+
+            // KHR Extension: Anisotropy
+            setImageType(material.anisotropyTexture, ImageType.NONCOLOR, "anisotropy");
         });
 
         // Reset values
         for(let i=0; i<state.gltf.images.length; i++){
             if(document.getElementById('image-' + i))
-                document.getElementById('image-' + i).checked = true;
+                document.getElementById('image-' + i).checked = false;
             if(document.getElementById('container_img_' + i))
                 document.getElementById('container_img_' + i).removeChild(document.getElementById('container_img_' + i).lastChild);
         }
-        const toMb = (value) => { return value/1024/1024; };
         
         var texturesFileSize = 0;
         const textures = [];
@@ -24129,7 +26971,7 @@ class GltfView
      * @param {*} state GltfState about which the statistics should be collected
      * @returns {Object} an object containing statistics information
      */
-    gatherTextureCompressionStatistics(state)
+    gatherCompressionStatistics(state)
     {
         if(state.gltf === undefined)
         {
@@ -24141,12 +26983,113 @@ class GltfView
         if (scene === undefined)
         {
             return {
+                meshes: [],
+                geometrySize: 0,
                 textures: [],
                 texturesSize: 0
             };
         }
 
-        const toMb = (value) => { return value/1024/1024; };
+        var geometryFileSize = 0;
+        const meshes = [];
+        const activeNodes = state.gltf.nodes;
+        const activeSelectedNodes = state.compressorParameters.processedMeshes.map(index => activeNodes[index]);
+
+        activeNodes.forEach((element, index) => {
+            const isIncluded = activeSelectedNodes.includes(element);
+
+            if(isIncluded){
+                var meshSize = 0;
+                var meshGPUSize = 0;
+                for(const prim of element.compressedNode.compressedMesh.primitives) {
+                    meshSize += prim.getSize(state.gltf);
+                    meshGPUSize += prim.getGPUSize(state.gltf);
+                }
+                meshSize = toMb(meshSize);
+                meshGPUSize = toMb(meshGPUSize);
+                state.gltf.meshes[element.mesh].diskSizeAfter = meshSize;
+                state.gltf.meshes[element.mesh].gpuSizeAfter = meshGPUSize;
+            }
+                
+            if(isIncluded){
+                const bboxErrorMin = element.bboxDiffError && [
+                    Math.ceil(1000 * element.bboxDiffError.bboxMin[0]) / 1000,
+                    Math.ceil(1000 * element.bboxDiffError.bboxMin[1]) / 1000,
+                    Math.ceil(1000 * element.bboxDiffError.bboxMin[2]) / 1000,
+                ];
+                const bboxErrorMax = element.bboxDiffError && [
+                    Math.ceil(1000 * element.bboxDiffError.bboxMax[0]) / 1000,
+                    Math.ceil(1000 * element.bboxDiffError.bboxMax[1]) / 1000,
+                    Math.ceil(1000 * element.bboxDiffError.bboxMax[2]) / 1000,
+                ];
+                const mesh = {
+                    index: element.mesh,
+                    compressionFormatAfter: isIncluded ? state.gltf.meshes[element.mesh].compressionFormatAfter : "", 
+                    diskSizeAfter: isIncluded ? state.gltf.meshes[element.mesh].diskSizeAfter.toFixed(2) + " mb" : "",  
+                    gpuSizeAfter: isIncluded ? state.gltf.meshes[element.mesh].gpuSizeAfter.toFixed(2) + " mb" : "",  
+                    bboxErrorMin: bboxErrorMin? `${bboxErrorMin[0].toFixed(3)} ${bboxErrorMin[1].toFixed(3)} ${bboxErrorMin[2].toFixed(3)}` : "",
+                    bboxErrorMax: bboxErrorMax? `${bboxErrorMax[0].toFixed(3)} ${bboxErrorMax[1].toFixed(3)} ${bboxErrorMax[2].toFixed(3)}` : ""
+                };
+                meshes.push(mesh);
+            }
+            let fileSize = element.mesh !== undefined ? state.gltf.meshes[element.mesh].diskSizeBefore : 0;
+            let fileSizeCompressed = element.mesh !== undefined ? state.gltf.meshes[element.mesh].diskSizeAfter : 0;
+            geometryFileSize += isIncluded ? fileSizeCompressed : fileSize;
+        });
+
+        // Recursive add nodes
+        function addNodeToTree (gltf, i, data) {
+            const node = gltf.nodes[i];
+            const nodeName = node.name !== undefined ? node.name : "Node_" + i;
+            const meshName = node.mesh !== undefined && state.gltf.meshes[node.mesh].name !== undefined ? state.gltf.meshes[node.mesh].name : "Mesh_" + node.mesh;
+
+            // Add to MeshNodeTree
+            if(node.children.length > 0 || node.mesh !== undefined){
+                data.children.push({
+                    name: nodeName, 
+                    mesh: node.mesh,
+                    meshName: meshName,
+                    meshInstances: node.meshInstances, 
+                    primitivesLength: node.primitivesLength,
+                    compressionFormatBefore: node.compressionFormatBefore,
+                    gpuSizeBefore: node.gpuSizeBefore,
+                    gpuSizeAfter: node.gpuSizeAfter,
+                    diskSizeBefore: node.diskSizeBefore,
+                    compressionFormatAfter: node.compressionFormatAfter,
+                    diskSizeAfter: node.diskSizeAfter,
+                    children: [],
+                });
+
+                // recurse into children
+                for(const j of node.children)
+                    addNodeToTree(gltf, j, data.children[data.children.length-1]);
+            }
+        }
+
+        // Compute info for tree mesh nodes
+        for(const i of state.gltf.nodes)
+            if(i.mesh !== undefined)
+            {
+                i.compressionFormatAfter = state.gltf.meshes[i.mesh].compressionFormatAfter === undefined ? "" : state.gltf.meshes[i.mesh].compressionFormatAfter;
+                i.diskSizeAfter = state.gltf.meshes[i.mesh].diskSizeAfter === undefined ? "" : state.gltf.meshes[i.mesh].diskSizeAfter.toFixed(2) + " mb";
+            }
+
+        let geometryData = {
+            name: scene.name !== undefined ? scene.name : "Root", 
+            mesh: undefined,
+            meshName: "",
+            meshInstances: [],
+            primitivesLength: 0,
+            compressionFormatBefore: "",
+            gpuSizeBefore: "",
+            gpuSizeAfter: "",
+            diskSizeBefore: "",
+            compressionFormatAfter: "",
+            diskSizeAfter: "",
+            children: [],
+        };
+        // Add children nodes
+        scene.nodes.forEach((node) => addNodeToTree(state.gltf, node, geometryData) );
 
         var texturesFileSize = 0;
         const textures = [];
@@ -24187,8 +27130,8 @@ class GltfView
 
             if(texture.formatCompressed === "ktx2")
             {
-                texture.formatCompressed += " + " + state.compressorParameters.compressionEncoding;
-                if(state.compressorParameters.compressionEncoding === "UASTC")
+                texture.formatCompressed += " + " + state.compressorParameters.compressionTextureEncoding;
+                if(state.compressorParameters.compressionTextureEncoding === "UASTC")
                 {
                     if(state.compressorParameters.compressionUASTC_Rdo)
                         texture.formatCompressed += " + RDO";
@@ -24206,6 +27149,9 @@ class GltfView
 
         // assemble statistics object
         return {
+            meshes: meshes,
+            geometryData: geometryData,
+            geometrySize: geometryFileSize,
             textures: textures,
             texturesSize: texturesFileSize
         };
@@ -26556,49 +29502,14 @@ var normalizeWheel = /*@__PURE__*/getDefaultExportFromCjs(normalizeWheel$2.expor
 // as close as possible
 class UIModel
 {
-    constructor(app, modelPathProvider, environments)
-    {
+    constructor(app, modelPathProvider, environments) {
         this.app = app;
-        this.pathProvider = modelPathProvider;
 
-        this.app.models = this.pathProvider.getAllKeys();
+        this.app.models = modelPathProvider.getAllKeys();
 
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const modelURL = urlParams.get("model");
-
-        let dropdownGltfChanged = undefined;
-        if (modelURL === null)
-        {
-            dropdownGltfChanged = app.modelChanged$.pipe(
-                pluck("event", "msg"),
-                startWith("DamagedHelmet"),
-                map(value => {
-                    app.flavours = this.pathProvider.getModelFlavours(value);
-                    app.selectedFlavour = "glTF";
-                    return this.pathProvider.resolve(value, app.selectedFlavour);
-                }),
-                map( value => ({mainFile: value, additionalFiles: undefined})),
-            );
-        } else {
-            dropdownGltfChanged = app.modelChanged$.pipe(
-                pluck("event", "msg"),
-                map(value => {
-                    app.flavours = this.pathProvider.getModelFlavours(value);
-                    app.selectedFlavour = "glTF";
-                    return this.pathProvider.resolve(value, app.selectedFlavour);
-                }),
-                map( value => ({mainFile: value, additionalFiles: undefined})),
-            );
-        }       
-
-        const dropdownFlavourChanged = app.flavourChanged$.pipe(
-            pluck("event", "msg"),
-            map(value => {
-                return this.pathProvider.resolve(app.selectedModel, value);
-            }),
-            map( value => ({mainFile: value, additionalFiles: undefined})),
-        );
 
         this.scene = app.sceneChanged$.pipe(pluck("event", "msg"));
         this.camera = app.cameraChanged$.pipe(pluck("event", "msg"));
@@ -26606,22 +29517,18 @@ class UIModel
         this.app.environments = environments;
         const selectedEnvironment = app.$watchAsObservable('selectedEnvironment').pipe(
             pluck('newValue'),
-            map( environmentName => this.app.environments[environmentName].hdr_path)
+            map(environmentName => this.app.environments[environmentName].hdr_path)
         );
         const initialEnvironment = "footprint_court";
         this.app.selectedEnvironment = initialEnvironment;
 
-        this.app.tonemaps = Object.keys(GltfState.ToneMaps).map((key) => {
-            return {title: GltfState.ToneMaps[key]};
-        });
+        this.app.tonemaps = Object.keys(GltfState.ToneMaps).map((key) => ({title: GltfState.ToneMaps[key]}));
         this.tonemap = app.tonemapChanged$.pipe(
             pluck("event", "msg"),
             startWith(GltfState.ToneMaps.LINEAR)
         );
 
-        this.app.debugchannels = Object.keys(GltfState.DebugOutput).map((key) => {
-            return {title: GltfState.DebugOutput[key]};
-        });
+        this.app.debugchannels = Object.keys(GltfState.DebugOutput).map((key) => ({title: GltfState.DebugOutput[key]}));
         this.debugchannel = app.debugchannelChanged$.pipe(
             pluck("event", "msg"),
             startWith(GltfState.DebugOutput.NONE)
@@ -26633,40 +29540,84 @@ class UIModel
         this.clearcoatEnabled = app.clearcoatChanged$.pipe(pluck("event", "msg"));
         this.sheenEnabled = app.sheenChanged$.pipe(pluck("event", "msg"));
         this.transmissionEnabled = app.transmissionChanged$.pipe(pluck("event", "msg"));
-        this.volumeEnabled = app.$watchAsObservable('volumeEnabled').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
-        this.iorEnabled = app.$watchAsObservable('iorEnabled').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
-        this.iridescenceEnabled = app.$watchAsObservable('iridescenceEnabled').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
-        this.specularEnabled = app.$watchAsObservable('specularEnabled').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
-        this.emissiveStrengthEnabled = app.$watchAsObservable('emissiveStrengthEnabled').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
+        this.volumeEnabled = app.$watchAsObservable('volumeEnabled').pipe(pluck('newValue'));
+        this.iorEnabled = app.$watchAsObservable('iorEnabled').pipe(pluck('newValue'));
+        this.iridescenceEnabled = app.$watchAsObservable('iridescenceEnabled').pipe(pluck('newValue'));
+        this.anisotropyEnabled = app.$watchAsObservable('anisotropyEnabled').pipe(pluck('newValue'));
+        this.specularEnabled = app.$watchAsObservable('specularEnabled').pipe(pluck('newValue'));
+        this.emissiveStrengthEnabled = app.$watchAsObservable('emissiveStrengthEnabled').pipe(pluck('newValue'));
         this.iblEnabled = app.iblChanged$.pipe(pluck("event", "msg"));
         this.iblIntensity = app.iblIntensityChanged$.pipe(pluck("event", "msg"));
         this.punctualLightsEnabled = app.punctualLightsChanged$.pipe(pluck("event", "msg"));
-        this.renderEnvEnabled = app.$watchAsObservable('renderEnv').pipe(
-                                            map( ({ newValue, oldValue }) => newValue));
+        this.renderEnvEnabled = app.$watchAsObservable('renderEnv').pipe(pluck('newValue'));
         this.blurEnvEnabled = app.blurEnvChanged$.pipe(pluck("event", "msg"));
-        this.addEnvironment = app.$watchAsObservable('uploadedHDR').pipe(
-            pluck('newValue')
-        );
+        this.addEnvironment = app.$watchAsObservable('uploadedHDR').pipe(pluck('newValue'));
         this.captureCanvas = app.captureCanvas$.pipe(pluck('event'));
         this.cameraValuesExport = app.cameraExport$.pipe(pluck('event'));
 
         // GSV-KTX
         this.texturesSelectionType = app.texturesSelectionChanged$.pipe(pluck("event", "msg"));
-        this.compressionSelectionType = app.compressionSelectionChanged$.pipe(pluck("event", "msg"));
-        this.compressionResolutionDownscale = app.compressionResolutionSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionTextureSelectionType = app.compressionTextureSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionTextureResolutionDownscale = app.compressionTextureResolutionSelectionChanged$.pipe(pluck("event", "msg"));
         this.compressionQualityJPEG = app.compressionQualityJPEGChanged$.pipe(pluck("event", "msg"));
         this.compressionQualityPNG = app.compressionQualityPNGChanged$.pipe(pluck("event", "msg"));
         this.compressionQualityWEBP = app.compressionQualityWEBPChanged$.pipe(pluck("event", "msg"));
         this.compressedPreviewMode = app.$watchAsObservable('compressionOnly').pipe(map( ({ newValue, oldValue }) => newValue));
         this.comparisonViewMode = app.comparisonViewChanged$.pipe(pluck("event", "msg"));
+
+        this.compressionGeometrySelectionType = app.compressionGeometrySelectionChanged$.pipe(pluck("event", "msg"));
+        this.selectedGeometry = app.$watchAsObservable('selectedGeometry').pipe(map( ({ newValue, oldValue }) => newValue));
+        this.enableMeshHighlighting = app.$watchAsObservable('enableMeshHighlighting').pipe(map( ({ newValue, oldValue }) => newValue));
+
+        this.compressionQuantizationPositionType = app.compressionQuantizationPositionTypeSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionQuantizationNormalType = app.compressionQuantizationNormalTypeSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionQuantizationTangentType = app.compressionQuantizationTangentTypeSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionQuantizationTexCoords0Type = app.compressionQuantizationTexCoords0TypeSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionQuantizationTexCoords1Type = app.compressionQuantizationTexCoords1TypeSelectionChanged$.pipe(pluck("event", "msg"));
+
+        this.compressionDracoEncodingMethod = app.compressionDracoEncodingMethodSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionSpeedDraco = app.compressionSpeedDracoChanged$.pipe(pluck("event", "msg"));
+        this.decompressionSpeedDraco = app.decompressionSpeedDracoChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationPositionQuantBits = app.compressionDracoQuantizationPositionQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationNormalQuantBits = app.compressionDracoQuantizationNormalQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationColorQuantBits = app.compressionDracoQuantizationColorQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationTexcoordQuantBits = app.compressionDracoQuantizationTexcoordQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationGenericQuantBits = app.compressionDracoQuantizationGenericQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationTangentQuantBits = app.compressionDracoQuantizationTangentQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationWeightQuantBits = app.compressionDracoQuantizationWeightQuantBitsChanged$.pipe(pluck("event", "msg"));
+        this.compressionDracoQuantizationJointQuantBits = app.compressionDracoQuantizationJointQuantBitsChanged$.pipe(pluck("event", "msg"));
+
+        this.compressionMeshOptFilterMethod = app.compressionMeshOptFilterMethodSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionMeshOptFilterMode = app.compressionMeshOptFilterModeSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionMeshOptFilterQuantizationBits = app.compressionMeshOptFilterQuantizationBitsChanged$.pipe(pluck("event", "msg"));
+        this.positionFilter = app.positionFilterChanged$.pipe(pluck("event", "msg"));
+        this.positionFilterMode = app.positionFilterModeChanged$.pipe(pluck("event", "msg"));
+        this.positionFilterBits = app.positionFilterBitsChanged$.pipe(pluck("event", "msg"));
+        this.normalFilter = app.normalFilterChanged$.pipe(pluck("event", "msg"));
+        this.normalFilterMode = app.normalFilterModeChanged$.pipe(pluck("event", "msg"));
+        this.normalFilterBits = app.normalFilterBitsChanged$.pipe(pluck("event", "msg"));
+        this.tangentFilter = app.tangentFilterChanged$.pipe(pluck("event", "msg"));
+        this.tangentFilterMode = app.tangentFilterModeChanged$.pipe(pluck("event", "msg"));
+        this.tangentFilterBits = app.tangentFilterBitsChanged$.pipe(pluck("event", "msg"));
+        this.tex0Filter = app.tex0FilterChanged$.pipe(pluck("event", "msg"));
+        this.tex0FilterMode = app.tex0FilterModeChanged$.pipe(pluck("event", "msg"));
+        this.tex0FilterBits = app.tex0FilterBitsChanged$.pipe(pluck("event", "msg"));
+        this.tex1Filter = app.tex1FilterChanged$.pipe(pluck("event", "msg"));
+        this.tex1FilterMode = app.tex1FilterModeChanged$.pipe(pluck("event", "msg"));
+        this.tex1FilterBits = app.tex1FilterBitsChanged$.pipe(pluck("event", "msg"));
         
+        this.compressionMeshOptFilterQuantizationBits = app.compressionMeshOptFilterQuantizationBitsChanged$.pipe(pluck("event", "msg"));
+        
+        this.compressionMeshOptReorder = app.compressionMeshOptReorderChanged$.pipe(pluck("event", "msg"));
+        
+        this.compressionMOptQuantizationPosition = app.compressionMOptQuantizationPositionChanged$.pipe(pluck("event", "msg"));
+        this.compressionMOptQuantizationNormal = app.compressionMOptQuantizationNormalChanged$.pipe(pluck("event", "msg"));
+        this.compressionMOptQuantizationTangent = app.compressionMOptQuantizationTangentChanged$.pipe(pluck("event", "msg"));
+        this.compressionMOptQuantizationTexCoords0 = app.compressionMOptQuantizationTexCoords0Changed$.pipe(pluck("event", "msg"));
+        this.compressionMOptQuantizationTexCoords1 = app.compressionMOptQuantizationTexCoords1Changed$.pipe(pluck("event", "msg"));
+
         // KTX
-        this.compressionEncoding = app.compressionEncodingSelectionChanged$.pipe(pluck("event", "msg"));
+        this.compressionTextureEncoding = app.compressionTextureEncodingSelectionChanged$.pipe(pluck("event", "msg"));
         this.compressionUASTC_Flags = app.compressedUASTC_FlagsChanged$.pipe(pluck("event", "msg"));
         this.compressionUASTC_Rdo = app.compressedUASTC_RdoChanged$.pipe(pluck("event", "msg"));
         this.compressionUASTC_Rdo_Algorithm = app.compressionUASTC_Rdo_AlgorithmSelectionChanged$.pipe(pluck("event", "msg"));
@@ -26687,7 +29638,7 @@ class UIModel
         this.compressionETC1S_NoSelectorRdo = app.compressionETC1S_NoSelectorRdoChanged$.pipe(pluck("event", "msg"));
 
         this.previewImageSlider = app.previewImageSliderChanged$.pipe(pluck("event", "msg"));
-        this.compressTextures = app.compressTextures$.pipe(pluck("event"));
+        this.compressGeometry = app.compressGeometry$.pipe(pluck("event"));
         this.gltfFilesExport = app.gltfExport$.pipe(pluck('event'));
         this.ktxjsonValuesExport = app.ktxjsonExport$.pipe(pluck('event'));
 
@@ -26697,66 +29648,78 @@ class UIModel
             filter$1(value => value.event !== undefined),
             pluck("event", "msg"),
             startWith(initialClearColor),
-            map(hex => {
-                // convert hex string to rgb values
-                var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? [
-                    parseInt(result[1], 16),
-                    parseInt(result[2], 16),
-                    parseInt(result[3], 16),
-                    255
-                ] : null;
-            })
+            map(hex => /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)),
+            filter$1(color => color !== null),
+            map(color => [
+                parseInt(color[1], 16) / 255.0,
+                parseInt(color[2], 16) / 255.0,
+                parseInt(color[3], 16) / 255.0,
+                1.0
+            ])
         );
 
         this.animationPlay = app.animationPlayChanged$.pipe(pluck("event", "msg"));
-        this.activeAnimations = app.$watchAsObservable('selectedAnimations').pipe(
-            map( ({ newValue, oldValue }) => newValue)
-        );
+        this.activeAnimations = app.$watchAsObservable('selectedAnimations').pipe(pluck('newValue'));
 
         const canvas = document.getElementById("canvas");
-        this.registerDropZoneUIHandle(canvas);
-        const inputObservables = UIModel.getInputObservables(canvas, this.app);
-        this.model = merge$1(dropdownGltfChanged, dropdownFlavourChanged, inputObservables.gltfDropped);
-        this.hdr = merge$1(inputObservables.hdrDropped, selectedEnvironment, this.addEnvironment).pipe(
+        canvas.addEventListener('dragenter', () => this.app.showDropDownOverlay = true);
+        canvas.addEventListener('dragleave', () => this.app.showDropDownOverlay = false);
+
+        const inputObservables = getInputObservables(canvas, this.app);
+
+        const dropdownGltfChanged = app.modelChanged$.pipe(
+            pluck("event", "msg"),
+            startWith(modelURL === null ? "DamagedHelmet" : null),
+            filter$1(value => value !== null),
+            map(value => {
+                app.flavours = modelPathProvider.getModelFlavours(value);
+                app.selectedFlavour = "glTF";
+                return modelPathProvider.resolve(value, app.selectedFlavour);
+            }),
+            map(value => ({mainFile: value})),
+        );
+
+        const dropdownFlavourChanged = app.flavourChanged$.pipe(
+            pluck("event", "msg"),
+            map(value => modelPathProvider.resolve(app.selectedModel, value)),
+            map(value => ({mainFile: value})),
+        );
+
+        this.model = merge$1(dropdownGltfChanged, dropdownFlavourChanged, inputObservables.droppedGltf);
+        this.hdr = merge$1(selectedEnvironment, this.addEnvironment, inputObservables.droppedHdr).pipe(
             startWith(environments[initialEnvironment].hdr_path)
         );
 
-        const hdrUIChange = merge$1(inputObservables.hdrDropped, this.addEnvironment);
-        hdrUIChange.subscribe( hdrPath => {
-            this.app.environments[hdrPath.name] = {
-                title: hdrPath.name,
-                hdr_path: hdrPath,
-            };
-            this.app.selectedEnvironment = hdrPath.name;
-        });
+        merge$1(this.addEnvironment, inputObservables.droppedHdr)
+            .subscribe(hdrPath => {
+                this.app.environments[hdrPath.name] = {
+                    title: hdrPath.name,
+                    hdr_path: hdrPath,
+                };
+                this.app.selectedEnvironment = hdrPath.name;
+            });
 
         this.variant = app.variantChanged$.pipe(pluck("event", "msg"));
 
-        this.model.subscribe(() => {
-            // remove last filename
-            if(this.app.models[this.app.models.length -1] === this.lastDroppedFilename)
-            {
+        // remove last filename
+        this.model
+            .pipe(filter$1(() => this.app.models.at(-1) === this.lastDroppedFilename))
+            .subscribe(() => {
                 this.app.models.pop();
                 this.lastDroppedFilename = undefined;
-            }
-        });
+            });
 
-        let dropedGLtfFileName = inputObservables.gltfDropped.pipe(
-            map( (data) => {
-                return data.mainFile.name;
-            })
-        );
+        let droppedGLtfFileName = inputObservables.droppedGltf.pipe(map(droppedGltf => droppedGltf.mainFile.name));
 
-        if (modelURL !== null){
-            let loadFromUrlObservable = new Observable(subscriber => { subscriber.next({mainFile: modelURL, additionalFiles: undefined});});
-            dropedGLtfFileName = merge$1(dropedGLtfFileName, loadFromUrlObservable.pipe(map((data) => {return data.mainFile;} )));
+        if (modelURL !== null) {
+            const loadFromUrlObservable = new Observable(subscriber => subscriber.next({mainFile: modelURL}));
+            droppedGLtfFileName = merge$1(droppedGLtfFileName, loadFromUrlObservable.pipe(map(data => data.mainFile)));
             this.model = merge$1(this.model, loadFromUrlObservable);
         }
 
-        dropedGLtfFileName.subscribe( (filename) => {
-            if(filename !== undefined)
-            {
+        droppedGLtfFileName
+            .pipe(filter$1(filename => filename !== undefined))
+            .subscribe(filename => {
                 filename = filename.split('/').pop();
                 let fileExtension = filename.split('.').pop();
                 filename = filename.substr(0, filename.lastIndexOf('.'));
@@ -26767,258 +29730,39 @@ class UIModel
 
                 app.flavours = [fileExtension];
                 app.selectedFlavour = fileExtension;
-            }
-        });
+            });
 
         this.orbit = inputObservables.orbit;
         this.pan = inputObservables.pan;
         this.zoom = inputObservables.zoom;
     }
 
-    // app has to be the vuejs app instance
-    static getInputObservables(inputDomElement, app)
+    attachGltfLoaded(gltfLoaded)
     {
-        const observables = {};
+        this.attachCameraChangeObservable(gltfLoaded);
+        gltfLoaded.subscribe(state => {
+            const gltf = state.gltf;
 
-        const simpleDropzoneObservabel = new Observable(subscriber => {
-            const dropCtrl = new xe(inputDomElement, inputDomElement);
-            dropCtrl.on('drop', ({files}) => {
-                app.showDropDownOverlay = false;
-                subscriber.next(files);
-            });
-            dropCtrl.on('droperror', () => {
-                app.showDropDownOverlay = false;
-                subscriber.error();
-            });
-        });
-        observables.filesDropped = simpleDropzoneObservabel.pipe(
-            map(files => Array.from(files.values()))
-        );
+            this.app.assetCopyright = gltf.asset.copyright ?? "N/A";
+            this.app.assetGenerator = gltf.asset.generator ?? "N/A";
+            
+            this.app.selectedScene = state.sceneIndex;
+            this.app.scenes = gltf.scenes.map((scene, index) => ({
+                title: scene.name ?? `Scene ${index}`,
+                index: index
+            }));
 
-        observables.gltfDropped = observables.filesDropped.pipe(
-            // filter out any non .gltf or .glb files
+            this.app.selectedAnimations = state.animationIndices;
 
-            map( (files) => {
-                // restructure the data by separating mainFile (gltf/glb) from additionalFiles
-                const mainFile = files.find( (file) => file.name.endsWith(".glb") || file.name.endsWith(".gltf") || file.name.endsWith(".vrm"));
-                const additionalFiles = files.filter( (file) => file !== mainFile);
-                return {mainFile: mainFile, additionalFiles: additionalFiles};
-            }),
-            filter$1(files => files.mainFile !== undefined),
-        );
-        observables.hdrDropped = observables.filesDropped.pipe(
-            map( (files) => {
-                // extract only the hdr file from the stream of files
-                return files.find( (file) => file.name.endsWith(".hdr"));
-            }),
-            filter$1(file => file !== undefined),
-        );
+            this.app.materialVariants = ["None", ...gltf?.variants.map(variant => variant.name)];
 
-        const mouseMove = fromEvent(document, 'mousemove');
-        const mouseDown = fromEvent(inputDomElement, 'mousedown');
-        const mouseUp = merge$1(fromEvent(document, 'mouseup'), fromEvent(document, 'mouseleave'));
-        
-        inputDomElement.addEventListener('mousemove', event => event.preventDefault());
-        inputDomElement.addEventListener('mousedown', event => event.preventDefault());
-        inputDomElement.addEventListener('mouseup', event => event.preventDefault());
+            this.app.setAnimationState(true);
+            this.app.animations = gltf.animations.map((animation, index) => ({
+                title: animation.name ?? `Animation ${index}`,
+                index: index
+            }));
 
-        const mouseOrbit = mouseDown.pipe(
-            filter$1( event => event.button === 0 && event.shiftKey === false),
-            mergeMap(() => mouseMove.pipe(
-                pairwise(),
-                map( ([oldMouse, newMouse]) => {
-                    return {
-                        deltaPhi: newMouse.pageX - oldMouse.pageX, 
-                        deltaTheta: newMouse.pageY - oldMouse.pageY 
-                    };
-                }),
-                takeUntil(mouseUp)
-            ))
-        );
-
-        const mousePan = mouseDown.pipe(
-            filter$1( event => event.button === 1 || event.shiftKey === true),
-            mergeMap(() => mouseMove.pipe(
-                pairwise(),
-                map( ([oldMouse, newMouse]) => {
-                    return {
-                        deltaX: newMouse.pageX - oldMouse.pageX, 
-                        deltaY: newMouse.pageY - oldMouse.pageY 
-                    };
-                }),
-                takeUntil(mouseUp)
-            ))
-        );
-
-        const smbZoom = mouseDown.pipe(
-            filter$1( event => event.button === 2),
-            mergeMap(() => mouseMove.pipe(takeUntil(mouseUp))),
-            map( mouse => ({deltaZoom: mouse.movementY }))
-        );
-        const wheelZoom = fromEvent(inputDomElement, 'wheel').pipe(
-            map(wheelEvent => normalizeWheel(wheelEvent)),
-            map(normalizedZoom => ({deltaZoom: normalizedZoom.spinY }))
-        );
-        inputDomElement.addEventListener('scroll', event => event.preventDefault(), { passive: false });
-        inputDomElement.addEventListener('wheel', event => event.preventDefault(), { passive: false });
-        const mouseZoom = merge$1(smbZoom, wheelZoom);
-
-        const touchmove = fromEvent(document, 'touchmove');
-        const touchstart = fromEvent(inputDomElement, 'touchstart');
-        const touchend = merge$1(fromEvent(inputDomElement, 'touchend'), fromEvent(inputDomElement, 'touchcancel'));
-
-        const touchOrbit = touchstart.pipe(
-            filter$1(event => event.touches.length === 1),
-            mergeMap(() => touchmove.pipe(
-                filter$1(event => event.touches.length === 1),
-                map(event => event.touches[0]),
-                pairwise(),
-                map(([oldTouch, newTouch]) => {
-                    return {
-                        deltaPhi: 2.0 * (newTouch.clientX - oldTouch.clientX),
-                        deltaTheta: 2.0 * (newTouch.clientY - oldTouch.clientY),
-                    };
-                }),
-                takeUntil(touchend)
-            )),
-        );
-
-        const touchZoom = touchstart.pipe(
-            filter$1(event => event.touches.length === 2),
-            mergeMap(() => touchmove.pipe(
-                filter$1(event => event.touches.length === 2),
-                map(event => {
-                    const pos1 = fromValues(event.touches[0].clientX, event.touches[0].clientY);
-                    const pos2 = fromValues(event.touches[1].clientX, event.touches[1].clientY);
-                    return dist(pos1, pos2);
-                }),
-                pairwise(),
-                map(([oldDist, newDist]) => ({ deltaZoom: 0.1 * (oldDist - newDist) })),
-                takeUntil(touchend))
-            ),
-        );
-
-        inputDomElement.addEventListener('ontouchmove', event => event.preventDefault(), { passive: false });
-        inputDomElement.addEventListener('ontouchstart', event => event.preventDefault(), { passive: false });
-        inputDomElement.addEventListener('ontouchend', event => event.preventDefault(), { passive: false });
-
-        observables.orbit = merge$1(mouseOrbit, touchOrbit);
-        observables.pan = mousePan;
-        observables.zoom = merge$1(mouseZoom, touchZoom);
-
-        // disable context menu
-        inputDomElement.oncontextmenu = () => false;
-
-        return observables;
-    }
-
-    registerDropZoneUIHandle(inputDomElement)
-    {
-        const self = this;
-        inputDomElement.addEventListener('dragenter', function(event) {
-            self.app.showDropDownOverlay = true;
-        });
-        inputDomElement.addEventListener('dragleave', function(event) {
-            self.app.showDropDownOverlay = false;
-        });
-    }
-
-    attachGltfLoaded(glTFLoadedStateObservable)
-    {
-        const gltfLoadedAndInit = glTFLoadedStateObservable.pipe(
-            map( state => state.gltf )
-        );
-
-        // update scenes
-        const sceneIndices = gltfLoadedAndInit.pipe(
-            map( (gltf) => {
-                return gltf.scenes.map( (scene, index) => {
-                    let name = scene.name;
-                    if(name === "" || name === undefined)
-                    {
-                        name = index;
-                    }
-                    return {title: name, index: index};
-                });
-            })
-        );
-        sceneIndices.subscribe( (scenes) => {
-            this.app.scenes = scenes;
-        });
-
-        const loadedSceneIndex = glTFLoadedStateObservable.pipe(
-            map( (state) => state.sceneIndex)
-        );
-        loadedSceneIndex.subscribe( (scene) => {
-            this.app.selectedScene = scene;
-        });
-
-        // update cameras
-        this.attachCameraChangeObservable(glTFLoadedStateObservable);
-
-        const variants = gltfLoadedAndInit.pipe(
-            map( (gltf) => {
-                if(gltf.variants !== undefined)
-                {
-                    return gltf.variants.map( (variant, index) => {
-                        return {title: variant.name};
-                    });
-                }
-                return [];
-            }),
-            map(variants => {
-                // Add a "None" variant to the beginning
-                variants.unshift({title: "None"});
-                return variants;
-            })
-        );
-        variants.subscribe( (variants) => {
-            this.app.materialVariants = variants;
-        });
-
-        gltfLoadedAndInit.subscribe(
-            (_) => {this.app.setAnimationState(true);
-            }
-        );
-
-        const xmpData = gltfLoadedAndInit.pipe(
-            map( (gltf) => {
-                if(gltf.extensions !== undefined && gltf.extensions.KHR_xmp_json_ld !== undefined)
-                {
-                    if(gltf.asset.extensions !== undefined && gltf.asset.extensions.KHR_xmp_json_ld !== undefined)
-                    {
-                        let xmpPacket = gltf.extensions.KHR_xmp_json_ld.packets[gltf.asset.extensions.KHR_xmp_json_ld.packet];
-                        return xmpPacket;
-                    }
-                }
-                return [];
-            })
-        );
-        xmpData.subscribe( (xmpData) => {
-            this.app.xmp = xmpData;
-        });
-
-        const animations = gltfLoadedAndInit.pipe(
-            map( gltf =>  gltf.animations.map( (anim, index) => {
-                let name = anim.name;
-                if (name === undefined || name === "")
-                {
-                    name = index;
-                }
-                return {
-                    title: name,
-                    index: index
-                };
-            }))
-        );
-        animations.subscribe( animations => {
-            this.app.animations = animations;
-        });
-
-        glTFLoadedStateObservable.pipe(
-            map( state => state.animationIndices)
-        ).subscribe( animationIndices => {
-            this.app.selectedAnimations = animationIndices;
+            this.app.xmp = gltf?.extensions?.KHR_xmp_json_ld?.packets[gltf?.asset?.extensions?.KHR_xmp_json_ld.packet] ?? null;
         });
     }
 
@@ -27032,6 +29776,53 @@ class UIModel
                 statistics["Opaque Material Count"] = data.opaqueMaterialsCount;
                 statistics["Transparent Material Count"] = data.transparentMaterialsCount;
                 this.app.statistics = statistics;
+
+                this.app.geometryStatistics = data.geometryData;
+                this.app.geometryStatistics.length = data.meshCount;
+                this.app.geometrySize = data.geometrySize;
+                this.app.enableMeshHighlighting = true;
+                this.app.isGeometryCompressed = data.isGeometryCompressed;
+                this.app.selectedCompressionGeometryType = "Draco";
+                this.app.selectedCompressionQuantizationPosition = "NONE";
+                this.app.selectedCompressionQuantizationNormal = "NONE";
+                this.app.selectedCompressionQuantizationTangent = "NONE";
+                this.app.selectedCompressionQuantizationTexCoords0 = "NONE";
+                this.app.selectedCompressionQuantizationTexCoords1 = "NONE";
+
+                this.app.selectedCompressionDracoEncodingMethod = "EDGEBREAKER";
+                this.app.compressionSpeedDraco = 7;
+                this.app.decompressionSpeedDraco = 7;
+                this.app.compressionDracoQuantizationPositionQuantBits = 16;
+                this.app.compressionDracoQuantizationNormalQuantBits = 10;
+                this.app.compressionDracoQuantizationColorQuantBits = 16;
+                this.app.compressionDracoQuantizationTexcoordQuantBits = 11;
+                this.app.compressionDracoQuantizationGenericQuantBits = 16;
+    
+                this.app.selectedCompressionMeshOptFilterMethod = "NONE";
+                this.app.selectedCompressionMeshOptFilterMode = "Separate";
+                this.app.compressionMeshOptFilterQuantizationBits = 16;
+                this.app.positionFilter = "NONE";
+                this.app.positionFilterMode = "Separate";
+                this.app.positionFilterBits = 16;
+                this.app.normalFilter = "NONE";
+                this.app.normalFilterMode = "Separate";
+                this.app.normalFilterBits = 16;
+                this.app.tangentFilter = "NONE";
+                this.app.tangentFilterMode = "Separate";
+                this.app.tangentFilterBits = 16;
+                this.app.tex0Filter = "NONE";
+                this.app.tex0FilterMode = "Separate";
+                this.app.tex0FilterBits = 16;
+                this.app.tex1Filter = "NONE";
+                this.app.tex1FilterMode = "Separate";
+                this.app.tex1FilterBits = 16;
+        
+                this.app.selectedCompressionMeshOptReorder = false;
+                this.app.compressionMOptQuantizationPosition = "NONE";
+                this.app.compressionMOptQuantizationNormal = "NONE";
+                this.app.compressionMOptQuantizationTangent = "NONE";
+                this.app.compressionMOptQuantizationTexCoords0 = "NONE";
+                this.app.compressionMOptQuantizationTexCoords1 = "NONE";
             }
         );
     }
@@ -27041,21 +29832,21 @@ class UIModel
         statisticsUpdateObservable.subscribe(
             data => {
                 let compressionStatistics = {};
-                compressionStatistics["Before"] = data.texturesSize.toFixed(2) + " mb";
+                compressionStatistics["Before"] = this.app.geometrySize.toFixed(2) + " + " + data.texturesSize.toFixed(2) + " = " + (this.app.geometrySize+data.texturesSize).toFixed(2) + " mb";
                 compressionStatistics["After"] = "";
                 this.app.compressionStatistics = compressionStatistics;
                 this.app.texturesStatistics = data.textures;
                 this.app.texturesUpdated = true;
 
-                this.app.compressionBtnTitle = "Compress Textures";
+                this.app.compressionBtnTitle = "Compress";
                 this.app.comparisonSlider = true;
                 this.app.compressionOnly = false;
                 this.app.compressionStarted = false;
                 this.app.compressionCompleted = false;
-                this.app.selectedTextureType = "All";
-                this.app.selectedCompressionType = "KTX2";
-                this.app.selectedCompressionEncoding = "UASTC";
-                this.app.selectedCompressionResolution = "1x";
+                this.app.selectedTextureType = "None";
+                this.app.selectedCompressionTextureType = "KTX2";
+                this.app.selectedCompressionTextureEncoding = "UASTC";
+                this.app.selectedCompressionTextureResolution = "1x";
                 this.app.compressionQualityJPEG = 80.0;
                 this.app.compressionQualityPNG = 8;
                 this.app.compressionQualityWEBP = 80.0;
@@ -27083,32 +29874,49 @@ class UIModel
         );
     }
 
-    updateTextureCompressionStatistics(statisticsUpdateObservable)
+    updateCompressionStatistics(statisticsUpdateObservable)
     {
         statisticsUpdateObservable.subscribe(
             data => {
-                let done = data.textures.some(texture => texture.isCompleted);
-                this.app.compressionStatistics["After"] = done ? (data.texturesSize.toFixed(2) + " mb") : "";
+                let doneGeometry = data.meshes.length > 0;
+                let doneTextures = data.textures.some(texture => texture.isCompleted);
+                let done = doneGeometry | doneTextures;
+
+                data.meshes.forEach(mesh => {
+                    let table_row = document.getElementById('mesh_table_row_' + mesh.index);
+                    table_row.rows[4].cells[2].innerHTML = mesh.compressionFormatAfter;
+                    table_row.rows[5].cells[2].innerHTML = mesh.diskSizeAfter;
+                    table_row.rows[6].cells[2].innerHTML = mesh.gpuSizeAfter;
+                    table_row.rows[7].cells[2].innerHTML = mesh.bboxErrorMin;
+                    table_row.rows[8].cells[2].innerHTML = mesh.bboxErrorMax;
+                });
+
+                this.app.geometryStatistics = data.geometryData;
+                if(doneGeometry)
+                    this.app.geometryStatistics.length = data.meshes.length;
+                this.app.geometryCompressedSize = data.geometrySize;
+                
+                this.app.compressionStatistics["After"] = done ? (data.geometrySize.toFixed(2) + " + " + data.texturesSize.toFixed(2) + " = " + (data.geometrySize + data.texturesSize).toFixed(2) + " mb") : "";
                 this.app.texturesStatistics = data.textures;
                 this.app.compressionCompleted = done;
-                this.app.compressedKTX |= this.app.selectedCompressionType === "KTX2";
-                this.app.compressionBtnTitle = "Compress Textures";
+                this.app.compressedKTX |= doneTextures & this.app.selectedCompressionTextureType === "KTX2";
+                this.app.compressionBtnTitle = "Compress";
                 this.app.scrollIntoView = true;
             },
         );
     }
 
-    updateTextureCompressionButton(i, total)
+    updateCompressionButton(i, total, text)
     {
         this.app.compressionCompleted = false;
         this.app.compressionStarted = (i < total);
         this.app.progressValue = (i/total)*100;
-        this.app.compressionBtnTitle = "Compressing Textures (" + i + "/" + total + ")";
+        this.app.compressionBtnTitle = "Compressing " + text + " (" + i + "/" + total + ")";
     }
 
     updateEncodingKTX(value)
     {
-        this.app.selectedCompressionEncoding = (value === "Color") ? "ETC1S" : "UASTC";
+        this.app.selectedCompressionTextureEncoding = (value === "Color") ? "ETC1S" : "UASTC";
     }
 
     updateSlider(index, previewMode)
@@ -27124,15 +29932,13 @@ class UIModel
 
     disabledAnimations(disabledAnimationsObservable)
     {
-        disabledAnimationsObservable.subscribe(
-            data => { this.app.disabledAnimations = data; }
-        );
+        disabledAnimationsObservable.subscribe(data => this.app.disabledAnimations = data);
     }
 
     attachCameraChangeObservable(sceneChangeObservable)
     {
         const cameraIndices = sceneChangeObservable.pipe(
-            map( (state) => {
+            map(state => {
                 let gltf = state.gltf;
                 let cameraIndices = [{title: "User Camera", index: -1}];
                 if (gltf.scenes[state.sceneIndex] !== undefined)
@@ -27155,40 +29961,148 @@ class UIModel
                 return cameraIndices;
             })
         );
-        cameraIndices.subscribe( (cameras) => {
-            this.app.cameras = cameras;
-        });
-        const loadedCameraIndex = sceneChangeObservable.pipe(
-            map( (state) => {
-                return state.cameraIndex;
-            })
-        );
-        loadedCameraIndex.subscribe( index => {
-            if(index ===  undefined)
-            {
-                index = -1;
-            }
-            this.app.selectedCamera = index;
-        });
-    }
-
-    copyToClipboard(text) {
-        var dummy = document.createElement("textarea");
-        document.body.appendChild(dummy);
-        dummy.value = text;
-        dummy.select();
-        document.execCommand("copy");
-        document.body.removeChild(dummy);
+        cameraIndices.subscribe(cameras => this.app.cameras = cameras);
+        const loadedCameraIndex = sceneChangeObservable.pipe(map(state => state.cameraIndex));
+        loadedCameraIndex.subscribe(index => this.app.selectedCamera = index !== undefined ? index : -1 );
     }
 
     goToLoadingState() {
         this.app.goToLoadingState();
     }
+
     exitLoadingState()
     {
         this.app.exitLoadingState();
     }
 }
+
+const getInputObservables = (inputElement, app) => {
+    const observables = {};
+    
+    const droppedFiles = new Observable(subscriber => {
+        const dropZone = new xe(inputElement, inputElement);
+        dropZone.on('drop', ({files}) => {
+            app.showDropDownOverlay = false;
+            subscriber.next(Array.from(files.entries()));
+        });
+        dropZone.on('droperror', () => {
+            app.showDropDownOverlay = false;
+            subscriber.error();
+        });
+    }).pipe(share());
+
+    // Partition files into a .gltf or .glb and additional files like buffers and textures
+    observables.droppedGltf = droppedFiles.pipe(
+        map(files => ({
+            mainFile: files.find(([path]) => path.endsWith(".glb") || path.endsWith(".gltf") || file.name.endsWith(".vrm")),
+            additionalFiles: files.filter(file => !file[0].endsWith(".glb") && !file[0].endsWith(".gltf"))
+        })),
+        filter$1(files => files.mainFile !== undefined),
+    );
+
+    observables.droppedHdr = droppedFiles.pipe(
+        map(files => files.find(([path]) => path.endsWith(".hdr"))),
+        filter$1(file => file !== undefined),
+        pluck("1")
+    );
+
+    const mouseMove = fromEvent(document, 'mousemove');
+    const mouseDown = fromEvent(inputElement, 'mousedown');
+    const mouseUp = merge$1(fromEvent(document, 'mouseup'), fromEvent(document, 'mouseleave'));
+    
+    inputElement.addEventListener('mousemove', event => event.preventDefault());
+    inputElement.addEventListener('mousedown', event => event.preventDefault());
+    inputElement.addEventListener('mouseup', event => event.preventDefault());
+
+    const mouseOrbit = mouseDown.pipe(
+        filter$1(event => event.button === 0 && event.shiftKey === false),
+        mergeMap(() => mouseMove.pipe(
+            pairwise(),
+            map( ([oldMouse, newMouse]) => {
+                return {
+                    deltaPhi: newMouse.pageX - oldMouse.pageX, 
+                    deltaTheta: newMouse.pageY - oldMouse.pageY 
+                };
+            }),
+            takeUntil(mouseUp)
+        ))
+    );
+
+    const mousePan = mouseDown.pipe(
+        filter$1( event => event.button === 1 || event.shiftKey === true),
+        mergeMap(() => mouseMove.pipe(
+            pairwise(),
+            map( ([oldMouse, newMouse]) => {
+                return {
+                    deltaX: newMouse.pageX - oldMouse.pageX, 
+                    deltaY: newMouse.pageY - oldMouse.pageY 
+                };
+            }),
+            takeUntil(mouseUp)
+        ))
+    );
+
+    const dragZoom = mouseDown.pipe(
+        filter$1( event => event.button === 2),
+        mergeMap(() => mouseMove.pipe(takeUntil(mouseUp))),
+        map( mouse => ({deltaZoom: mouse.movementY}))
+    );
+    const wheelZoom = fromEvent(inputElement, 'wheel').pipe(
+        map(wheelEvent => normalizeWheel(wheelEvent)),
+        map(normalizedZoom => ({deltaZoom: normalizedZoom.spinY }))
+    );
+    inputElement.addEventListener('scroll', event => event.preventDefault(), { passive: false });
+    inputElement.addEventListener('wheel', event => event.preventDefault(), { passive: false });
+    const mouseZoom = merge$1(dragZoom, wheelZoom);
+
+    const touchmove = fromEvent(document, 'touchmove');
+    const touchstart = fromEvent(inputElement, 'touchstart');
+    const touchend = merge$1(fromEvent(inputElement, 'touchend'), fromEvent(inputElement, 'touchcancel'));
+
+    const touchOrbit = touchstart.pipe(
+        filter$1(event => event.touches.length === 1),
+        mergeMap(() => touchmove.pipe(
+            filter$1(event => event.touches.length === 1),
+            map(event => event.touches[0]),
+            pairwise(),
+            map(([oldTouch, newTouch]) => {
+                return {
+                    deltaPhi: 2.0 * (newTouch.clientX - oldTouch.clientX),
+                    deltaTheta: 2.0 * (newTouch.clientY - oldTouch.clientY),
+                };
+            }),
+            takeUntil(touchend)
+        )),
+    );
+
+    const touchZoom = touchstart.pipe(
+        filter$1(event => event.touches.length === 2),
+        mergeMap(() => touchmove.pipe(
+            filter$1(event => event.touches.length === 2),
+            map(event => {
+                const pos1 = fromValues(event.touches[0].clientX, event.touches[0].clientY);
+                const pos2 = fromValues(event.touches[1].clientX, event.touches[1].clientY);
+                return dist(pos1, pos2);
+            }),
+            pairwise(),
+            map(([oldDist, newDist]) => ({ deltaZoom: 0.1 * (oldDist - newDist) })),
+            takeUntil(touchend))
+        ),
+    );
+
+    inputElement.addEventListener('ontouchmove', event => event.preventDefault(), { passive: false });
+    inputElement.addEventListener('ontouchstart', event => event.preventDefault(), { passive: false });
+    inputElement.addEventListener('ontouchend', event => event.preventDefault(), { passive: false });
+
+    observables.orbit = merge$1(mouseOrbit, touchOrbit);
+    observables.pan = mousePan;
+    observables.zoom = merge$1(mouseZoom, touchZoom);
+
+    // disable context menu
+    inputElement.oncontextmenu = () => false;
+
+    return observables;
+};
 
 /*!
  * Vue.js v2.7.16
@@ -55049,7 +57963,7 @@ Vue$2.component('toggle-button', {
     },
     methods:
     {
-        buttonclicked: function(value)
+        buttonclicked: function()
         {
             this.isOn = !this.isOn;
             this.name = this.isOn ? this.ontext : this.offtext;
@@ -55063,9 +57977,172 @@ Vue$2.component('toggle-button', {
     }
 });
 
+new Vue$2();
+
+Vue$2.component("tree-view-node", {
+    template: "#tree-view-node-template",
+    props: {
+        item: Object,
+    },
+    data: function() {
+        return {
+            isOpen: true
+        };
+    },
+    computed: {
+        hasMesh: function() {
+            return this.item.mesh > -1;
+        },
+        isFolder: function() {
+            return this.item.children && this.item.children.length;
+        }
+    },
+    // mounted() {
+    //     eventBus.$on('toggle-event', data => {
+    //         this.toggle();
+    //     });
+    //},
+    methods: {
+        toggle: function() {
+            if (this.isFolder) {
+                this.isOpen = !this.isOpen;
+            }
+        },
+        toTable(item){
+            if(item.mesh === undefined)
+                return;
+
+            if(document.getElementById('mesh_node_' + item.name).checked){
+
+                if(document.getElementById('mesh_table_row_' + item.mesh) === null){
+
+                    app.selectedGeometry.push([item.mesh, true]);
+
+                    // Create an empty table
+                    const newTable = document.createElement("table");
+                    newTable.setAttribute('id', 'mesh_table_row_' + item.mesh);
+                    newTable.setAttribute('style', 'margin-bottom:5px;');
+
+                    // Insert row
+                    var rows = [];
+                    var cell1, cell2, cell3;
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell1.innerHTML = "Name";
+                    cell2.innerHTML = item.meshName;
+                    cell2.colSpan   = "2";
+                    
+                    // Insert row 
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell1.innerHTML = "Instances";
+                    cell2.innerHTML = item.meshInstances.length+1;
+                    cell2.colSpan   = "2";
+
+                    // Insert row 
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell1.innerHTML = "Primitives";
+                    cell2.innerHTML = item.primitivesLength;
+                    cell2.colSpan   = "2";
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML = "Compression";
+                    cell2.innerHTML = "Before";
+                    cell3.innerHTML = "After";
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML = "Format";
+                    cell2.innerHTML = item.compressionFormatBefore;
+                    cell3.innerHTML = item.compressionFormatAfter;
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML  = "DiskSize";
+                    cell2.innerHTML = item.diskSizeBefore;
+                    cell3.innerHTML = item.diskSizeAfter;
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML  = "GPUSize";
+                    cell2.innerHTML = item.gpuSizeBefore;
+                    cell3.innerHTML = item.gpuSizeAfter;
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML  = "BboxChangeMin";
+                    cell2.innerHTML = "";
+                    cell3.innerHTML = "";
+
+                    // Insert row
+                    rows.push(newTable.insertRow(-1));
+                    cell1 = rows[rows.length-1].insertCell(0);
+                    cell2 = rows[rows.length-1].insertCell(1);
+                    cell3 = rows[rows.length-1].insertCell(2);
+                    cell1.innerHTML  = "BboxChangeMax";
+                    cell2.innerHTML = "";
+                    cell3.innerHTML = "";
+
+                    const table = document.getElementById('geometry_table');
+                    table.appendChild(newTable);
+                }
+            }
+            else
+            {
+                let t = document.getElementById('mesh_table_row_' + item.mesh);
+                if(t){
+                    t.remove();
+                    app.selectedGeometry.push([item.mesh, false]);
+                }
+            }
+        },
+        checkChild: function(item) {
+            this.toTable(item);
+
+            item.meshInstances.forEach(i => {
+                document.getElementById('mesh_node_' + i).checked = document.getElementById('mesh_node_' + this.item.name).checked;
+            });
+
+            item.children.forEach(child => {
+                document.getElementById('mesh_node_' + child.name).checked = document.getElementById('mesh_node_' + this.item.name).checked;
+                this.checkChild(child);
+            });
+        },
+        checkChildren: function() {
+            app.selectedGeometry = [];
+            this.checkChild(this.item);
+        }
+    }
+});
+
 Vue$2.component('json-to-ui-template', {
     props: ['data', 'isinner'],
     template:'#jsonToUITemplate'
+});
+
+Vue$2.component('geometry-template', {
+    props: ['data'],
+    template:'#geometryTable'
 });
 
 Vue$2.component('texture-details', {
@@ -55116,56 +58193,146 @@ const app = new Vue$2({
         'punctualLightsChanged$', 'iblChanged$', 'blurEnvChanged$', 'morphingChanged$',
         'addEnvironment$', 'colorChanged$', 'environmentRotationChanged$', 'animationPlayChanged$', 'selectedAnimationsChanged$',
         'variantChanged$', 'exposureChanged$', "clearcoatChanged$", "sheenChanged$", "transmissionChanged$",
-        'cameraExport$', 'captureCanvas$','iblIntensityChanged$', 'comparisonViewChanged$',
-        'texturesSelectionChanged$', 'compressionSelectionChanged$', 'compressionUASTC_Rdo_AlgorithmSelectionChanged$', 'compressionEncodingSelectionChanged$', 'compressionResolutionSelectionChanged$',
+        'cameraExport$', 'captureCanvas$','iblIntensityChanged$', 'comparisonViewChanged$', 'compressionDracoEncodingMethodSelectionChanged$',
+        'compressionMOptQuantizationPositionChanged$', 'compressionMOptQuantizationNormalChanged$', 'compressionMOptQuantizationTangentChanged$',
+        'compressionMOptQuantizationTexCoords0Changed$', 'compressionMOptQuantizationTexCoords1Changed$', 
+        'compressionMeshOptFilterMethodSelectionChanged$', 'compressionMeshOptFilterModeSelectionChanged$', 'compressionMeshOptFilterQuantizationBitsChanged$',
+        'compressionMeshOptQuantizationColorQuantBitsChanged$', 'compressionMeshOptQuantizationTexcoordQuantBitsChanged$', 'compressionMeshOptReorderChanged$',
+        'compressionSpeedDracoChanged$', 'decompressionSpeedDracoChanged$', 'compressionDracoQuantizationPositionQuantBitsChanged$', 'compressionDracoQuantizationNormalQuantBitsChanged$',
+        'compressionDracoQuantizationColorQuantBitsChanged$', 'compressionDracoQuantizationTexcoordQuantBitsChanged$', 'compressionDracoQuantizationGenericQuantBitsChanged$',
+        'compressionDracoQuantizationTangentQuantBitsChanged$',
+        'compressionDracoQuantizationWeightQuantBitsChanged$',
+        'compressionDracoQuantizationJointQuantBitsChanged$',
+        'positionFilterChanged$',
+        'positionFilterModeChanged$',
+        'positionFilterBitsChanged$',
+        'normalFilterChanged$',
+        'normalFilterModeChanged$',
+        'normalFilterBitsChanged$',
+        'tangentFilterChanged$',
+        'tangentFilterModeChanged$',
+        'tangentFilterBitsChanged$',
+        'tex0FilterChanged$',
+        'tex0FilterModeChanged$',
+        'tex0FilterBitsChanged$',
+        'tex1FilterChanged$',
+        'tex1FilterModeChanged$',
+        'tex1FilterBitsChanged$',
+        'compressionQuantizationPositionTypeSelectionChanged$', 'compressionQuantizationNormalTypeSelectionChanged$', 'compressionQuantizationTangentTypeSelectionChanged$',
+        'compressionQuantizationTexCoords0TypeSelectionChanged$', 'compressionQuantizationTexCoords1TypeSelectionChanged$',
+        'texturesSelectionChanged$', 'compressionTextureSelectionChanged$', 'compressionUASTC_Rdo_AlgorithmSelectionChanged$', 
+        'compressionTextureEncodingSelectionChanged$', 'compressionTextureResolutionSelectionChanged$', 'compressionGeometrySelectionChanged$',
         'compressedUASTC_FlagsChanged$', 'compressedUASTC_RdoChanged$', 'compressionUASTC_Rdo_LevelChanged$', 'compressedUASTC_Rdo_DonotFavorSimplerModesChanged$',
         'compressionETC1S_CompressionLevelChanged$', 'compressionETC1S_QualityLevelChanged$', 'compressionETC1S_MaxEndPointsChanged$', 
         'compressionETC1S_EndpointRdoThresholdChanged$', 'compressionETC1S_MaxSelectorsChanged$', 'compressionETC1S_SelectorRdoThresholdChanged$',
         'compressionETC1S_NoEndpointRdoChanged$', 'compressionETC1S_NoSelectorRdoChanged$',
         'compressionUASTC_Rdo_QualityScalarChanged$', 'compressionUASTC_Rdo_DictionarySizeChanged$', 'compressionUASTC_Rdo_MaxSmoothBlockErrorScaleChanged$',
         'compressionUASTC_Rdo_MaxSmoothBlockStandardDeviationChanged$', 'compressionQualityPNGChanged$', 'compressionQualityWEBPChanged$',
-        'compressionQualityJPEGChanged$', 'compressTextures$', 'previewImageSliderChanged$',
+        'compressionQualityJPEGChanged$', 'compressGeometry$', 'previewImageSliderChanged$',
         'gltfExport$', 'ktxjsonExport$'],
     data() {
         return {
             fullscreen: false,
             timer: null,
-
             fullheight: true,
             right: true,
             models: ["DamagedHelmet"],
             flavours: ["glTF", "glTF-Binary", "glTF-Quantized", "glTF-Draco", "glTF-pbrSpecularGlossiness"],
             scenes: [{title: "0"}, {title: "1"}],
             cameras: [{title: "User Camera", index: -1}],
-            materialVariants: [{title: "None"}],
+            materialVariants: ["None"],
 
             animations: [{title: "cool animation"}, {title: "even cooler"}, {title: "not cool"}, {title: "Do not click!"}],
             tonemaps: [{title: "None"}],
             debugchannels: [{title: "None"}],
             xmp: [{title: "xmp"}],
+            assetCopyright: "",
+            assetGenerator: "",
             statistics: [],
 
+            isGeometryCompressed: false,
+            enableMeshHighlighting: true,
+            selectedGeometry: [],
+            geometrySize: 0,
+            geometryCompressedSize: 0,
+            geometryStatistics: [],
+            geometryCompressorDisplay: false,
+            textureCompressorDisplay: false,
             texturesStatistics: [],
             texturesUpdated: false,
 
             comparisonSlider: true,
             compressionOnly: false,
             compressionStatistics: [],
-            compressionBtnTitle: "Compress Textures",
+            compressionBtnTitle: "Compress",
             
             textureType: [{title: "None"}, {title: "Color"}, {title: "Non-color"}, {title: "Normal"}, {title: "All"}],
-            selectedTextureType: "All",
+            selectedTextureType: "None",
 
             compressionStarted: false,
             compressionCompleted: false,
-            compressionType: [{title: "JPEG"}, {title: "PNG"}, {title: "WEBP"}, {title: "KTX2"}],
-            compressionEncoding: [{title: "UASTC"}, {title: "ETC1S"}],
-            compressionResolution: [{title: "1x"}, {title: "2x"}, {title: "4x"}, {title: "8x"}, {title: "16x"}, {title: "32x"}],
+
+            compressionGeometryTypes: [{title: "Draco"}, {title: "MeshQuantization"}, {title: "MeshOpt"}, {title: "Uncompressed"}],
+            compressionTextureType: [{title: "JPEG"}, {title: "PNG"}, {title: "WEBP"}, {title: "KTX2"}],
+            compressionQuantizationPositionTypes: [{title: "NONE"}, {title: "FLOAT"}, {title: "SHORT"}, {title: "SHORT_NORMALIZED"}, {title: "UNSIGNED_SHORT"}, {title: "UNSIGNED_SHORT_NORMALIZED"}, {title: "BYTE"}, {title: "BYTE_NORMALIZED"}, {title: "UNSIGNED_BYTE"}, {title: "UNSIGNED_BYTE_NORMALIZED"}],
+            selectedCompressionQuantizationPosition: "NONE",
+            compressionQuantizationNormalTypes: [{title: "NONE"}, {title: "FLOAT"}, {title: "SHORT_NORMALIZED"}, {title: "BYTE_NORMALIZED"}],
+            selectedCompressionQuantizationNormal: "NONE",
+            compressionQuantizationTangentTypes: [{title: "NONE"}, {title: "FLOAT"}, {title: "SHORT_NORMALIZED"}, {title: "BYTE_NORMALIZED"}],
+            selectedCompressionQuantizationTangent: "NONE",
+            compressionQuantizationTexCoordsTypes: [{title: "NONE"}, {title: "FLOAT"}, {title: "SHORT"}, {title: "SHORT_NORMALIZED"}, {title: "UNSIGNED_SHORT"}, {title: "BYTE"}, {title: "BYTE_NORMALIZED"}, {title: "UNSIGNED_BYTE"}],
+            selectedCompressionQuantizationTexCoords0: "NONE",
+            selectedCompressionQuantizationTexCoords1: "NONE",
+
+            compressionDracoEncodingMethods: [{title: "EDGEBREAKER"}, {title: "SEQUENTIAL ENCODING"}],
+            selectedCompressionDracoEncodingMethod: "EDGEBREAKER",
+            compressionSpeedDraco: 7,
+            decompressionSpeedDraco: 7,
+            compressionDracoQuantizationPositionQuantBits: 16,
+            compressionDracoQuantizationNormalQuantBits: 10,
+            compressionDracoQuantizationColorQuantBits: 16,
+            compressionDracoQuantizationTexcoordQuantBits: 11,
+            compressionDracoQuantizationGenericQuantBits: 16,
+            compressionDracoQuantizationTangentQuantBits: 16,
+            compressionDracoQuantizationWeightQuantBits: 16,
+            compressionDracoQuantizationJointQuantBits: 16,
+
+            compressionMeshOptFilterMethods: [{title: "NONE"}, {title: "OCTAHEDRAL"}, {title: "QUATERNION"}, {title: "EXPONENTIAL"}],
+            selectedCompressionMeshOptFilterMethod: "NONE",
+            compressionMeshOptFilterModes: [{title: "Separate"}, {title: "SharedVector"}, {title: "SharedComponent"}],
+            selectedCompressionMeshOptFilterMode: "Separate",
+            compressionMeshOptFilterQuantizationBits: 16,
+            positionFilter: "NONE",
+            positionFilterMode: "Separate",
+            positionFilterBits: 16,
+            normalFilter: "NONE",
+            normalFilterMode: "Separate",
+            normalFilterBits: 16,
+            tangentFilter: "NONE",
+            tangentFilterMode: "Separate",
+            tangentFilterBits: 16,
+            tex0Filter: "NONE",
+            tex0FilterMode: "Separate",
+            ex0FilterBits: 16,
+            tex1Filter: "NONE",
+            tex1FilterMode: "Separate",
+            tex1FilterBits: 16,
+            selectedCompressionMeshOptReorder: false,
+            compressionMOptQuantizationPosition: "NONE",
+            compressionMOptQuantizationTangent: "NONE",
+            compressionMOptQuantizationNormal: "NONE",
+            compressionMOptQuantizationTexCoords0: "NONE",
+            compressionMOptQuantizationTexCoords1: "NONE",
+
+            compressionTextureEncoding: [{title: "UASTC"}, {title: "ETC1S"}],
+            compressionTextureResolution: [{title: "1x"}, {title: "2x"}, {title: "4x"}, {title: "8x"}, {title: "16x"}, {title: "32x"}],
             
+            selectedCompressionGeometryType: "Draco",
+
             compressedKTX: false,
-            selectedCompressionType: "KTX2",
-            selectedCompressionEncoding: "UASTC",
-            selectedCompressionResolution: "1x",
+            selectedCompressionTextureType: "KTX2",
+            selectedCompressionTextureEncoding: "UASTC",
+            selectedCompressionTextureResolution: "1x",
             compressionQualityJPEG: 80.0,
             compressionQualityPNG: 8,
             compressionQualityWEBP: 80.0,
@@ -55229,6 +58396,7 @@ const app = new Vue$2({
             volumeEnabled: true,
             iorEnabled: true,
             iridescenceEnabled: true,
+            anisotropyEnabled: true,
             specularEnabled: true,
             emissiveStrengthEnabled: true,
 
@@ -55244,6 +58412,12 @@ const app = new Vue$2({
             environmentVisiblePrefState: true,
             volumeEnabledPrefState: true,
         };
+    },
+    computed: {
+        filteredCompressionGeometryItems() {
+            // Filter the items array based on the selectedCategory
+            return this.isGeometryCompressed ? this.compressionGeometryTypes : this.compressionGeometryTypes.filter(item => item.title !== 'Uncompressed'); 
+        }
     },
     created() {
         window.addEventListener("keydown", this.keyListener);
@@ -55300,6 +58474,29 @@ const app = new Vue$2({
             if (event.key === "c") 
                 this.compressionOnly = !this.compressionOnly;
         },
+        disableMeshHighlighting() {
+            this.enableMeshHighlighting = false;
+        },
+        toggleCollapseButtonFA(value, e){
+            if(value){
+                e.classList.remove('fa-caret-right');
+                e.classList.add('fa-caret-down');
+            }
+            else {
+                e.classList.remove('fa-caret-down');
+                e.classList.add('fa-caret-right');
+            }
+        },
+        toggleGeometryCompressorDisplay() {
+            this.geometryCompressorDisplay = !this.geometryCompressorDisplay;
+            const e = document.getElementById('geometryCompressorFA');
+            this.toggleCollapseButtonFA(this.geometryCompressorDisplay, e);
+        },
+        toggleTextureCompressorDisplay() {
+            this.textureCompressorDisplay = !this.textureCompressorDisplay;
+            const e = document.getElementById('textureCompressorFA');
+            this.toggleCollapseButtonFA(this.textureCompressorDisplay, e);
+        },
         toggleFullscreen() {
             if(this.fullscreen) {
                 app.show();
@@ -55322,7 +58519,7 @@ const app = new Vue$2({
         {
             this.$refs.animationState.setState(value);
         },
-        iblTriggered: function(value)
+        iblTriggered: function()
         {
             if(this.ibl == false)
             {
@@ -55333,7 +58530,7 @@ const app = new Vue$2({
                 this.renderEnv = this.environmentVisiblePrefState;
             }
         },
-        transmissionTriggered: function(value)
+        transmissionTriggered: function()
         {
             if(this.transmissionEnabled == false)
             {
@@ -55410,7 +58607,11 @@ const app = new Vue$2({
         },
         show() {
             this.uiVisible = true;
-        },
+        }
+        //toggleMeshNodeTree: function() {
+            //eventBus.$emit('toggle-event', {});
+            //this.$refs.toggleMeshNodeTreeBtn.innerText = this.$refs.toggleMeshNodeTreeBtn.innerText === 'Collapse' ? 'Expand' : 'Collapse';
+        //}
     }
 }).$mount('#app');
 
@@ -55424,7 +58625,7 @@ new Vue$2({
     methods:
     {
         toggleFullscreen() {
-            if(this.fullscreen) {
+            if (this.fullscreen) {
                 app.show();
             } else {
                 app.hide();
@@ -55446,10 +58647,9 @@ new Vue$2({
 }).$mount('#canvasUI');
 
 // pipe error messages to UI
-(function(){
-
-    var originalWarn = console.warn;
-    var originalError = console.error;
+(() => {
+    const originalWarn = console.warn;
+    const originalError = console.error;
 
     console.warn = function(txt) {
         app.warn(txt);
@@ -55461,14 +58661,13 @@ new Vue$2({
     };
 
     window.onerror = function(msg, url, lineNo, columnNo, error) {
-        var message = [
+        app.error([
             'Message: ' + msg,
             'URL: ' + url,
             'Line: ' + lineNo,
             'Column: ' + columnNo,
             'Error object: ' + JSON.stringify(error)
-          ].join(' - ');
-        app.error(message);
+        ].join(' - '));
     };
 })();
 
@@ -55705,9 +58904,9 @@ var substr = 'ab'.substr(-1) === 'b' ?
     }
 ;
 
-class gltfModelPathProvider
+class GltfModelPathProvider
 {
-    constructor(modelIndexerPath, currentFalvour="glTF", ignoredVariants = ["glTF-Embedded"])
+    constructor(modelIndexerPath, ignoredVariants = ["glTF-Embedded"])
     {
         this.modelIndexerPath = modelIndexerPath;
         this.ignoredVariants = ignoredVariants;
@@ -55717,10 +58916,8 @@ class gltfModelPathProvider
     async initialize()
     {
         const self = this;
-        return axios.get(this.modelIndexerPath).then(response =>
-        {
-            self.populateDictionary(response.data);
-        });
+        const response = await axios.get(this.modelIndexerPath);
+        self.populateDictionary(response.data);
     }
 
     resolve(modelKey, flavour)
@@ -55739,7 +58936,6 @@ class gltfModelPathProvider
         this.modelsDictionary = {};
         for (const entry of modelIndexer)
         {
-            // TODO maybe handle undefined names better
             if (entry.variants === undefined || entry.name === undefined)
             {
                 continue;
@@ -55757,7 +58953,6 @@ class gltfModelPathProvider
                 const fileName = entry.variants[variant];
                 const modelPath = path.join(modelsFolder, entry.name, variant, fileName);
                 variants[variant] = modelPath;
-
             }
             this.modelsDictionary[entry.name] = variants;
         }
@@ -63781,10 +66976,8 @@ async function runWebWorker(workerData, config) {
 		});
 	}
 	const resultValue = await result;
-	try {
+	if (!streamsTransferred) {
 		await writable.getWriter().close();
-	} catch (_error) {
-		// ignored
 	}
 	await closed;
 	return resultValue;
@@ -64024,7 +67217,7 @@ function clearTerminateTimeout(workerData) {
 	}
 }
 
-function e(e){const t=()=>URL.createObjectURL(new Blob(['const{Array:e,Object:t,Number:n,Math:r,Error:s,Uint8Array:i,Uint16Array:o,Uint32Array:c,Int32Array:f,Map:a,DataView:l,Promise:u,TextEncoder:w,crypto:h,postMessage:d,TransformStream:p,ReadableStream:y,WritableStream:m,CompressionStream:b,DecompressionStream:g}=self,k=void 0,v="undefined",S="function";class z{constructor(e){return class extends p{constructor(t,n){const r=new e(n);super({transform(e,t){t.enqueue(r.append(e))},flush(e){const t=r.flush();t&&e.enqueue(t)}})}}}}const C=[];for(let e=0;256>e;e++){let t=e;for(let e=0;8>e;e++)1&t?t=t>>>1^3988292384:t>>>=1;C[e]=t}class x{constructor(e){this.t=e||-1}append(e){let t=0|this.t;for(let n=0,r=0|e.length;r>n;n++)t=t>>>8^C[255&(t^e[n])];this.t=t}get(){return~this.t}}class A extends p{constructor(){let e;const t=new x;super({transform(e,n){t.append(e),n.enqueue(e)},flush(){const n=new i(4);new l(n.buffer).setUint32(0,t.get()),e.value=n}}),e=this}}const _={concat(e,t){if(0===e.length||0===t.length)return e.concat(t);const n=e[e.length-1],r=_.i(n);return 32===r?e.concat(t):_.o(t,r,0|n,e.slice(0,e.length-1))},l(e){const t=e.length;if(0===t)return 0;const n=e[t-1];return 32*(t-1)+_.i(n)},u(e,t){if(32*e.length<t)return e;const n=(e=e.slice(0,r.ceil(t/32))).length;return t&=31,n>0&&t&&(e[n-1]=_.h(t,e[n-1]&2147483648>>t-1,1)),e},h:(e,t,n)=>32===e?t:(n?0|t:t<<32-e)+1099511627776*e,i:e=>r.round(e/1099511627776)||32,o(e,t,n,r){for(void 0===r&&(r=[]);t>=32;t-=32)r.push(n),n=0;if(0===t)return r.concat(e);for(let s=0;s<e.length;s++)r.push(n|e[s]>>>t),n=e[s]<<32-t;const s=e.length?e[e.length-1]:0,i=_.i(s);return r.push(_.h(t+i&31,t+i>32?n:r.pop(),1)),r}},I={p:{m(e){const t=_.l(e)/8,n=new i(t);let r;for(let s=0;t>s;s++)0==(3&s)&&(r=e[s/4]),n[s]=r>>>24,r<<=8;return n},g(e){const t=[];let n,r=0;for(n=0;n<e.length;n++)r=r<<8|e[n],3==(3&n)&&(t.push(r),r=0);return 3&n&&t.push(_.h(8*(3&n),r)),t}}},P=class{constructor(e){const t=this;t.blockSize=512,t.k=[1732584193,4023233417,2562383102,271733878,3285377520],t.v=[1518500249,1859775393,2400959708,3395469782],e?(t.S=e.S.slice(0),t.C=e.C.slice(0),t.A=e.A):t.reset()}reset(){const e=this;return e.S=e.k.slice(0),e.C=[],e.A=0,e}update(e){const t=this;"string"==typeof e&&(e=I._.g(e));const n=t.C=_.concat(t.C,e),r=t.A,i=t.A=r+_.l(e);if(i>9007199254740991)throw new s("Cannot hash more than 2^53 - 1 bits");const o=new c(n);let f=0;for(let e=t.blockSize+r-(t.blockSize+r&t.blockSize-1);i>=e;e+=t.blockSize)t.I(o.subarray(16*f,16*(f+1))),f+=1;return n.splice(0,16*f),t}P(){const e=this;let t=e.C;const n=e.S;t=_.concat(t,[_.h(1,1)]);for(let e=t.length+2;15&e;e++)t.push(0);for(t.push(r.floor(e.A/4294967296)),t.push(0|e.A);t.length;)e.I(t.splice(0,16));return e.reset(),n}D(e,t,n,r){return e>19?e>39?e>59?e>79?void 0:t^n^r:t&n|t&r|n&r:t^n^r:t&n|~t&r}V(e,t){return t<<e|t>>>32-e}I(t){const n=this,s=n.S,i=e(80);for(let e=0;16>e;e++)i[e]=t[e];let o=s[0],c=s[1],f=s[2],a=s[3],l=s[4];for(let e=0;79>=e;e++){16>e||(i[e]=n.V(1,i[e-3]^i[e-8]^i[e-14]^i[e-16]));const t=n.V(5,o)+n.D(e,c,f,a)+l+i[e]+n.v[r.floor(e/20)]|0;l=a,a=f,f=n.V(30,c),c=o,o=t}s[0]=s[0]+o|0,s[1]=s[1]+c|0,s[2]=s[2]+f|0,s[3]=s[3]+a|0,s[4]=s[4]+l|0}},D={getRandomValues(e){const t=new c(e.buffer),n=e=>{let t=987654321;const n=4294967295;return()=>(t=36969*(65535&t)+(t>>16)&n,(((t<<16)+(e=18e3*(65535&e)+(e>>16)&n)&n)/4294967296+.5)*(r.random()>.5?1:-1))};for(let s,i=0;i<e.length;i+=4){const e=n(4294967296*(s||r.random()));s=987654071*e(),t[i/4]=4294967296*e()|0}return e}},V={importKey:e=>new V.R(I.p.g(e)),B(e,t,n,r){if(n=n||1e4,0>r||0>n)throw new s("invalid params to pbkdf2");const i=1+(r>>5)<<2;let o,c,f,a,u;const w=new ArrayBuffer(i),h=new l(w);let d=0;const p=_;for(t=I.p.g(t),u=1;(i||1)>d;u++){for(o=c=e.encrypt(p.concat(t,[u])),f=1;n>f;f++)for(c=e.encrypt(c),a=0;a<c.length;a++)o[a]^=c[a];for(f=0;(i||1)>d&&f<o.length;f++)h.setInt32(d,o[f]),d+=4}return w.slice(0,r/8)},R:class{constructor(e){const t=this,n=t.M=P,r=[[],[]];t.U=[new n,new n];const s=t.U[0].blockSize/32;e.length>s&&(e=(new n).update(e).P());for(let t=0;s>t;t++)r[0][t]=909522486^e[t],r[1][t]=1549556828^e[t];t.U[0].update(r[0]),t.U[1].update(r[1]),t.K=new n(t.U[0])}reset(){const e=this;e.K=new e.M(e.U[0]),e.N=!1}update(e){this.N=!0,this.K.update(e)}digest(){const e=this,t=e.K.P(),n=new e.M(e.U[1]).update(t).P();return e.reset(),n}encrypt(e){if(this.N)throw new s("encrypt on already updated hmac called!");return this.update(e),this.digest(e)}}},R=typeof h!=v&&typeof h.getRandomValues==S,B="Invalid password",E="Invalid signature",M="zipjs-abort-check-password";function U(e){return R?h.getRandomValues(e):D.getRandomValues(e)}const K=16,N={name:"PBKDF2"},O=t.assign({hash:{name:"HMAC"}},N),T=t.assign({iterations:1e3,hash:{name:"SHA-1"}},N),W=["deriveBits"],j=[8,12,16],H=[16,24,32],L=10,F=[0,0,0,0],q=typeof h!=v,G=q&&h.subtle,J=q&&typeof G!=v,Q=I.p,X=class{constructor(e){const t=this;t.O=[[[],[],[],[],[]],[[],[],[],[],[]]],t.O[0][0][0]||t.T();const n=t.O[0][4],r=t.O[1],i=e.length;let o,c,f,a=1;if(4!==i&&6!==i&&8!==i)throw new s("invalid aes key size");for(t.v=[c=e.slice(0),f=[]],o=i;4*i+28>o;o++){let e=c[o-1];(o%i==0||8===i&&o%i==4)&&(e=n[e>>>24]<<24^n[e>>16&255]<<16^n[e>>8&255]<<8^n[255&e],o%i==0&&(e=e<<8^e>>>24^a<<24,a=a<<1^283*(a>>7))),c[o]=c[o-i]^e}for(let e=0;o;e++,o--){const t=c[3&e?o:o-4];f[e]=4>=o||4>e?t:r[0][n[t>>>24]]^r[1][n[t>>16&255]]^r[2][n[t>>8&255]]^r[3][n[255&t]]}}encrypt(e){return this.W(e,0)}decrypt(e){return this.W(e,1)}T(){const e=this.O[0],t=this.O[1],n=e[4],r=t[4],s=[],i=[];let o,c,f,a;for(let e=0;256>e;e++)i[(s[e]=e<<1^283*(e>>7))^e]=e;for(let l=o=0;!n[l];l^=c||1,o=i[o]||1){let i=o^o<<1^o<<2^o<<3^o<<4;i=i>>8^255&i^99,n[l]=i,r[i]=l,a=s[f=s[c=s[l]]];let u=16843009*a^65537*f^257*c^16843008*l,w=257*s[i]^16843008*i;for(let n=0;4>n;n++)e[n][l]=w=w<<24^w>>>8,t[n][i]=u=u<<24^u>>>8}for(let n=0;5>n;n++)e[n]=e[n].slice(0),t[n]=t[n].slice(0)}W(e,t){if(4!==e.length)throw new s("invalid aes block size");const n=this.v[t],r=n.length/4-2,i=[0,0,0,0],o=this.O[t],c=o[0],f=o[1],a=o[2],l=o[3],u=o[4];let w,h,d,p=e[0]^n[0],y=e[t?3:1]^n[1],m=e[2]^n[2],b=e[t?1:3]^n[3],g=4;for(let e=0;r>e;e++)w=c[p>>>24]^f[y>>16&255]^a[m>>8&255]^l[255&b]^n[g],h=c[y>>>24]^f[m>>16&255]^a[b>>8&255]^l[255&p]^n[g+1],d=c[m>>>24]^f[b>>16&255]^a[p>>8&255]^l[255&y]^n[g+2],b=c[b>>>24]^f[p>>16&255]^a[y>>8&255]^l[255&m]^n[g+3],g+=4,p=w,y=h,m=d;for(let e=0;4>e;e++)i[t?3&-e:e]=u[p>>>24]<<24^u[y>>16&255]<<16^u[m>>8&255]<<8^u[255&b]^n[g++],w=p,p=y,y=m,m=b,b=w;return i}},Y=class{constructor(e,t){this.j=e,this.H=t,this.L=t}reset(){this.L=this.H}update(e){return this.F(this.j,e,this.L)}q(e){if(255==(e>>24&255)){let t=e>>16&255,n=e>>8&255,r=255&e;255===t?(t=0,255===n?(n=0,255===r?r=0:++r):++n):++t,e=0,e+=t<<16,e+=n<<8,e+=r}else e+=1<<24;return e}G(e){0===(e[0]=this.q(e[0]))&&(e[1]=this.q(e[1]))}F(e,t,n){let r;if(!(r=t.length))return[];const s=_.l(t);for(let s=0;r>s;s+=4){this.G(n);const r=e.encrypt(n);t[s]^=r[0],t[s+1]^=r[1],t[s+2]^=r[2],t[s+3]^=r[3]}return _.u(t,s)}},Z=V.R;let $=q&&J&&typeof G.importKey==S,ee=q&&J&&typeof G.deriveBits==S;class te extends p{constructor({password:e,rawPassword:n,signed:r,encryptionStrength:o,checkPasswordOnly:c}){super({start(){t.assign(this,{ready:new u((e=>this.J=e)),password:ie(e,n),signed:r,X:o-1,pending:new i})},async transform(e,t){const n=this,{password:r,X:o,J:f,ready:a}=n;r?(await(async(e,t,n,r)=>{const i=await se(e,t,n,ce(r,0,j[t])),o=ce(r,j[t]);if(i[0]!=o[0]||i[1]!=o[1])throw new s(B)})(n,o,r,ce(e,0,j[o]+2)),e=ce(e,j[o]+2),c?t.error(new s(M)):f()):await a;const l=new i(e.length-L-(e.length-L)%K);t.enqueue(re(n,e,l,0,L,!0))},async flush(e){const{signed:t,Y:n,Z:r,pending:o,ready:c}=this;if(r&&n){await c;const f=ce(o,0,o.length-L),a=ce(o,o.length-L);let l=new i;if(f.length){const e=ae(Q,f);r.update(e);const t=n.update(e);l=fe(Q,t)}if(t){const e=ce(fe(Q,r.digest()),0,L);for(let t=0;L>t;t++)if(e[t]!=a[t])throw new s(E)}e.enqueue(l)}}})}}class ne extends p{constructor({password:e,rawPassword:n,encryptionStrength:r}){let s;super({start(){t.assign(this,{ready:new u((e=>this.J=e)),password:ie(e,n),X:r-1,pending:new i})},async transform(e,t){const n=this,{password:r,X:s,J:o,ready:c}=n;let f=new i;r?(f=await(async(e,t,n)=>{const r=U(new i(j[t]));return oe(r,await se(e,t,n,r))})(n,s,r),o()):await c;const a=new i(f.length+e.length-e.length%K);a.set(f,0),t.enqueue(re(n,e,a,f.length,0))},async flush(e){const{Y:t,Z:n,pending:r,ready:o}=this;if(n&&t){await o;let c=new i;if(r.length){const e=t.update(ae(Q,r));n.update(e),c=fe(Q,e)}s.signature=fe(Q,n.digest()).slice(0,L),e.enqueue(oe(c,s.signature))}}}),s=this}}function re(e,t,n,r,s,o){const{Y:c,Z:f,pending:a}=e,l=t.length-s;let u;for(a.length&&(t=oe(a,t),n=((e,t)=>{if(t&&t>e.length){const n=e;(e=new i(t)).set(n,0)}return e})(n,l-l%K)),u=0;l-K>=u;u+=K){const e=ae(Q,ce(t,u,u+K));o&&f.update(e);const s=c.update(e);o||f.update(s),n.set(fe(Q,s),u+r)}return e.pending=ce(t,u),n}async function se(n,r,s,o){n.password=null;const c=await(async(e,t,n,r,s)=>{if(!$)return V.importKey(t);try{return await G.importKey("raw",t,n,!1,s)}catch(e){return $=!1,V.importKey(t)}})(0,s,O,0,W),f=await(async(e,t,n)=>{if(!ee)return V.B(t,e.salt,T.iterations,n);try{return await G.deriveBits(e,t,n)}catch(r){return ee=!1,V.B(t,e.salt,T.iterations,n)}})(t.assign({salt:o},T),c,8*(2*H[r]+2)),a=new i(f),l=ae(Q,ce(a,0,H[r])),u=ae(Q,ce(a,H[r],2*H[r])),w=ce(a,2*H[r]);return t.assign(n,{keys:{key:l,$:u,passwordVerification:w},Y:new Y(new X(l),e.from(F)),Z:new Z(u)}),w}function ie(e,t){return t===k?(e=>{if(typeof w==v){const t=new i((e=unescape(encodeURIComponent(e))).length);for(let n=0;n<t.length;n++)t[n]=e.charCodeAt(n);return t}return(new w).encode(e)})(e):t}function oe(e,t){let n=e;return e.length+t.length&&(n=new i(e.length+t.length),n.set(e,0),n.set(t,e.length)),n}function ce(e,t,n){return e.subarray(t,n)}function fe(e,t){return e.m(t)}function ae(e,t){return e.g(t)}class le extends p{constructor({password:e,passwordVerification:n,checkPasswordOnly:r}){super({start(){t.assign(this,{password:e,passwordVerification:n}),de(this,e)},transform(e,t){const n=this;if(n.password){const t=we(n,e.subarray(0,12));if(n.password=null,t[11]!=n.passwordVerification)throw new s(B);e=e.subarray(12)}r?t.error(new s(M)):t.enqueue(we(n,e))}})}}class ue extends p{constructor({password:e,passwordVerification:n}){super({start(){t.assign(this,{password:e,passwordVerification:n}),de(this,e)},transform(e,t){const n=this;let r,s;if(n.password){n.password=null;const t=U(new i(12));t[11]=n.passwordVerification,r=new i(e.length+t.length),r.set(he(n,t),0),s=12}else r=new i(e.length),s=0;r.set(he(n,e),s),t.enqueue(r)}})}}function we(e,t){const n=new i(t.length);for(let r=0;r<t.length;r++)n[r]=ye(e)^t[r],pe(e,n[r]);return n}function he(e,t){const n=new i(t.length);for(let r=0;r<t.length;r++)n[r]=ye(e)^t[r],pe(e,t[r]);return n}function de(e,n){const r=[305419896,591751049,878082192];t.assign(e,{keys:r,ee:new x(r[0]),te:new x(r[2])});for(let t=0;t<n.length;t++)pe(e,n.charCodeAt(t))}function pe(e,t){let[n,s,i]=e.keys;e.ee.append([t]),n=~e.ee.get(),s=be(r.imul(be(s+me(n)),134775813)+1),e.te.append([s>>>24]),i=~e.te.get(),e.keys=[n,s,i]}function ye(e){const t=2|e.keys[2];return me(r.imul(t,1^t)>>>8)}function me(e){return 255&e}function be(e){return 4294967295&e}const ge="deflate-raw";class ke extends p{constructor(e,{chunkSize:t,CompressionStream:n,CompressionStreamNative:r}){super({});const{compressed:s,encrypted:i,useCompressionStream:o,zipCrypto:c,signed:f,level:a}=e,u=this;let w,h,d=Se(super.readable);i&&!c||!f||(w=new A,d=xe(d,w)),s&&(d=Ce(d,o,{level:a,chunkSize:t},r,n)),i&&(c?d=xe(d,new ue(e)):(h=new ne(e),d=xe(d,h))),ze(u,d,(()=>{let e;i&&!c&&(e=h.signature),i&&!c||!f||(e=new l(w.value.buffer).getUint32(0)),u.signature=e}))}}class ve extends p{constructor(e,{chunkSize:t,DecompressionStream:n,DecompressionStreamNative:r}){super({});const{zipCrypto:i,encrypted:o,signed:c,signature:f,compressed:a,useCompressionStream:u}=e;let w,h,d=Se(super.readable);o&&(i?d=xe(d,new le(e)):(h=new te(e),d=xe(d,h))),a&&(d=Ce(d,u,{chunkSize:t},r,n)),o&&!i||!c||(w=new A,d=xe(d,w)),ze(this,d,(()=>{if((!o||i)&&c){const e=new l(w.value.buffer);if(f!=e.getUint32(0,!1))throw new s(E)}}))}}function Se(e){return xe(e,new p({transform(e,t){e&&e.length&&t.enqueue(e)}}))}function ze(e,n,r){n=xe(n,new p({flush:r})),t.defineProperty(e,"readable",{get:()=>n})}function Ce(e,t,n,r,s){try{e=xe(e,new(t&&r?r:s)(ge,n))}catch(r){if(!t)return e;try{e=xe(e,new s(ge,n))}catch(t){return e}}return e}function xe(e,t){return e.pipeThrough(t)}const Ae="data",_e="close";class Ie extends p{constructor(e,n){super({});const r=this,{codecType:s}=e;let i;s.startsWith("deflate")?i=ke:s.startsWith("inflate")&&(i=ve);let o=0,c=0;const f=new i(e,n),a=super.readable,l=new p({transform(e,t){e&&e.length&&(c+=e.length,t.enqueue(e))},flush(){t.assign(r,{inputSize:c})}}),u=new p({transform(e,t){e&&e.length&&(o+=e.length,t.enqueue(e))},flush(){const{signature:e}=f;t.assign(r,{signature:e,outputSize:o,inputSize:c})}});t.defineProperty(r,"readable",{get:()=>a.pipeThrough(l).pipeThrough(f).pipeThrough(u)})}}class Pe extends p{constructor(e){let t;super({transform:function n(r,s){if(t){const e=new i(t.length+r.length);e.set(t),e.set(r,t.length),r=e,t=null}r.length>e?(s.enqueue(r.slice(0,e)),n(r.slice(e),s)):t=r},flush(e){t&&t.length&&e.enqueue(t)}})}}const De=new a,Ve=new a;let Re,Be=0,Ee=!0;async function Me(e){try{const{options:t,scripts:r,config:s}=e;if(r&&r.length)try{Ee?importScripts.apply(k,r):await Ue(r)}catch(e){Ee=!1,await Ue(r)}self.initCodec&&self.initCodec(),s.CompressionStreamNative=self.CompressionStream,s.DecompressionStreamNative=self.DecompressionStream,self.Deflate&&(s.CompressionStream=new z(self.Deflate)),self.Inflate&&(s.DecompressionStream=new z(self.Inflate));const i={highWaterMark:1},o=e.readable||new y({async pull(e){const t=new u((e=>De.set(Be,e)));Ke({type:"pull",messageId:Be}),Be=(Be+1)%n.MAX_SAFE_INTEGER;const{value:r,done:s}=await t;e.enqueue(r),s&&e.close()}},i),c=e.writable||new m({async write(e){let t;const r=new u((e=>t=e));Ve.set(Be,t),Ke({type:Ae,value:e,messageId:Be}),Be=(Be+1)%n.MAX_SAFE_INTEGER,await r}},i),f=new Ie(t,s);Re=new AbortController;const{signal:a}=Re;await o.pipeThrough(f).pipeThrough(new Pe(s.chunkSize)).pipeTo(c,{signal:a,preventClose:!0,preventAbort:!0});try{await c.getWriter().close()}catch(e){}const{signature:l,inputSize:w,outputSize:h}=f;Ke({type:_e,result:{signature:l,inputSize:w,outputSize:h}})}catch(e){Ne(e)}}async function Ue(e){for(const t of e)await import(t)}function Ke(e){let{value:t}=e;if(t)if(t.length)try{t=new i(t),e.value=t.buffer,d(e,[e.value])}catch(t){d(e)}else d(e);else d(e)}function Ne(e=new s("Unknown error")){const{message:t,stack:n,code:r,name:i}=e;d({error:{message:t,stack:n,code:r,name:i}})}addEventListener("message",(({data:e})=>{const{type:t,messageId:n,value:r,done:s}=e;try{if("start"==t&&Me(e),t==Ae){const e=De.get(n);De.delete(n),e({value:new i(r),done:s})}if("ack"==t){const e=Ve.get(n);Ve.delete(n),e()}t==_e&&Re.abort()}catch(e){Ne(e)}}));const Oe=-2;function Te(t){return We(t.map((([t,n])=>new e(t).fill(n,0,t))))}function We(t){return t.reduce(((t,n)=>t.concat(e.isArray(n)?We(n):n)),[])}const je=[0,1,2,3].concat(...Te([[2,4],[2,5],[4,6],[4,7],[8,8],[8,9],[16,10],[16,11],[32,12],[32,13],[64,14],[64,15],[2,0],[1,16],[1,17],[2,18],[2,19],[4,20],[4,21],[8,22],[8,23],[16,24],[16,25],[32,26],[32,27],[64,28],[64,29]]));function He(){const e=this;function t(e,t){let n=0;do{n|=1&e,e>>>=1,n<<=1}while(--t>0);return n>>>1}e.ne=n=>{const s=e.re,i=e.ie.se,o=e.ie.oe;let c,f,a,l=-1;for(n.ce=0,n.fe=573,c=0;o>c;c++)0!==s[2*c]?(n.ae[++n.ce]=l=c,n.le[c]=0):s[2*c+1]=0;for(;2>n.ce;)a=n.ae[++n.ce]=2>l?++l:0,s[2*a]=1,n.le[a]=0,n.ue--,i&&(n.we-=i[2*a+1]);for(e.he=l,c=r.floor(n.ce/2);c>=1;c--)n.de(s,c);a=o;do{c=n.ae[1],n.ae[1]=n.ae[n.ce--],n.de(s,1),f=n.ae[1],n.ae[--n.fe]=c,n.ae[--n.fe]=f,s[2*a]=s[2*c]+s[2*f],n.le[a]=r.max(n.le[c],n.le[f])+1,s[2*c+1]=s[2*f+1]=a,n.ae[1]=a++,n.de(s,1)}while(n.ce>=2);n.ae[--n.fe]=n.ae[1],(t=>{const n=e.re,r=e.ie.se,s=e.ie.pe,i=e.ie.ye,o=e.ie.me;let c,f,a,l,u,w,h=0;for(l=0;15>=l;l++)t.be[l]=0;for(n[2*t.ae[t.fe]+1]=0,c=t.fe+1;573>c;c++)f=t.ae[c],l=n[2*n[2*f+1]+1]+1,l>o&&(l=o,h++),n[2*f+1]=l,f>e.he||(t.be[l]++,u=0,i>f||(u=s[f-i]),w=n[2*f],t.ue+=w*(l+u),r&&(t.we+=w*(r[2*f+1]+u)));if(0!==h){do{for(l=o-1;0===t.be[l];)l--;t.be[l]--,t.be[l+1]+=2,t.be[o]--,h-=2}while(h>0);for(l=o;0!==l;l--)for(f=t.be[l];0!==f;)a=t.ae[--c],a>e.he||(n[2*a+1]!=l&&(t.ue+=(l-n[2*a+1])*n[2*a],n[2*a+1]=l),f--)}})(n),((e,n,r)=>{const s=[];let i,o,c,f=0;for(i=1;15>=i;i++)s[i]=f=f+r[i-1]<<1;for(o=0;n>=o;o++)c=e[2*o+1],0!==c&&(e[2*o]=t(s[c]++,c))})(s,e.he,n.be)}}function Le(e,t,n,r,s){const i=this;i.se=e,i.pe=t,i.ye=n,i.oe=r,i.me=s}He.ge=[0,1,2,3,4,5,6,7].concat(...Te([[2,8],[2,9],[2,10],[2,11],[4,12],[4,13],[4,14],[4,15],[8,16],[8,17],[8,18],[8,19],[16,20],[16,21],[16,22],[16,23],[32,24],[32,25],[32,26],[31,27],[1,28]])),He.ke=[0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224,0],He.ve=[0,1,2,3,4,6,8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024,1536,2048,3072,4096,6144,8192,12288,16384,24576],He.Se=e=>256>e?je[e]:je[256+(e>>>7)],He.ze=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],He.Ce=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],He.xe=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,3,7],He.Ae=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];const Fe=Te([[144,8],[112,9],[24,7],[8,8]]);Le._e=We([12,140,76,204,44,172,108,236,28,156,92,220,60,188,124,252,2,130,66,194,34,162,98,226,18,146,82,210,50,178,114,242,10,138,74,202,42,170,106,234,26,154,90,218,58,186,122,250,6,134,70,198,38,166,102,230,22,150,86,214,54,182,118,246,14,142,78,206,46,174,110,238,30,158,94,222,62,190,126,254,1,129,65,193,33,161,97,225,17,145,81,209,49,177,113,241,9,137,73,201,41,169,105,233,25,153,89,217,57,185,121,249,5,133,69,197,37,165,101,229,21,149,85,213,53,181,117,245,13,141,77,205,45,173,109,237,29,157,93,221,61,189,125,253,19,275,147,403,83,339,211,467,51,307,179,435,115,371,243,499,11,267,139,395,75,331,203,459,43,299,171,427,107,363,235,491,27,283,155,411,91,347,219,475,59,315,187,443,123,379,251,507,7,263,135,391,71,327,199,455,39,295,167,423,103,359,231,487,23,279,151,407,87,343,215,471,55,311,183,439,119,375,247,503,15,271,143,399,79,335,207,463,47,303,175,431,111,367,239,495,31,287,159,415,95,351,223,479,63,319,191,447,127,383,255,511,0,64,32,96,16,80,48,112,8,72,40,104,24,88,56,120,4,68,36,100,20,84,52,116,3,131,67,195,35,163,99,227].map(((e,t)=>[e,Fe[t]])));const qe=Te([[30,5]]);function Ge(e,t,n,r,s){const i=this;i.Ie=e,i.Pe=t,i.De=n,i.Ve=r,i.Re=s}Le.Be=We([0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23].map(((e,t)=>[e,qe[t]]))),Le.Ee=new Le(Le._e,He.ze,257,286,15),Le.Me=new Le(Le.Be,He.Ce,0,30,15),Le.Ue=new Le(null,He.xe,0,19,7);const Je=[new Ge(0,0,0,0,0),new Ge(4,4,8,4,1),new Ge(4,5,16,8,1),new Ge(4,6,32,32,1),new Ge(4,4,16,16,2),new Ge(8,16,32,32,2),new Ge(8,16,128,128,2),new Ge(8,32,128,256,2),new Ge(32,128,258,1024,2),new Ge(32,258,258,4096,2)],Qe=["need dictionary","stream end","","","stream error","data error","","buffer error","",""],Xe=113,Ye=666,Ze=262;function $e(e,t,n,r){const s=e[2*t],i=e[2*n];return i>s||s==i&&r[t]<=r[n]}function et(){const e=this;let t,n,s,c,f,a,l,u,w,h,d,p,y,m,b,g,k,v,S,z,C,x,A,_,I,P,D,V,R,B,E,M,U;const K=new He,N=new He,O=new He;let T,W,j,H,L,F;function q(){let t;for(t=0;286>t;t++)E[2*t]=0;for(t=0;30>t;t++)M[2*t]=0;for(t=0;19>t;t++)U[2*t]=0;E[512]=1,e.ue=e.we=0,W=j=0}function G(e,t){let n,r=-1,s=e[1],i=0,o=7,c=4;0===s&&(o=138,c=3),e[2*(t+1)+1]=65535;for(let f=0;t>=f;f++)n=s,s=e[2*(f+1)+1],++i<o&&n==s||(c>i?U[2*n]+=i:0!==n?(n!=r&&U[2*n]++,U[32]++):i>10?U[36]++:U[34]++,i=0,r=n,0===s?(o=138,c=3):n==s?(o=6,c=3):(o=7,c=4))}function J(t){e.Ke[e.pending++]=t}function Q(e){J(255&e),J(e>>>8&255)}function X(e,t){let n;const r=t;F>16-r?(n=e,L|=n<<F&65535,Q(L),L=n>>>16-F,F+=r-16):(L|=e<<F&65535,F+=r)}function Y(e,t){const n=2*e;X(65535&t[n],65535&t[n+1])}function Z(e,t){let n,r,s=-1,i=e[1],o=0,c=7,f=4;for(0===i&&(c=138,f=3),n=0;t>=n;n++)if(r=i,i=e[2*(n+1)+1],++o>=c||r!=i){if(f>o)do{Y(r,U)}while(0!=--o);else 0!==r?(r!=s&&(Y(r,U),o--),Y(16,U),X(o-3,2)):o>10?(Y(18,U),X(o-11,7)):(Y(17,U),X(o-3,3));o=0,s=r,0===i?(c=138,f=3):r==i?(c=6,f=3):(c=7,f=4)}}function $(){16==F?(Q(L),L=0,F=0):8>F||(J(255&L),L>>>=8,F-=8)}function ee(t,n){let s,i,o;if(e.Ne[W]=t,e.Oe[W]=255&n,W++,0===t?E[2*n]++:(j++,t--,E[2*(He.ge[n]+256+1)]++,M[2*He.Se(t)]++),0==(8191&W)&&D>2){for(s=8*W,i=C-k,o=0;30>o;o++)s+=M[2*o]*(5+He.Ce[o]);if(s>>>=3,j<r.floor(W/2)&&s<r.floor(i/2))return!0}return W==T-1}function te(t,n){let r,s,i,o,c=0;if(0!==W)do{r=e.Ne[c],s=e.Oe[c],c++,0===r?Y(s,t):(i=He.ge[s],Y(i+256+1,t),o=He.ze[i],0!==o&&(s-=He.ke[i],X(s,o)),r--,i=He.Se(r),Y(i,n),o=He.Ce[i],0!==o&&(r-=He.ve[i],X(r,o)))}while(W>c);Y(256,t),H=t[513]}function ne(){F>8?Q(L):F>0&&J(255&L),L=0,F=0}function re(t,n,r){X(0+(r?1:0),3),((t,n)=>{ne(),H=8,Q(n),Q(~n),e.Ke.set(u.subarray(t,t+n),e.pending),e.pending+=n})(t,n)}function se(n){((t,n,r)=>{let s,i,o=0;D>0?(K.ne(e),N.ne(e),o=(()=>{let t;for(G(E,K.he),G(M,N.he),O.ne(e),t=18;t>=3&&0===U[2*He.Ae[t]+1];t--);return e.ue+=14+3*(t+1),t})(),s=e.ue+3+7>>>3,i=e.we+3+7>>>3,i>s||(s=i)):s=i=n+5,n+4>s||-1==t?i==s?(X(2+(r?1:0),3),te(Le._e,Le.Be)):(X(4+(r?1:0),3),((e,t,n)=>{let r;for(X(e-257,5),X(t-1,5),X(n-4,4),r=0;n>r;r++)X(U[2*He.Ae[r]+1],3);Z(E,e-1),Z(M,t-1)})(K.he+1,N.he+1,o+1),te(E,M)):re(t,n,r),q(),r&&ne()})(0>k?-1:k,C-k,n),k=C,t.Te()}function ie(){let e,n,r,s;do{if(s=w-A-C,0===s&&0===C&&0===A)s=f;else if(-1==s)s--;else if(C>=f+f-Ze){u.set(u.subarray(f,f+f),0),x-=f,C-=f,k-=f,e=y,r=e;do{n=65535&d[--r],d[r]=f>n?0:n-f}while(0!=--e);e=f,r=e;do{n=65535&h[--r],h[r]=f>n?0:n-f}while(0!=--e);s+=f}if(0===t.We)return;e=t.je(u,C+A,s),A+=e,3>A||(p=255&u[C],p=(p<<g^255&u[C+1])&b)}while(Ze>A&&0!==t.We)}function oe(e){let t,n,r=I,s=C,i=_;const o=C>f-Ze?C-(f-Ze):0;let c=B;const a=l,w=C+258;let d=u[s+i-1],p=u[s+i];R>_||(r>>=2),c>A&&(c=A);do{if(t=e,u[t+i]==p&&u[t+i-1]==d&&u[t]==u[s]&&u[++t]==u[s+1]){s+=2,t++;do{}while(u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&w>s);if(n=258-(w-s),s=w-258,n>i){if(x=e,i=n,n>=c)break;d=u[s+i-1],p=u[s+i]}}}while((e=65535&h[e&a])>o&&0!=--r);return i>A?A:i}e.le=[],e.be=[],e.ae=[],E=[],M=[],U=[],e.de=(t,n)=>{const r=e.ae,s=r[n];let i=n<<1;for(;i<=e.ce&&(i<e.ce&&$e(t,r[i+1],r[i],e.le)&&i++,!$e(t,s,r[i],e.le));)r[n]=r[i],n=i,i<<=1;r[n]=s},e.He=(t,S,x,W,j,G)=>(W||(W=8),j||(j=8),G||(G=0),t.Le=null,-1==S&&(S=6),1>j||j>9||8!=W||9>x||x>15||0>S||S>9||0>G||G>2?Oe:(t.Fe=e,a=x,f=1<<a,l=f-1,m=j+7,y=1<<m,b=y-1,g=r.floor((m+3-1)/3),u=new i(2*f),h=[],d=[],T=1<<j+6,e.Ke=new i(4*T),s=4*T,e.Ne=new o(T),e.Oe=new i(T),D=S,V=G,(t=>(t.qe=t.Ge=0,t.Le=null,e.pending=0,e.Je=0,n=Xe,c=0,K.re=E,K.ie=Le.Ee,N.re=M,N.ie=Le.Me,O.re=U,O.ie=Le.Ue,L=0,F=0,H=8,q(),(()=>{w=2*f,d[y-1]=0;for(let e=0;y-1>e;e++)d[e]=0;P=Je[D].Pe,R=Je[D].Ie,B=Je[D].De,I=Je[D].Ve,C=0,k=0,A=0,v=_=2,z=0,p=0})(),0))(t))),e.Qe=()=>42!=n&&n!=Xe&&n!=Ye?Oe:(e.Oe=null,e.Ne=null,e.Ke=null,d=null,h=null,u=null,e.Fe=null,n==Xe?-3:0),e.Xe=(e,t,n)=>{let r=0;return-1==t&&(t=6),0>t||t>9||0>n||n>2?Oe:(Je[D].Re!=Je[t].Re&&0!==e.qe&&(r=e.Ye(1)),D!=t&&(D=t,P=Je[D].Pe,R=Je[D].Ie,B=Je[D].De,I=Je[D].Ve),V=n,r)},e.Ze=(e,t,r)=>{let s,i=r,o=0;if(!t||42!=n)return Oe;if(3>i)return 0;for(i>f-Ze&&(i=f-Ze,o=r-i),u.set(t.subarray(o,o+i),0),C=i,k=i,p=255&u[0],p=(p<<g^255&u[1])&b,s=0;i-3>=s;s++)p=(p<<g^255&u[s+2])&b,h[s&l]=d[p],d[p]=s;return 0},e.Ye=(r,i)=>{let o,w,m,I,R;if(i>4||0>i)return Oe;if(!r.$e||!r.et&&0!==r.We||n==Ye&&4!=i)return r.Le=Qe[4],Oe;if(0===r.tt)return r.Le=Qe[7],-5;var B;if(t=r,I=c,c=i,42==n&&(w=8+(a-8<<4)<<8,m=(D-1&255)>>1,m>3&&(m=3),w|=m<<6,0!==C&&(w|=32),w+=31-w%31,n=Xe,J((B=w)>>8&255),J(255&B)),0!==e.pending){if(t.Te(),0===t.tt)return c=-1,0}else if(0===t.We&&I>=i&&4!=i)return t.Le=Qe[7],-5;if(n==Ye&&0!==t.We)return r.Le=Qe[7],-5;if(0!==t.We||0!==A||0!=i&&n!=Ye){switch(R=-1,Je[D].Re){case 0:R=(e=>{let n,r=65535;for(r>s-5&&(r=s-5);;){if(1>=A){if(ie(),0===A&&0==e)return 0;if(0===A)break}if(C+=A,A=0,n=k+r,(0===C||C>=n)&&(A=C-n,C=n,se(!1),0===t.tt))return 0;if(C-k>=f-Ze&&(se(!1),0===t.tt))return 0}return se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i);break;case 1:R=(e=>{let n,r=0;for(;;){if(Ze>A){if(ie(),Ze>A&&0==e)return 0;if(0===A)break}if(3>A||(p=(p<<g^255&u[C+2])&b,r=65535&d[p],h[C&l]=d[p],d[p]=C),0===r||(C-r&65535)>f-Ze||2!=V&&(v=oe(r)),3>v)n=ee(0,255&u[C]),A--,C++;else if(n=ee(C-x,v-3),A-=v,v>P||3>A)C+=v,v=0,p=255&u[C],p=(p<<g^255&u[C+1])&b;else{v--;do{C++,p=(p<<g^255&u[C+2])&b,r=65535&d[p],h[C&l]=d[p],d[p]=C}while(0!=--v);C++}if(n&&(se(!1),0===t.tt))return 0}return se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i);break;case 2:R=(e=>{let n,r,s=0;for(;;){if(Ze>A){if(ie(),Ze>A&&0==e)return 0;if(0===A)break}if(3>A||(p=(p<<g^255&u[C+2])&b,s=65535&d[p],h[C&l]=d[p],d[p]=C),_=v,S=x,v=2,0!==s&&P>_&&f-Ze>=(C-s&65535)&&(2!=V&&(v=oe(s)),5>=v&&(1==V||3==v&&C-x>4096)&&(v=2)),3>_||v>_)if(0!==z){if(n=ee(0,255&u[C-1]),n&&se(!1),C++,A--,0===t.tt)return 0}else z=1,C++,A--;else{r=C+A-3,n=ee(C-1-S,_-3),A-=_-1,_-=2;do{++C>r||(p=(p<<g^255&u[C+2])&b,s=65535&d[p],h[C&l]=d[p],d[p]=C)}while(0!=--_);if(z=0,v=2,C++,n&&(se(!1),0===t.tt))return 0}}return 0!==z&&(n=ee(0,255&u[C-1]),z=0),se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i)}if(2!=R&&3!=R||(n=Ye),0==R||2==R)return 0===t.tt&&(c=-1),0;if(1==R){if(1==i)X(2,3),Y(256,Le._e),$(),9>1+H+10-F&&(X(2,3),Y(256,Le._e),$()),H=7;else if(re(0,0,!1),3==i)for(o=0;y>o;o++)d[o]=0;if(t.Te(),0===t.tt)return c=-1,0}}return 4!=i?0:1}}function tt(){const e=this;e.nt=0,e.rt=0,e.We=0,e.qe=0,e.tt=0,e.Ge=0}function nt(e){const t=new tt,n=(o=e&&e.chunkSize?e.chunkSize:65536)+5*(r.floor(o/16383)+1);var o;const c=new i(n);let f=e?e.level:-1;void 0===f&&(f=-1),t.He(f),t.$e=c,this.append=(e,r)=>{let o,f,a=0,l=0,u=0;const w=[];if(e.length){t.nt=0,t.et=e,t.We=e.length;do{if(t.rt=0,t.tt=n,o=t.Ye(0),0!=o)throw new s("deflating: "+t.Le);t.rt&&(t.rt==n?w.push(new i(c)):w.push(c.subarray(0,t.rt))),u+=t.rt,r&&t.nt>0&&t.nt!=a&&(r(t.nt),a=t.nt)}while(t.We>0||0===t.tt);return w.length>1?(f=new i(u),w.forEach((e=>{f.set(e,l),l+=e.length}))):f=w[0]?new i(w[0]):new i,f}},this.flush=()=>{let e,r,o=0,f=0;const a=[];do{if(t.rt=0,t.tt=n,e=t.Ye(4),1!=e&&0!=e)throw new s("deflating: "+t.Le);n-t.tt>0&&a.push(c.slice(0,t.rt)),f+=t.rt}while(t.We>0||0===t.tt);return t.Qe(),r=new i(f),a.forEach((e=>{r.set(e,o),o+=e.length})),r}}tt.prototype={He(e,t){const n=this;return n.Fe=new et,t||(t=15),n.Fe.He(n,e,t)},Ye(e){const t=this;return t.Fe?t.Fe.Ye(t,e):Oe},Qe(){const e=this;if(!e.Fe)return Oe;const t=e.Fe.Qe();return e.Fe=null,t},Xe(e,t){const n=this;return n.Fe?n.Fe.Xe(n,e,t):Oe},Ze(e,t){const n=this;return n.Fe?n.Fe.Ze(n,e,t):Oe},je(e,t,n){const r=this;let s=r.We;return s>n&&(s=n),0===s?0:(r.We-=s,e.set(r.et.subarray(r.nt,r.nt+s),t),r.nt+=s,r.qe+=s,s)},Te(){const e=this;let t=e.Fe.pending;t>e.tt&&(t=e.tt),0!==t&&(e.$e.set(e.Fe.Ke.subarray(e.Fe.Je,e.Fe.Je+t),e.rt),e.rt+=t,e.Fe.Je+=t,e.Ge+=t,e.tt-=t,e.Fe.pending-=t,0===e.Fe.pending&&(e.Fe.Je=0))}};const rt=-2,st=-3,it=-5,ot=[0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535],ct=[96,7,256,0,8,80,0,8,16,84,8,115,82,7,31,0,8,112,0,8,48,0,9,192,80,7,10,0,8,96,0,8,32,0,9,160,0,8,0,0,8,128,0,8,64,0,9,224,80,7,6,0,8,88,0,8,24,0,9,144,83,7,59,0,8,120,0,8,56,0,9,208,81,7,17,0,8,104,0,8,40,0,9,176,0,8,8,0,8,136,0,8,72,0,9,240,80,7,4,0,8,84,0,8,20,85,8,227,83,7,43,0,8,116,0,8,52,0,9,200,81,7,13,0,8,100,0,8,36,0,9,168,0,8,4,0,8,132,0,8,68,0,9,232,80,7,8,0,8,92,0,8,28,0,9,152,84,7,83,0,8,124,0,8,60,0,9,216,82,7,23,0,8,108,0,8,44,0,9,184,0,8,12,0,8,140,0,8,76,0,9,248,80,7,3,0,8,82,0,8,18,85,8,163,83,7,35,0,8,114,0,8,50,0,9,196,81,7,11,0,8,98,0,8,34,0,9,164,0,8,2,0,8,130,0,8,66,0,9,228,80,7,7,0,8,90,0,8,26,0,9,148,84,7,67,0,8,122,0,8,58,0,9,212,82,7,19,0,8,106,0,8,42,0,9,180,0,8,10,0,8,138,0,8,74,0,9,244,80,7,5,0,8,86,0,8,22,192,8,0,83,7,51,0,8,118,0,8,54,0,9,204,81,7,15,0,8,102,0,8,38,0,9,172,0,8,6,0,8,134,0,8,70,0,9,236,80,7,9,0,8,94,0,8,30,0,9,156,84,7,99,0,8,126,0,8,62,0,9,220,82,7,27,0,8,110,0,8,46,0,9,188,0,8,14,0,8,142,0,8,78,0,9,252,96,7,256,0,8,81,0,8,17,85,8,131,82,7,31,0,8,113,0,8,49,0,9,194,80,7,10,0,8,97,0,8,33,0,9,162,0,8,1,0,8,129,0,8,65,0,9,226,80,7,6,0,8,89,0,8,25,0,9,146,83,7,59,0,8,121,0,8,57,0,9,210,81,7,17,0,8,105,0,8,41,0,9,178,0,8,9,0,8,137,0,8,73,0,9,242,80,7,4,0,8,85,0,8,21,80,8,258,83,7,43,0,8,117,0,8,53,0,9,202,81,7,13,0,8,101,0,8,37,0,9,170,0,8,5,0,8,133,0,8,69,0,9,234,80,7,8,0,8,93,0,8,29,0,9,154,84,7,83,0,8,125,0,8,61,0,9,218,82,7,23,0,8,109,0,8,45,0,9,186,0,8,13,0,8,141,0,8,77,0,9,250,80,7,3,0,8,83,0,8,19,85,8,195,83,7,35,0,8,115,0,8,51,0,9,198,81,7,11,0,8,99,0,8,35,0,9,166,0,8,3,0,8,131,0,8,67,0,9,230,80,7,7,0,8,91,0,8,27,0,9,150,84,7,67,0,8,123,0,8,59,0,9,214,82,7,19,0,8,107,0,8,43,0,9,182,0,8,11,0,8,139,0,8,75,0,9,246,80,7,5,0,8,87,0,8,23,192,8,0,83,7,51,0,8,119,0,8,55,0,9,206,81,7,15,0,8,103,0,8,39,0,9,174,0,8,7,0,8,135,0,8,71,0,9,238,80,7,9,0,8,95,0,8,31,0,9,158,84,7,99,0,8,127,0,8,63,0,9,222,82,7,27,0,8,111,0,8,47,0,9,190,0,8,15,0,8,143,0,8,79,0,9,254,96,7,256,0,8,80,0,8,16,84,8,115,82,7,31,0,8,112,0,8,48,0,9,193,80,7,10,0,8,96,0,8,32,0,9,161,0,8,0,0,8,128,0,8,64,0,9,225,80,7,6,0,8,88,0,8,24,0,9,145,83,7,59,0,8,120,0,8,56,0,9,209,81,7,17,0,8,104,0,8,40,0,9,177,0,8,8,0,8,136,0,8,72,0,9,241,80,7,4,0,8,84,0,8,20,85,8,227,83,7,43,0,8,116,0,8,52,0,9,201,81,7,13,0,8,100,0,8,36,0,9,169,0,8,4,0,8,132,0,8,68,0,9,233,80,7,8,0,8,92,0,8,28,0,9,153,84,7,83,0,8,124,0,8,60,0,9,217,82,7,23,0,8,108,0,8,44,0,9,185,0,8,12,0,8,140,0,8,76,0,9,249,80,7,3,0,8,82,0,8,18,85,8,163,83,7,35,0,8,114,0,8,50,0,9,197,81,7,11,0,8,98,0,8,34,0,9,165,0,8,2,0,8,130,0,8,66,0,9,229,80,7,7,0,8,90,0,8,26,0,9,149,84,7,67,0,8,122,0,8,58,0,9,213,82,7,19,0,8,106,0,8,42,0,9,181,0,8,10,0,8,138,0,8,74,0,9,245,80,7,5,0,8,86,0,8,22,192,8,0,83,7,51,0,8,118,0,8,54,0,9,205,81,7,15,0,8,102,0,8,38,0,9,173,0,8,6,0,8,134,0,8,70,0,9,237,80,7,9,0,8,94,0,8,30,0,9,157,84,7,99,0,8,126,0,8,62,0,9,221,82,7,27,0,8,110,0,8,46,0,9,189,0,8,14,0,8,142,0,8,78,0,9,253,96,7,256,0,8,81,0,8,17,85,8,131,82,7,31,0,8,113,0,8,49,0,9,195,80,7,10,0,8,97,0,8,33,0,9,163,0,8,1,0,8,129,0,8,65,0,9,227,80,7,6,0,8,89,0,8,25,0,9,147,83,7,59,0,8,121,0,8,57,0,9,211,81,7,17,0,8,105,0,8,41,0,9,179,0,8,9,0,8,137,0,8,73,0,9,243,80,7,4,0,8,85,0,8,21,80,8,258,83,7,43,0,8,117,0,8,53,0,9,203,81,7,13,0,8,101,0,8,37,0,9,171,0,8,5,0,8,133,0,8,69,0,9,235,80,7,8,0,8,93,0,8,29,0,9,155,84,7,83,0,8,125,0,8,61,0,9,219,82,7,23,0,8,109,0,8,45,0,9,187,0,8,13,0,8,141,0,8,77,0,9,251,80,7,3,0,8,83,0,8,19,85,8,195,83,7,35,0,8,115,0,8,51,0,9,199,81,7,11,0,8,99,0,8,35,0,9,167,0,8,3,0,8,131,0,8,67,0,9,231,80,7,7,0,8,91,0,8,27,0,9,151,84,7,67,0,8,123,0,8,59,0,9,215,82,7,19,0,8,107,0,8,43,0,9,183,0,8,11,0,8,139,0,8,75,0,9,247,80,7,5,0,8,87,0,8,23,192,8,0,83,7,51,0,8,119,0,8,55,0,9,207,81,7,15,0,8,103,0,8,39,0,9,175,0,8,7,0,8,135,0,8,71,0,9,239,80,7,9,0,8,95,0,8,31,0,9,159,84,7,99,0,8,127,0,8,63,0,9,223,82,7,27,0,8,111,0,8,47,0,9,191,0,8,15,0,8,143,0,8,79,0,9,255],ft=[80,5,1,87,5,257,83,5,17,91,5,4097,81,5,5,89,5,1025,85,5,65,93,5,16385,80,5,3,88,5,513,84,5,33,92,5,8193,82,5,9,90,5,2049,86,5,129,192,5,24577,80,5,2,87,5,385,83,5,25,91,5,6145,81,5,7,89,5,1537,85,5,97,93,5,24577,80,5,4,88,5,769,84,5,49,92,5,12289,82,5,13,90,5,3073,86,5,193,192,5,24577],at=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258,0,0],lt=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,112,112],ut=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],wt=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];function ht(){let e,t,n,r,s,i;function o(e,t,o,c,f,a,l,u,w,h,d){let p,y,m,b,g,k,v,S,z,C,x,A,_,I,P;C=0,g=o;do{n[e[t+C]]++,C++,g--}while(0!==g);if(n[0]==o)return l[0]=-1,u[0]=0,0;for(S=u[0],k=1;15>=k&&0===n[k];k++);for(v=k,k>S&&(S=k),g=15;0!==g&&0===n[g];g--);for(m=g,S>g&&(S=g),u[0]=S,I=1<<k;g>k;k++,I<<=1)if(0>(I-=n[k]))return st;if(0>(I-=n[g]))return st;for(n[g]+=I,i[1]=k=0,C=1,_=2;0!=--g;)i[_]=k+=n[C],_++,C++;g=0,C=0;do{0!==(k=e[t+C])&&(d[i[k]++]=g),C++}while(++g<o);for(o=i[m],i[0]=g=0,C=0,b=-1,A=-S,s[0]=0,x=0,P=0;m>=v;v++)for(p=n[v];0!=p--;){for(;v>A+S;){if(b++,A+=S,P=m-A,P=P>S?S:P,(y=1<<(k=v-A))>p+1&&(y-=p+1,_=v,P>k))for(;++k<P&&(y<<=1)>n[++_];)y-=n[_];if(P=1<<k,h[0]+P>1440)return st;s[b]=x=h[0],h[0]+=P,0!==b?(i[b]=g,r[0]=k,r[1]=S,k=g>>>A-S,r[2]=x-s[b-1]-k,w.set(r,3*(s[b-1]+k))):l[0]=x}for(r[1]=v-A,o>C?d[C]<c?(r[0]=256>d[C]?0:96,r[2]=d[C++]):(r[0]=a[d[C]-c]+16+64,r[2]=f[d[C++]-c]):r[0]=192,y=1<<v-A,k=g>>>A;P>k;k+=y)w.set(r,3*(x+k));for(k=1<<v-1;0!=(g&k);k>>>=1)g^=k;for(g^=k,z=(1<<A)-1;(g&z)!=i[b];)b--,A-=S,z=(1<<A)-1}return 0!==I&&1!=m?it:0}function c(o){let c;for(e||(e=[],t=[],n=new f(16),r=[],s=new f(15),i=new f(16)),t.length<o&&(t=[]),c=0;o>c;c++)t[c]=0;for(c=0;16>c;c++)n[c]=0;for(c=0;3>c;c++)r[c]=0;s.set(n.subarray(0,15),0),i.set(n.subarray(0,16),0)}this.st=(n,r,s,i,f)=>{let a;return c(19),e[0]=0,a=o(n,0,19,19,null,null,s,r,i,e,t),a==st?f.Le="oversubscribed dynamic bit lengths tree":a!=it&&0!==r[0]||(f.Le="incomplete dynamic bit lengths tree",a=st),a},this.it=(n,r,s,i,f,a,l,u,w)=>{let h;return c(288),e[0]=0,h=o(s,0,n,257,at,lt,a,i,u,e,t),0!=h||0===i[0]?(h==st?w.Le="oversubscribed literal/length tree":-4!=h&&(w.Le="incomplete literal/length tree",h=st),h):(c(288),h=o(s,n,r,0,ut,wt,l,f,u,e,t),0!=h||0===f[0]&&n>257?(h==st?w.Le="oversubscribed distance tree":h==it?(w.Le="incomplete distance tree",h=st):-4!=h&&(w.Le="empty distance tree with lengths",h=st),h):0)}}function dt(){const e=this;let t,n,r,s,i=0,o=0,c=0,f=0,a=0,l=0,u=0,w=0,h=0,d=0;function p(e,t,n,r,s,i,o,c){let f,a,l,u,w,h,d,p,y,m,b,g,k,v,S,z;d=c.nt,p=c.We,w=o.ot,h=o.ct,y=o.write,m=y<o.read?o.read-y-1:o.end-y,b=ot[e],g=ot[t];do{for(;20>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;if(f=w&b,a=n,l=r,z=3*(l+f),0!==(u=a[z]))for(;;){if(w>>=a[z+1],h-=a[z+1],0!=(16&u)){for(u&=15,k=a[z+2]+(w&ot[u]),w>>=u,h-=u;15>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;for(f=w&g,a=s,l=i,z=3*(l+f),u=a[z];;){if(w>>=a[z+1],h-=a[z+1],0!=(16&u)){for(u&=15;u>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;if(v=a[z+2]+(w&ot[u]),w>>=u,h-=u,m-=k,v>y){S=y-v;do{S+=o.end}while(0>S);if(u=o.end-S,k>u){if(k-=u,y-S>0&&u>y-S)do{o.lt[y++]=o.lt[S++]}while(0!=--u);else o.lt.set(o.lt.subarray(S,S+u),y),y+=u,S+=u,u=0;S=0}}else S=y-v,y-S>0&&2>y-S?(o.lt[y++]=o.lt[S++],o.lt[y++]=o.lt[S++],k-=2):(o.lt.set(o.lt.subarray(S,S+2),y),y+=2,S+=2,k-=2);if(y-S>0&&k>y-S)do{o.lt[y++]=o.lt[S++]}while(0!=--k);else o.lt.set(o.lt.subarray(S,S+k),y),y+=k,S+=k,k=0;break}if(0!=(64&u))return c.Le="invalid distance code",k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,st;f+=a[z+2],f+=w&ot[u],z=3*(l+f),u=a[z]}break}if(0!=(64&u))return 0!=(32&u)?(k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,1):(c.Le="invalid literal/length code",k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,st);if(f+=a[z+2],f+=w&ot[u],z=3*(l+f),0===(u=a[z])){w>>=a[z+1],h-=a[z+1],o.lt[y++]=a[z+2],m--;break}}else w>>=a[z+1],h-=a[z+1],o.lt[y++]=a[z+2],m--}while(m>=258&&p>=10);return k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,0}e.init=(e,i,o,c,f,a)=>{t=0,u=e,w=i,r=o,h=c,s=f,d=a,n=null},e.ut=(e,y,m)=>{let b,g,k,v,S,z,C,x=0,A=0,_=0;for(_=y.nt,v=y.We,x=e.ot,A=e.ct,S=e.write,z=S<e.read?e.read-S-1:e.end-S;;)switch(t){case 0:if(z>=258&&v>=10&&(e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,m=p(u,w,r,h,s,d,e,y),_=y.nt,v=y.We,x=e.ot,A=e.ct,S=e.write,z=S<e.read?e.read-S-1:e.end-S,0!=m)){t=1==m?7:9;break}c=u,n=r,o=h,t=1;case 1:for(b=c;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}if(g=3*(o+(x&ot[b])),x>>>=n[g+1],A-=n[g+1],k=n[g],0===k){f=n[g+2],t=6;break}if(0!=(16&k)){a=15&k,i=n[g+2],t=2;break}if(0==(64&k)){c=k,o=g/3+n[g+2];break}if(0!=(32&k)){t=7;break}return t=9,y.Le="invalid literal/length code",m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 2:for(b=a;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}i+=x&ot[b],x>>=b,A-=b,c=w,n=s,o=d,t=3;case 3:for(b=c;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}if(g=3*(o+(x&ot[b])),x>>=n[g+1],A-=n[g+1],k=n[g],0!=(16&k)){a=15&k,l=n[g+2],t=4;break}if(0==(64&k)){c=k,o=g/3+n[g+2];break}return t=9,y.Le="invalid distance code",m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 4:for(b=a;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}l+=x&ot[b],x>>=b,A-=b,t=5;case 5:for(C=S-l;0>C;)C+=e.end;for(;0!==i;){if(0===z&&(S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z&&(e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z)))return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);e.lt[S++]=e.lt[C++],z--,C==e.end&&(C=0),i--}t=0;break;case 6:if(0===z&&(S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z&&(e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z)))return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,e.lt[S++]=f,z--,t=0;break;case 7:if(A>7&&(A-=8,v++,_--),e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,e.read!=e.write)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);t=8;case 8:return m=1,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 9:return m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);default:return m=rt,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m)}},e.ht=()=>{}}ht.dt=(e,t,n,r)=>(e[0]=9,t[0]=5,n[0]=ct,r[0]=ft,0);const pt=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];function yt(e,t){const n=this;let r,s=0,o=0,c=0,a=0;const l=[0],u=[0],w=new dt;let h=0,d=new f(4320);const p=new ht;n.ct=0,n.ot=0,n.lt=new i(t),n.end=t,n.read=0,n.write=0,n.reset=(e,t)=>{t&&(t[0]=0),6==s&&w.ht(e),s=0,n.ct=0,n.ot=0,n.read=n.write=0},n.reset(e,null),n.wt=(e,t)=>{let r,s,i;return s=e.rt,i=n.read,r=(i>n.write?n.end:n.write)-i,r>e.tt&&(r=e.tt),0!==r&&t==it&&(t=0),e.tt-=r,e.Ge+=r,e.$e.set(n.lt.subarray(i,i+r),s),s+=r,i+=r,i==n.end&&(i=0,n.write==n.end&&(n.write=0),r=n.write-i,r>e.tt&&(r=e.tt),0!==r&&t==it&&(t=0),e.tt-=r,e.Ge+=r,e.$e.set(n.lt.subarray(i,i+r),s),s+=r,i+=r),e.rt=s,n.read=i,t},n.ut=(e,t)=>{let i,f,y,m,b,g,k,v;for(m=e.nt,b=e.We,f=n.ot,y=n.ct,g=n.write,k=g<n.read?n.read-g-1:n.end-g;;){let S,z,C,x,A,_,I,P;switch(s){case 0:for(;3>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}switch(i=7&f,h=1&i,i>>>1){case 0:f>>>=3,y-=3,i=7&y,f>>>=i,y-=i,s=1;break;case 1:S=[],z=[],C=[[]],x=[[]],ht.dt(S,z,C,x),w.init(S[0],z[0],C[0],0,x[0],0),f>>>=3,y-=3,s=6;break;case 2:f>>>=3,y-=3,s=3;break;case 3:return f>>>=3,y-=3,s=9,e.Le="invalid block type",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t)}break;case 1:for(;32>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if((~f>>>16&65535)!=(65535&f))return s=9,e.Le="invalid stored block lengths",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);o=65535&f,f=y=0,s=0!==o?2:0!==h?7:0;break;case 2:if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(0===k&&(g==n.end&&0!==n.read&&(g=0,k=g<n.read?n.read-g-1:n.end-g),0===k&&(n.write=g,t=n.wt(e,t),g=n.write,k=g<n.read?n.read-g-1:n.end-g,g==n.end&&0!==n.read&&(g=0,k=g<n.read?n.read-g-1:n.end-g),0===k)))return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(t=0,i=o,i>b&&(i=b),i>k&&(i=k),n.lt.set(e.je(m,i),g),m+=i,b-=i,g+=i,k-=i,0!=(o-=i))break;s=0!==h?7:0;break;case 3:for(;14>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(c=i=16383&f,(31&i)>29||(i>>5&31)>29)return s=9,e.Le="too many length or distance symbols",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(i=258+(31&i)+(i>>5&31),!r||r.length<i)r=[];else for(v=0;i>v;v++)r[v]=0;f>>>=14,y-=14,a=0,s=4;case 4:for(;4+(c>>>10)>a;){for(;3>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}r[pt[a++]]=7&f,f>>>=3,y-=3}for(;19>a;)r[pt[a++]]=0;if(l[0]=7,i=p.st(r,l,u,d,e),0!=i)return(t=i)==st&&(r=null,s=9),n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);a=0,s=5;case 5:for(;i=c,258+(31&i)+(i>>5&31)>a;){let o,w;for(i=l[0];i>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(i=d[3*(u[0]+(f&ot[i]))+1],w=d[3*(u[0]+(f&ot[i]))+2],16>w)f>>>=i,y-=i,r[a++]=w;else{for(v=18==w?7:w-14,o=18==w?11:3;i+v>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(f>>>=i,y-=i,o+=f&ot[v],f>>>=v,y-=v,v=a,i=c,v+o>258+(31&i)+(i>>5&31)||16==w&&1>v)return r=null,s=9,e.Le="invalid bit length repeat",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);w=16==w?r[v-1]:0;do{r[v++]=w}while(0!=--o);a=v}}if(u[0]=-1,A=[],_=[],I=[],P=[],A[0]=9,_[0]=6,i=c,i=p.it(257+(31&i),1+(i>>5&31),r,A,_,I,P,d,e),0!=i)return i==st&&(r=null,s=9),t=i,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);w.init(A[0],_[0],d,I[0],d,P[0]),s=6;case 6:if(n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,1!=(t=w.ut(n,e,t)))return n.wt(e,t);if(t=0,w.ht(e),m=e.nt,b=e.We,f=n.ot,y=n.ct,g=n.write,k=g<n.read?n.read-g-1:n.end-g,0===h){s=0;break}s=7;case 7:if(n.write=g,t=n.wt(e,t),g=n.write,k=g<n.read?n.read-g-1:n.end-g,n.read!=n.write)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);s=8;case 8:return t=1,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);case 9:return t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);default:return t=rt,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t)}}},n.ht=e=>{n.reset(e,null),n.lt=null,d=null},n.yt=(e,t,r)=>{n.lt.set(e.subarray(t,t+r),0),n.read=n.write=r},n.bt=()=>1==s?1:0}const mt=13,bt=[0,0,255,255];function gt(){const e=this;function t(e){return e&&e.gt?(e.qe=e.Ge=0,e.Le=null,e.gt.mode=7,e.gt.kt.reset(e,null),0):rt}e.mode=0,e.method=0,e.vt=[0],e.St=0,e.marker=0,e.zt=0,e.Ct=t=>(e.kt&&e.kt.ht(t),e.kt=null,0),e.xt=(n,r)=>(n.Le=null,e.kt=null,8>r||r>15?(e.Ct(n),rt):(e.zt=r,n.gt.kt=new yt(n,1<<r),t(n),0)),e.At=(e,t)=>{let n,r;if(!e||!e.gt||!e.et)return rt;const s=e.gt;for(t=4==t?it:0,n=it;;)switch(s.mode){case 0:if(0===e.We)return n;if(n=t,e.We--,e.qe++,8!=(15&(s.method=e.ft(e.nt++)))){s.mode=mt,e.Le="unknown compression method",s.marker=5;break}if(8+(s.method>>4)>s.zt){s.mode=mt,e.Le="invalid win size",s.marker=5;break}s.mode=1;case 1:if(0===e.We)return n;if(n=t,e.We--,e.qe++,r=255&e.ft(e.nt++),((s.method<<8)+r)%31!=0){s.mode=mt,e.Le="incorrect header check",s.marker=5;break}if(0==(32&r)){s.mode=7;break}s.mode=2;case 2:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St=(255&e.ft(e.nt++))<<24&4278190080,s.mode=3;case 3:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St+=(255&e.ft(e.nt++))<<16&16711680,s.mode=4;case 4:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St+=(255&e.ft(e.nt++))<<8&65280,s.mode=5;case 5:return 0===e.We?n:(n=t,e.We--,e.qe++,s.St+=255&e.ft(e.nt++),s.mode=6,2);case 6:return s.mode=mt,e.Le="need dictionary",s.marker=0,rt;case 7:if(n=s.kt.ut(e,n),n==st){s.mode=mt,s.marker=0;break}if(0==n&&(n=t),1!=n)return n;n=t,s.kt.reset(e,s.vt),s.mode=12;case 12:return e.We=0,1;case mt:return st;default:return rt}},e._t=(e,t,n)=>{let r=0,s=n;if(!e||!e.gt||6!=e.gt.mode)return rt;const i=e.gt;return s<1<<i.zt||(s=(1<<i.zt)-1,r=n-s),i.kt.yt(t,r,s),i.mode=7,0},e.It=e=>{let n,r,s,i,o;if(!e||!e.gt)return rt;const c=e.gt;if(c.mode!=mt&&(c.mode=mt,c.marker=0),0===(n=e.We))return it;for(r=e.nt,s=c.marker;0!==n&&4>s;)e.ft(r)==bt[s]?s++:s=0!==e.ft(r)?0:4-s,r++,n--;return e.qe+=r-e.nt,e.nt=r,e.We=n,c.marker=s,4!=s?st:(i=e.qe,o=e.Ge,t(e),e.qe=i,e.Ge=o,c.mode=7,0)},e.Pt=e=>e&&e.gt&&e.gt.kt?e.gt.kt.bt():rt}function kt(){}function vt(e){const t=new kt,n=e&&e.chunkSize?r.floor(2*e.chunkSize):131072,o=new i(n);let c=!1;t.xt(),t.$e=o,this.append=(e,r)=>{const f=[];let a,l,u=0,w=0,h=0;if(0!==e.length){t.nt=0,t.et=e,t.We=e.length;do{if(t.rt=0,t.tt=n,0!==t.We||c||(t.nt=0,c=!0),a=t.At(0),c&&a===it){if(0!==t.We)throw new s("inflating: bad input")}else if(0!==a&&1!==a)throw new s("inflating: "+t.Le);if((c||1===a)&&t.We===e.length)throw new s("inflating: bad input");t.rt&&(t.rt===n?f.push(new i(o)):f.push(o.subarray(0,t.rt))),h+=t.rt,r&&t.nt>0&&t.nt!=u&&(r(t.nt),u=t.nt)}while(t.We>0||0===t.tt);return f.length>1?(l=new i(h),f.forEach((e=>{l.set(e,w),w+=e.length}))):l=f[0]?new i(f[0]):new i,l}},this.flush=()=>{t.Ct()}}kt.prototype={xt(e){const t=this;return t.gt=new gt,e||(e=15),t.gt.xt(t,e)},At(e){const t=this;return t.gt?t.gt.At(t,e):rt},Ct(){const e=this;if(!e.gt)return rt;const t=e.gt.Ct(e);return e.gt=null,t},It(){const e=this;return e.gt?e.gt.It(e):rt},_t(e,t){const n=this;return n.gt?n.gt._t(n,e,t):rt},ft(e){return this.et[e]},je(e,t){return this.et.subarray(e,e+t)}},self.initCodec=()=>{self.Deflate=nt,self.Inflate=vt};\n'],{type:"text/javascript"}));e({workerScripts:{inflate:[t],deflate:[t]}});}
+function e(e){const t=()=>URL.createObjectURL(new Blob(['const{Array:e,Object:t,Number:n,Math:r,Error:s,Uint8Array:i,Uint16Array:o,Uint32Array:c,Int32Array:f,Map:a,DataView:l,Promise:u,TextEncoder:w,crypto:h,postMessage:d,TransformStream:p,ReadableStream:y,WritableStream:m,CompressionStream:b,DecompressionStream:g}=self,k=void 0,v="undefined",S="function";class z{constructor(e){return class extends p{constructor(t,n){const r=new e(n);super({transform(e,t){t.enqueue(r.append(e))},flush(e){const t=r.flush();t&&e.enqueue(t)}})}}}}const C=[];for(let e=0;256>e;e++){let t=e;for(let e=0;8>e;e++)1&t?t=t>>>1^3988292384:t>>>=1;C[e]=t}class x{constructor(e){this.t=e||-1}append(e){let t=0|this.t;for(let n=0,r=0|e.length;r>n;n++)t=t>>>8^C[255&(t^e[n])];this.t=t}get(){return~this.t}}class A extends p{constructor(){let e;const t=new x;super({transform(e,n){t.append(e),n.enqueue(e)},flush(){const n=new i(4);new l(n.buffer).setUint32(0,t.get()),e.value=n}}),e=this}}const _={concat(e,t){if(0===e.length||0===t.length)return e.concat(t);const n=e[e.length-1],r=_.i(n);return 32===r?e.concat(t):_.o(t,r,0|n,e.slice(0,e.length-1))},l(e){const t=e.length;if(0===t)return 0;const n=e[t-1];return 32*(t-1)+_.i(n)},u(e,t){if(32*e.length<t)return e;const n=(e=e.slice(0,r.ceil(t/32))).length;return t&=31,n>0&&t&&(e[n-1]=_.h(t,e[n-1]&2147483648>>t-1,1)),e},h:(e,t,n)=>32===e?t:(n?0|t:t<<32-e)+1099511627776*e,i:e=>r.round(e/1099511627776)||32,o(e,t,n,r){for(void 0===r&&(r=[]);t>=32;t-=32)r.push(n),n=0;if(0===t)return r.concat(e);for(let s=0;s<e.length;s++)r.push(n|e[s]>>>t),n=e[s]<<32-t;const s=e.length?e[e.length-1]:0,i=_.i(s);return r.push(_.h(t+i&31,t+i>32?n:r.pop(),1)),r}},I={p:{m(e){const t=_.l(e)/8,n=new i(t);let r;for(let s=0;t>s;s++)0==(3&s)&&(r=e[s/4]),n[s]=r>>>24,r<<=8;return n},g(e){const t=[];let n,r=0;for(n=0;n<e.length;n++)r=r<<8|e[n],3==(3&n)&&(t.push(r),r=0);return 3&n&&t.push(_.h(8*(3&n),r)),t}}},P=class{constructor(e){const t=this;t.blockSize=512,t.k=[1732584193,4023233417,2562383102,271733878,3285377520],t.v=[1518500249,1859775393,2400959708,3395469782],e?(t.S=e.S.slice(0),t.C=e.C.slice(0),t.A=e.A):t.reset()}reset(){const e=this;return e.S=e.k.slice(0),e.C=[],e.A=0,e}update(e){const t=this;"string"==typeof e&&(e=I._.g(e));const n=t.C=_.concat(t.C,e),r=t.A,i=t.A=r+_.l(e);if(i>9007199254740991)throw new s("Cannot hash more than 2^53 - 1 bits");const o=new c(n);let f=0;for(let e=t.blockSize+r-(t.blockSize+r&t.blockSize-1);i>=e;e+=t.blockSize)t.I(o.subarray(16*f,16*(f+1))),f+=1;return n.splice(0,16*f),t}P(){const e=this;let t=e.C;const n=e.S;t=_.concat(t,[_.h(1,1)]);for(let e=t.length+2;15&e;e++)t.push(0);for(t.push(r.floor(e.A/4294967296)),t.push(0|e.A);t.length;)e.I(t.splice(0,16));return e.reset(),n}D(e,t,n,r){return e>19?e>39?e>59?e>79?void 0:t^n^r:t&n|t&r|n&r:t^n^r:t&n|~t&r}V(e,t){return t<<e|t>>>32-e}I(t){const n=this,s=n.S,i=e(80);for(let e=0;16>e;e++)i[e]=t[e];let o=s[0],c=s[1],f=s[2],a=s[3],l=s[4];for(let e=0;79>=e;e++){16>e||(i[e]=n.V(1,i[e-3]^i[e-8]^i[e-14]^i[e-16]));const t=n.V(5,o)+n.D(e,c,f,a)+l+i[e]+n.v[r.floor(e/20)]|0;l=a,a=f,f=n.V(30,c),c=o,o=t}s[0]=s[0]+o|0,s[1]=s[1]+c|0,s[2]=s[2]+f|0,s[3]=s[3]+a|0,s[4]=s[4]+l|0}},D={getRandomValues(e){const t=new c(e.buffer),n=e=>{let t=987654321;const n=4294967295;return()=>(t=36969*(65535&t)+(t>>16)&n,(((t<<16)+(e=18e3*(65535&e)+(e>>16)&n)&n)/4294967296+.5)*(r.random()>.5?1:-1))};for(let s,i=0;i<e.length;i+=4){const e=n(4294967296*(s||r.random()));s=987654071*e(),t[i/4]=4294967296*e()|0}return e}},V={importKey:e=>new V.R(I.p.g(e)),B(e,t,n,r){if(n=n||1e4,0>r||0>n)throw new s("invalid params to pbkdf2");const i=1+(r>>5)<<2;let o,c,f,a,u;const w=new ArrayBuffer(i),h=new l(w);let d=0;const p=_;for(t=I.p.g(t),u=1;(i||1)>d;u++){for(o=c=e.encrypt(p.concat(t,[u])),f=1;n>f;f++)for(c=e.encrypt(c),a=0;a<c.length;a++)o[a]^=c[a];for(f=0;(i||1)>d&&f<o.length;f++)h.setInt32(d,o[f]),d+=4}return w.slice(0,r/8)},R:class{constructor(e){const t=this,n=t.M=P,r=[[],[]];t.U=[new n,new n];const s=t.U[0].blockSize/32;e.length>s&&(e=(new n).update(e).P());for(let t=0;s>t;t++)r[0][t]=909522486^e[t],r[1][t]=1549556828^e[t];t.U[0].update(r[0]),t.U[1].update(r[1]),t.K=new n(t.U[0])}reset(){const e=this;e.K=new e.M(e.U[0]),e.N=!1}update(e){this.N=!0,this.K.update(e)}digest(){const e=this,t=e.K.P(),n=new e.M(e.U[1]).update(t).P();return e.reset(),n}encrypt(e){if(this.N)throw new s("encrypt on already updated hmac called!");return this.update(e),this.digest(e)}}},R=typeof h!=v&&typeof h.getRandomValues==S,B="Invalid password",E="Invalid signature",M="zipjs-abort-check-password";function U(e){return R?h.getRandomValues(e):D.getRandomValues(e)}const K=16,N={name:"PBKDF2"},O=t.assign({hash:{name:"HMAC"}},N),T=t.assign({iterations:1e3,hash:{name:"SHA-1"}},N),W=["deriveBits"],j=[8,12,16],H=[16,24,32],L=10,F=[0,0,0,0],q=typeof h!=v,G=q&&h.subtle,J=q&&typeof G!=v,Q=I.p,X=class{constructor(e){const t=this;t.O=[[[],[],[],[],[]],[[],[],[],[],[]]],t.O[0][0][0]||t.T();const n=t.O[0][4],r=t.O[1],i=e.length;let o,c,f,a=1;if(4!==i&&6!==i&&8!==i)throw new s("invalid aes key size");for(t.v=[c=e.slice(0),f=[]],o=i;4*i+28>o;o++){let e=c[o-1];(o%i==0||8===i&&o%i==4)&&(e=n[e>>>24]<<24^n[e>>16&255]<<16^n[e>>8&255]<<8^n[255&e],o%i==0&&(e=e<<8^e>>>24^a<<24,a=a<<1^283*(a>>7))),c[o]=c[o-i]^e}for(let e=0;o;e++,o--){const t=c[3&e?o:o-4];f[e]=4>=o||4>e?t:r[0][n[t>>>24]]^r[1][n[t>>16&255]]^r[2][n[t>>8&255]]^r[3][n[255&t]]}}encrypt(e){return this.W(e,0)}decrypt(e){return this.W(e,1)}T(){const e=this.O[0],t=this.O[1],n=e[4],r=t[4],s=[],i=[];let o,c,f,a;for(let e=0;256>e;e++)i[(s[e]=e<<1^283*(e>>7))^e]=e;for(let l=o=0;!n[l];l^=c||1,o=i[o]||1){let i=o^o<<1^o<<2^o<<3^o<<4;i=i>>8^255&i^99,n[l]=i,r[i]=l,a=s[f=s[c=s[l]]];let u=16843009*a^65537*f^257*c^16843008*l,w=257*s[i]^16843008*i;for(let n=0;4>n;n++)e[n][l]=w=w<<24^w>>>8,t[n][i]=u=u<<24^u>>>8}for(let n=0;5>n;n++)e[n]=e[n].slice(0),t[n]=t[n].slice(0)}W(e,t){if(4!==e.length)throw new s("invalid aes block size");const n=this.v[t],r=n.length/4-2,i=[0,0,0,0],o=this.O[t],c=o[0],f=o[1],a=o[2],l=o[3],u=o[4];let w,h,d,p=e[0]^n[0],y=e[t?3:1]^n[1],m=e[2]^n[2],b=e[t?1:3]^n[3],g=4;for(let e=0;r>e;e++)w=c[p>>>24]^f[y>>16&255]^a[m>>8&255]^l[255&b]^n[g],h=c[y>>>24]^f[m>>16&255]^a[b>>8&255]^l[255&p]^n[g+1],d=c[m>>>24]^f[b>>16&255]^a[p>>8&255]^l[255&y]^n[g+2],b=c[b>>>24]^f[p>>16&255]^a[y>>8&255]^l[255&m]^n[g+3],g+=4,p=w,y=h,m=d;for(let e=0;4>e;e++)i[t?3&-e:e]=u[p>>>24]<<24^u[y>>16&255]<<16^u[m>>8&255]<<8^u[255&b]^n[g++],w=p,p=y,y=m,m=b,b=w;return i}},Y=class{constructor(e,t){this.j=e,this.H=t,this.L=t}reset(){this.L=this.H}update(e){return this.F(this.j,e,this.L)}q(e){if(255==(e>>24&255)){let t=e>>16&255,n=e>>8&255,r=255&e;255===t?(t=0,255===n?(n=0,255===r?r=0:++r):++n):++t,e=0,e+=t<<16,e+=n<<8,e+=r}else e+=1<<24;return e}G(e){0===(e[0]=this.q(e[0]))&&(e[1]=this.q(e[1]))}F(e,t,n){let r;if(!(r=t.length))return[];const s=_.l(t);for(let s=0;r>s;s+=4){this.G(n);const r=e.encrypt(n);t[s]^=r[0],t[s+1]^=r[1],t[s+2]^=r[2],t[s+3]^=r[3]}return _.u(t,s)}},Z=V.R;let $=q&&J&&typeof G.importKey==S,ee=q&&J&&typeof G.deriveBits==S;class te extends p{constructor({password:e,rawPassword:n,signed:r,encryptionStrength:o,checkPasswordOnly:c}){super({start(){t.assign(this,{ready:new u((e=>this.J=e)),password:ie(e,n),signed:r,X:o-1,pending:new i})},async transform(e,t){const n=this,{password:r,X:o,J:f,ready:a}=n;r?(await(async(e,t,n,r)=>{const i=await se(e,t,n,ce(r,0,j[t])),o=ce(r,j[t]);if(i[0]!=o[0]||i[1]!=o[1])throw new s(B)})(n,o,r,ce(e,0,j[o]+2)),e=ce(e,j[o]+2),c?t.error(new s(M)):f()):await a;const l=new i(e.length-L-(e.length-L)%K);t.enqueue(re(n,e,l,0,L,!0))},async flush(e){const{signed:t,Y:n,Z:r,pending:o,ready:c}=this;if(r&&n){await c;const f=ce(o,0,o.length-L),a=ce(o,o.length-L);let l=new i;if(f.length){const e=ae(Q,f);r.update(e);const t=n.update(e);l=fe(Q,t)}if(t){const e=ce(fe(Q,r.digest()),0,L);for(let t=0;L>t;t++)if(e[t]!=a[t])throw new s(E)}e.enqueue(l)}}})}}class ne extends p{constructor({password:e,rawPassword:n,encryptionStrength:r}){let s;super({start(){t.assign(this,{ready:new u((e=>this.J=e)),password:ie(e,n),X:r-1,pending:new i})},async transform(e,t){const n=this,{password:r,X:s,J:o,ready:c}=n;let f=new i;r?(f=await(async(e,t,n)=>{const r=U(new i(j[t]));return oe(r,await se(e,t,n,r))})(n,s,r),o()):await c;const a=new i(f.length+e.length-e.length%K);a.set(f,0),t.enqueue(re(n,e,a,f.length,0))},async flush(e){const{Y:t,Z:n,pending:r,ready:o}=this;if(n&&t){await o;let c=new i;if(r.length){const e=t.update(ae(Q,r));n.update(e),c=fe(Q,e)}s.signature=fe(Q,n.digest()).slice(0,L),e.enqueue(oe(c,s.signature))}}}),s=this}}function re(e,t,n,r,s,o){const{Y:c,Z:f,pending:a}=e,l=t.length-s;let u;for(a.length&&(t=oe(a,t),n=((e,t)=>{if(t&&t>e.length){const n=e;(e=new i(t)).set(n,0)}return e})(n,l-l%K)),u=0;l-K>=u;u+=K){const e=ae(Q,ce(t,u,u+K));o&&f.update(e);const s=c.update(e);o||f.update(s),n.set(fe(Q,s),u+r)}return e.pending=ce(t,u),n}async function se(n,r,s,o){n.password=null;const c=await(async(e,t,n,r,s)=>{if(!$)return V.importKey(t);try{return await G.importKey("raw",t,n,!1,s)}catch(e){return $=!1,V.importKey(t)}})(0,s,O,0,W),f=await(async(e,t,n)=>{if(!ee)return V.B(t,e.salt,T.iterations,n);try{return await G.deriveBits(e,t,n)}catch(r){return ee=!1,V.B(t,e.salt,T.iterations,n)}})(t.assign({salt:o},T),c,8*(2*H[r]+2)),a=new i(f),l=ae(Q,ce(a,0,H[r])),u=ae(Q,ce(a,H[r],2*H[r])),w=ce(a,2*H[r]);return t.assign(n,{keys:{key:l,$:u,passwordVerification:w},Y:new Y(new X(l),e.from(F)),Z:new Z(u)}),w}function ie(e,t){return t===k?(e=>{if(typeof w==v){const t=new i((e=unescape(encodeURIComponent(e))).length);for(let n=0;n<t.length;n++)t[n]=e.charCodeAt(n);return t}return(new w).encode(e)})(e):t}function oe(e,t){let n=e;return e.length+t.length&&(n=new i(e.length+t.length),n.set(e,0),n.set(t,e.length)),n}function ce(e,t,n){return e.subarray(t,n)}function fe(e,t){return e.m(t)}function ae(e,t){return e.g(t)}class le extends p{constructor({password:e,passwordVerification:n,checkPasswordOnly:r}){super({start(){t.assign(this,{password:e,passwordVerification:n}),de(this,e)},transform(e,t){const n=this;if(n.password){const t=we(n,e.subarray(0,12));if(n.password=null,t[11]!=n.passwordVerification)throw new s(B);e=e.subarray(12)}r?t.error(new s(M)):t.enqueue(we(n,e))}})}}class ue extends p{constructor({password:e,passwordVerification:n}){super({start(){t.assign(this,{password:e,passwordVerification:n}),de(this,e)},transform(e,t){const n=this;let r,s;if(n.password){n.password=null;const t=U(new i(12));t[11]=n.passwordVerification,r=new i(e.length+t.length),r.set(he(n,t),0),s=12}else r=new i(e.length),s=0;r.set(he(n,e),s),t.enqueue(r)}})}}function we(e,t){const n=new i(t.length);for(let r=0;r<t.length;r++)n[r]=ye(e)^t[r],pe(e,n[r]);return n}function he(e,t){const n=new i(t.length);for(let r=0;r<t.length;r++)n[r]=ye(e)^t[r],pe(e,t[r]);return n}function de(e,n){const r=[305419896,591751049,878082192];t.assign(e,{keys:r,ee:new x(r[0]),te:new x(r[2])});for(let t=0;t<n.length;t++)pe(e,n.charCodeAt(t))}function pe(e,t){let[n,s,i]=e.keys;e.ee.append([t]),n=~e.ee.get(),s=be(r.imul(be(s+me(n)),134775813)+1),e.te.append([s>>>24]),i=~e.te.get(),e.keys=[n,s,i]}function ye(e){const t=2|e.keys[2];return me(r.imul(t,1^t)>>>8)}function me(e){return 255&e}function be(e){return 4294967295&e}const ge="deflate-raw";class ke extends p{constructor(e,{chunkSize:t,CompressionStream:n,CompressionStreamNative:r}){super({});const{compressed:s,encrypted:i,useCompressionStream:o,zipCrypto:c,signed:f,level:a}=e,u=this;let w,h,d=Se(super.readable);i&&!c||!f||(w=new A,d=xe(d,w)),s&&(d=Ce(d,o,{level:a,chunkSize:t},r,n)),i&&(c?d=xe(d,new ue(e)):(h=new ne(e),d=xe(d,h))),ze(u,d,(()=>{let e;i&&!c&&(e=h.signature),i&&!c||!f||(e=new l(w.value.buffer).getUint32(0)),u.signature=e}))}}class ve extends p{constructor(e,{chunkSize:t,DecompressionStream:n,DecompressionStreamNative:r}){super({});const{zipCrypto:i,encrypted:o,signed:c,signature:f,compressed:a,useCompressionStream:u}=e;let w,h,d=Se(super.readable);o&&(i?d=xe(d,new le(e)):(h=new te(e),d=xe(d,h))),a&&(d=Ce(d,u,{chunkSize:t},r,n)),o&&!i||!c||(w=new A,d=xe(d,w)),ze(this,d,(()=>{if((!o||i)&&c){const e=new l(w.value.buffer);if(f!=e.getUint32(0,!1))throw new s(E)}}))}}function Se(e){return xe(e,new p({transform(e,t){e&&e.length&&t.enqueue(e)}}))}function ze(e,n,r){n=xe(n,new p({flush:r})),t.defineProperty(e,"readable",{get:()=>n})}function Ce(e,t,n,r,s){try{e=xe(e,new(t&&r?r:s)(ge,n))}catch(r){if(!t)return e;try{e=xe(e,new s(ge,n))}catch(t){return e}}return e}function xe(e,t){return e.pipeThrough(t)}const Ae="data",_e="close";class Ie extends p{constructor(e,n){super({});const r=this,{codecType:s}=e;let i;s.startsWith("deflate")?i=ke:s.startsWith("inflate")&&(i=ve);let o=0,c=0;const f=new i(e,n),a=super.readable,l=new p({transform(e,t){e&&e.length&&(c+=e.length,t.enqueue(e))},flush(){t.assign(r,{inputSize:c})}}),u=new p({transform(e,t){e&&e.length&&(o+=e.length,t.enqueue(e))},flush(){const{signature:e}=f;t.assign(r,{signature:e,outputSize:o,inputSize:c})}});t.defineProperty(r,"readable",{get:()=>a.pipeThrough(l).pipeThrough(f).pipeThrough(u)})}}class Pe extends p{constructor(e){let t;super({transform:function n(r,s){if(t){const e=new i(t.length+r.length);e.set(t),e.set(r,t.length),r=e,t=null}r.length>e?(s.enqueue(r.slice(0,e)),n(r.slice(e),s)):t=r},flush(e){t&&t.length&&e.enqueue(t)}})}}const De=new a,Ve=new a;let Re,Be=0,Ee=!0;async function Me(e){try{const{options:t,scripts:r,config:s}=e;if(r&&r.length)try{Ee?importScripts.apply(k,r):await Ue(r)}catch(e){Ee=!1,await Ue(r)}self.initCodec&&self.initCodec(),s.CompressionStreamNative=self.CompressionStream,s.DecompressionStreamNative=self.DecompressionStream,self.Deflate&&(s.CompressionStream=new z(self.Deflate)),self.Inflate&&(s.DecompressionStream=new z(self.Inflate));const i={highWaterMark:1},o=e.readable||new y({async pull(e){const t=new u((e=>De.set(Be,e)));Ke({type:"pull",messageId:Be}),Be=(Be+1)%n.MAX_SAFE_INTEGER;const{value:r,done:s}=await t;e.enqueue(r),s&&e.close()}},i),c=e.writable||new m({async write(e){let t;const r=new u((e=>t=e));Ve.set(Be,t),Ke({type:Ae,value:e,messageId:Be}),Be=(Be+1)%n.MAX_SAFE_INTEGER,await r}},i),f=new Ie(t,s);Re=new AbortController;const{signal:a}=Re;await o.pipeThrough(f).pipeThrough(new Pe(s.chunkSize)).pipeTo(c,{signal:a,preventClose:!0,preventAbort:!0}),await c.getWriter().close();const{signature:l,inputSize:w,outputSize:h}=f;Ke({type:_e,result:{signature:l,inputSize:w,outputSize:h}})}catch(e){Ne(e)}}async function Ue(e){for(const t of e)await import(t)}function Ke(e){let{value:t}=e;if(t)if(t.length)try{t=new i(t),e.value=t.buffer,d(e,[e.value])}catch(t){d(e)}else d(e);else d(e)}function Ne(e=new s("Unknown error")){const{message:t,stack:n,code:r,name:i}=e;d({error:{message:t,stack:n,code:r,name:i}})}addEventListener("message",(({data:e})=>{const{type:t,messageId:n,value:r,done:s}=e;try{if("start"==t&&Me(e),t==Ae){const e=De.get(n);De.delete(n),e({value:new i(r),done:s})}if("ack"==t){const e=Ve.get(n);Ve.delete(n),e()}t==_e&&Re.abort()}catch(e){Ne(e)}}));const Oe=-2;function Te(t){return We(t.map((([t,n])=>new e(t).fill(n,0,t))))}function We(t){return t.reduce(((t,n)=>t.concat(e.isArray(n)?We(n):n)),[])}const je=[0,1,2,3].concat(...Te([[2,4],[2,5],[4,6],[4,7],[8,8],[8,9],[16,10],[16,11],[32,12],[32,13],[64,14],[64,15],[2,0],[1,16],[1,17],[2,18],[2,19],[4,20],[4,21],[8,22],[8,23],[16,24],[16,25],[32,26],[32,27],[64,28],[64,29]]));function He(){const e=this;function t(e,t){let n=0;do{n|=1&e,e>>>=1,n<<=1}while(--t>0);return n>>>1}e.ne=n=>{const s=e.re,i=e.ie.se,o=e.ie.oe;let c,f,a,l=-1;for(n.ce=0,n.fe=573,c=0;o>c;c++)0!==s[2*c]?(n.ae[++n.ce]=l=c,n.le[c]=0):s[2*c+1]=0;for(;2>n.ce;)a=n.ae[++n.ce]=2>l?++l:0,s[2*a]=1,n.le[a]=0,n.ue--,i&&(n.we-=i[2*a+1]);for(e.he=l,c=r.floor(n.ce/2);c>=1;c--)n.de(s,c);a=o;do{c=n.ae[1],n.ae[1]=n.ae[n.ce--],n.de(s,1),f=n.ae[1],n.ae[--n.fe]=c,n.ae[--n.fe]=f,s[2*a]=s[2*c]+s[2*f],n.le[a]=r.max(n.le[c],n.le[f])+1,s[2*c+1]=s[2*f+1]=a,n.ae[1]=a++,n.de(s,1)}while(n.ce>=2);n.ae[--n.fe]=n.ae[1],(t=>{const n=e.re,r=e.ie.se,s=e.ie.pe,i=e.ie.ye,o=e.ie.me;let c,f,a,l,u,w,h=0;for(l=0;15>=l;l++)t.be[l]=0;for(n[2*t.ae[t.fe]+1]=0,c=t.fe+1;573>c;c++)f=t.ae[c],l=n[2*n[2*f+1]+1]+1,l>o&&(l=o,h++),n[2*f+1]=l,f>e.he||(t.be[l]++,u=0,i>f||(u=s[f-i]),w=n[2*f],t.ue+=w*(l+u),r&&(t.we+=w*(r[2*f+1]+u)));if(0!==h){do{for(l=o-1;0===t.be[l];)l--;t.be[l]--,t.be[l+1]+=2,t.be[o]--,h-=2}while(h>0);for(l=o;0!==l;l--)for(f=t.be[l];0!==f;)a=t.ae[--c],a>e.he||(n[2*a+1]!=l&&(t.ue+=(l-n[2*a+1])*n[2*a],n[2*a+1]=l),f--)}})(n),((e,n,r)=>{const s=[];let i,o,c,f=0;for(i=1;15>=i;i++)s[i]=f=f+r[i-1]<<1;for(o=0;n>=o;o++)c=e[2*o+1],0!==c&&(e[2*o]=t(s[c]++,c))})(s,e.he,n.be)}}function Le(e,t,n,r,s){const i=this;i.se=e,i.pe=t,i.ye=n,i.oe=r,i.me=s}He.ge=[0,1,2,3,4,5,6,7].concat(...Te([[2,8],[2,9],[2,10],[2,11],[4,12],[4,13],[4,14],[4,15],[8,16],[8,17],[8,18],[8,19],[16,20],[16,21],[16,22],[16,23],[32,24],[32,25],[32,26],[31,27],[1,28]])),He.ke=[0,1,2,3,4,5,6,7,8,10,12,14,16,20,24,28,32,40,48,56,64,80,96,112,128,160,192,224,0],He.ve=[0,1,2,3,4,6,8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024,1536,2048,3072,4096,6144,8192,12288,16384,24576],He.Se=e=>256>e?je[e]:je[256+(e>>>7)],He.ze=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],He.Ce=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],He.xe=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,3,7],He.Ae=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];const Fe=Te([[144,8],[112,9],[24,7],[8,8]]);Le._e=We([12,140,76,204,44,172,108,236,28,156,92,220,60,188,124,252,2,130,66,194,34,162,98,226,18,146,82,210,50,178,114,242,10,138,74,202,42,170,106,234,26,154,90,218,58,186,122,250,6,134,70,198,38,166,102,230,22,150,86,214,54,182,118,246,14,142,78,206,46,174,110,238,30,158,94,222,62,190,126,254,1,129,65,193,33,161,97,225,17,145,81,209,49,177,113,241,9,137,73,201,41,169,105,233,25,153,89,217,57,185,121,249,5,133,69,197,37,165,101,229,21,149,85,213,53,181,117,245,13,141,77,205,45,173,109,237,29,157,93,221,61,189,125,253,19,275,147,403,83,339,211,467,51,307,179,435,115,371,243,499,11,267,139,395,75,331,203,459,43,299,171,427,107,363,235,491,27,283,155,411,91,347,219,475,59,315,187,443,123,379,251,507,7,263,135,391,71,327,199,455,39,295,167,423,103,359,231,487,23,279,151,407,87,343,215,471,55,311,183,439,119,375,247,503,15,271,143,399,79,335,207,463,47,303,175,431,111,367,239,495,31,287,159,415,95,351,223,479,63,319,191,447,127,383,255,511,0,64,32,96,16,80,48,112,8,72,40,104,24,88,56,120,4,68,36,100,20,84,52,116,3,131,67,195,35,163,99,227].map(((e,t)=>[e,Fe[t]])));const qe=Te([[30,5]]);function Ge(e,t,n,r,s){const i=this;i.Ie=e,i.Pe=t,i.De=n,i.Ve=r,i.Re=s}Le.Be=We([0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23].map(((e,t)=>[e,qe[t]]))),Le.Ee=new Le(Le._e,He.ze,257,286,15),Le.Me=new Le(Le.Be,He.Ce,0,30,15),Le.Ue=new Le(null,He.xe,0,19,7);const Je=[new Ge(0,0,0,0,0),new Ge(4,4,8,4,1),new Ge(4,5,16,8,1),new Ge(4,6,32,32,1),new Ge(4,4,16,16,2),new Ge(8,16,32,32,2),new Ge(8,16,128,128,2),new Ge(8,32,128,256,2),new Ge(32,128,258,1024,2),new Ge(32,258,258,4096,2)],Qe=["need dictionary","stream end","","","stream error","data error","","buffer error","",""],Xe=113,Ye=666,Ze=262;function $e(e,t,n,r){const s=e[2*t],i=e[2*n];return i>s||s==i&&r[t]<=r[n]}function et(){const e=this;let t,n,s,c,f,a,l,u,w,h,d,p,y,m,b,g,k,v,S,z,C,x,A,_,I,P,D,V,R,B,E,M,U;const K=new He,N=new He,O=new He;let T,W,j,H,L,F;function q(){let t;for(t=0;286>t;t++)E[2*t]=0;for(t=0;30>t;t++)M[2*t]=0;for(t=0;19>t;t++)U[2*t]=0;E[512]=1,e.ue=e.we=0,W=j=0}function G(e,t){let n,r=-1,s=e[1],i=0,o=7,c=4;0===s&&(o=138,c=3),e[2*(t+1)+1]=65535;for(let f=0;t>=f;f++)n=s,s=e[2*(f+1)+1],++i<o&&n==s||(c>i?U[2*n]+=i:0!==n?(n!=r&&U[2*n]++,U[32]++):i>10?U[36]++:U[34]++,i=0,r=n,0===s?(o=138,c=3):n==s?(o=6,c=3):(o=7,c=4))}function J(t){e.Ke[e.pending++]=t}function Q(e){J(255&e),J(e>>>8&255)}function X(e,t){let n;const r=t;F>16-r?(n=e,L|=n<<F&65535,Q(L),L=n>>>16-F,F+=r-16):(L|=e<<F&65535,F+=r)}function Y(e,t){const n=2*e;X(65535&t[n],65535&t[n+1])}function Z(e,t){let n,r,s=-1,i=e[1],o=0,c=7,f=4;for(0===i&&(c=138,f=3),n=0;t>=n;n++)if(r=i,i=e[2*(n+1)+1],++o>=c||r!=i){if(f>o)do{Y(r,U)}while(0!=--o);else 0!==r?(r!=s&&(Y(r,U),o--),Y(16,U),X(o-3,2)):o>10?(Y(18,U),X(o-11,7)):(Y(17,U),X(o-3,3));o=0,s=r,0===i?(c=138,f=3):r==i?(c=6,f=3):(c=7,f=4)}}function $(){16==F?(Q(L),L=0,F=0):8>F||(J(255&L),L>>>=8,F-=8)}function ee(t,n){let s,i,o;if(e.Ne[W]=t,e.Oe[W]=255&n,W++,0===t?E[2*n]++:(j++,t--,E[2*(He.ge[n]+256+1)]++,M[2*He.Se(t)]++),0==(8191&W)&&D>2){for(s=8*W,i=C-k,o=0;30>o;o++)s+=M[2*o]*(5+He.Ce[o]);if(s>>>=3,j<r.floor(W/2)&&s<r.floor(i/2))return!0}return W==T-1}function te(t,n){let r,s,i,o,c=0;if(0!==W)do{r=e.Ne[c],s=e.Oe[c],c++,0===r?Y(s,t):(i=He.ge[s],Y(i+256+1,t),o=He.ze[i],0!==o&&(s-=He.ke[i],X(s,o)),r--,i=He.Se(r),Y(i,n),o=He.Ce[i],0!==o&&(r-=He.ve[i],X(r,o)))}while(W>c);Y(256,t),H=t[513]}function ne(){F>8?Q(L):F>0&&J(255&L),L=0,F=0}function re(t,n,r){X(0+(r?1:0),3),((t,n)=>{ne(),H=8,Q(n),Q(~n),e.Ke.set(u.subarray(t,t+n),e.pending),e.pending+=n})(t,n)}function se(n){((t,n,r)=>{let s,i,o=0;D>0?(K.ne(e),N.ne(e),o=(()=>{let t;for(G(E,K.he),G(M,N.he),O.ne(e),t=18;t>=3&&0===U[2*He.Ae[t]+1];t--);return e.ue+=14+3*(t+1),t})(),s=e.ue+3+7>>>3,i=e.we+3+7>>>3,i>s||(s=i)):s=i=n+5,n+4>s||-1==t?i==s?(X(2+(r?1:0),3),te(Le._e,Le.Be)):(X(4+(r?1:0),3),((e,t,n)=>{let r;for(X(e-257,5),X(t-1,5),X(n-4,4),r=0;n>r;r++)X(U[2*He.Ae[r]+1],3);Z(E,e-1),Z(M,t-1)})(K.he+1,N.he+1,o+1),te(E,M)):re(t,n,r),q(),r&&ne()})(0>k?-1:k,C-k,n),k=C,t.Te()}function ie(){let e,n,r,s;do{if(s=w-A-C,0===s&&0===C&&0===A)s=f;else if(-1==s)s--;else if(C>=f+f-Ze){u.set(u.subarray(f,f+f),0),x-=f,C-=f,k-=f,e=y,r=e;do{n=65535&d[--r],d[r]=f>n?0:n-f}while(0!=--e);e=f,r=e;do{n=65535&h[--r],h[r]=f>n?0:n-f}while(0!=--e);s+=f}if(0===t.We)return;e=t.je(u,C+A,s),A+=e,3>A||(p=255&u[C],p=(p<<g^255&u[C+1])&b)}while(Ze>A&&0!==t.We)}function oe(e){let t,n,r=I,s=C,i=_;const o=C>f-Ze?C-(f-Ze):0;let c=B;const a=l,w=C+258;let d=u[s+i-1],p=u[s+i];R>_||(r>>=2),c>A&&(c=A);do{if(t=e,u[t+i]==p&&u[t+i-1]==d&&u[t]==u[s]&&u[++t]==u[s+1]){s+=2,t++;do{}while(u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&u[++s]==u[++t]&&w>s);if(n=258-(w-s),s=w-258,n>i){if(x=e,i=n,n>=c)break;d=u[s+i-1],p=u[s+i]}}}while((e=65535&h[e&a])>o&&0!=--r);return i>A?A:i}e.le=[],e.be=[],e.ae=[],E=[],M=[],U=[],e.de=(t,n)=>{const r=e.ae,s=r[n];let i=n<<1;for(;i<=e.ce&&(i<e.ce&&$e(t,r[i+1],r[i],e.le)&&i++,!$e(t,s,r[i],e.le));)r[n]=r[i],n=i,i<<=1;r[n]=s},e.He=(t,S,x,W,j,G)=>(W||(W=8),j||(j=8),G||(G=0),t.Le=null,-1==S&&(S=6),1>j||j>9||8!=W||9>x||x>15||0>S||S>9||0>G||G>2?Oe:(t.Fe=e,a=x,f=1<<a,l=f-1,m=j+7,y=1<<m,b=y-1,g=r.floor((m+3-1)/3),u=new i(2*f),h=[],d=[],T=1<<j+6,e.Ke=new i(4*T),s=4*T,e.Ne=new o(T),e.Oe=new i(T),D=S,V=G,(t=>(t.qe=t.Ge=0,t.Le=null,e.pending=0,e.Je=0,n=Xe,c=0,K.re=E,K.ie=Le.Ee,N.re=M,N.ie=Le.Me,O.re=U,O.ie=Le.Ue,L=0,F=0,H=8,q(),(()=>{w=2*f,d[y-1]=0;for(let e=0;y-1>e;e++)d[e]=0;P=Je[D].Pe,R=Je[D].Ie,B=Je[D].De,I=Je[D].Ve,C=0,k=0,A=0,v=_=2,z=0,p=0})(),0))(t))),e.Qe=()=>42!=n&&n!=Xe&&n!=Ye?Oe:(e.Oe=null,e.Ne=null,e.Ke=null,d=null,h=null,u=null,e.Fe=null,n==Xe?-3:0),e.Xe=(e,t,n)=>{let r=0;return-1==t&&(t=6),0>t||t>9||0>n||n>2?Oe:(Je[D].Re!=Je[t].Re&&0!==e.qe&&(r=e.Ye(1)),D!=t&&(D=t,P=Je[D].Pe,R=Je[D].Ie,B=Je[D].De,I=Je[D].Ve),V=n,r)},e.Ze=(e,t,r)=>{let s,i=r,o=0;if(!t||42!=n)return Oe;if(3>i)return 0;for(i>f-Ze&&(i=f-Ze,o=r-i),u.set(t.subarray(o,o+i),0),C=i,k=i,p=255&u[0],p=(p<<g^255&u[1])&b,s=0;i-3>=s;s++)p=(p<<g^255&u[s+2])&b,h[s&l]=d[p],d[p]=s;return 0},e.Ye=(r,i)=>{let o,w,m,I,R;if(i>4||0>i)return Oe;if(!r.$e||!r.et&&0!==r.We||n==Ye&&4!=i)return r.Le=Qe[4],Oe;if(0===r.tt)return r.Le=Qe[7],-5;var B;if(t=r,I=c,c=i,42==n&&(w=8+(a-8<<4)<<8,m=(D-1&255)>>1,m>3&&(m=3),w|=m<<6,0!==C&&(w|=32),w+=31-w%31,n=Xe,J((B=w)>>8&255),J(255&B)),0!==e.pending){if(t.Te(),0===t.tt)return c=-1,0}else if(0===t.We&&I>=i&&4!=i)return t.Le=Qe[7],-5;if(n==Ye&&0!==t.We)return r.Le=Qe[7],-5;if(0!==t.We||0!==A||0!=i&&n!=Ye){switch(R=-1,Je[D].Re){case 0:R=(e=>{let n,r=65535;for(r>s-5&&(r=s-5);;){if(1>=A){if(ie(),0===A&&0==e)return 0;if(0===A)break}if(C+=A,A=0,n=k+r,(0===C||C>=n)&&(A=C-n,C=n,se(!1),0===t.tt))return 0;if(C-k>=f-Ze&&(se(!1),0===t.tt))return 0}return se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i);break;case 1:R=(e=>{let n,r=0;for(;;){if(Ze>A){if(ie(),Ze>A&&0==e)return 0;if(0===A)break}if(3>A||(p=(p<<g^255&u[C+2])&b,r=65535&d[p],h[C&l]=d[p],d[p]=C),0===r||(C-r&65535)>f-Ze||2!=V&&(v=oe(r)),3>v)n=ee(0,255&u[C]),A--,C++;else if(n=ee(C-x,v-3),A-=v,v>P||3>A)C+=v,v=0,p=255&u[C],p=(p<<g^255&u[C+1])&b;else{v--;do{C++,p=(p<<g^255&u[C+2])&b,r=65535&d[p],h[C&l]=d[p],d[p]=C}while(0!=--v);C++}if(n&&(se(!1),0===t.tt))return 0}return se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i);break;case 2:R=(e=>{let n,r,s=0;for(;;){if(Ze>A){if(ie(),Ze>A&&0==e)return 0;if(0===A)break}if(3>A||(p=(p<<g^255&u[C+2])&b,s=65535&d[p],h[C&l]=d[p],d[p]=C),_=v,S=x,v=2,0!==s&&P>_&&f-Ze>=(C-s&65535)&&(2!=V&&(v=oe(s)),5>=v&&(1==V||3==v&&C-x>4096)&&(v=2)),3>_||v>_)if(0!==z){if(n=ee(0,255&u[C-1]),n&&se(!1),C++,A--,0===t.tt)return 0}else z=1,C++,A--;else{r=C+A-3,n=ee(C-1-S,_-3),A-=_-1,_-=2;do{++C>r||(p=(p<<g^255&u[C+2])&b,s=65535&d[p],h[C&l]=d[p],d[p]=C)}while(0!=--_);if(z=0,v=2,C++,n&&(se(!1),0===t.tt))return 0}}return 0!==z&&(n=ee(0,255&u[C-1]),z=0),se(4==e),0===t.tt?4==e?2:0:4==e?3:1})(i)}if(2!=R&&3!=R||(n=Ye),0==R||2==R)return 0===t.tt&&(c=-1),0;if(1==R){if(1==i)X(2,3),Y(256,Le._e),$(),9>1+H+10-F&&(X(2,3),Y(256,Le._e),$()),H=7;else if(re(0,0,!1),3==i)for(o=0;y>o;o++)d[o]=0;if(t.Te(),0===t.tt)return c=-1,0}}return 4!=i?0:1}}function tt(){const e=this;e.nt=0,e.rt=0,e.We=0,e.qe=0,e.tt=0,e.Ge=0}function nt(e){const t=new tt,n=(o=e&&e.chunkSize?e.chunkSize:65536)+5*(r.floor(o/16383)+1);var o;const c=new i(n);let f=e?e.level:-1;void 0===f&&(f=-1),t.He(f),t.$e=c,this.append=(e,r)=>{let o,f,a=0,l=0,u=0;const w=[];if(e.length){t.nt=0,t.et=e,t.We=e.length;do{if(t.rt=0,t.tt=n,o=t.Ye(0),0!=o)throw new s("deflating: "+t.Le);t.rt&&(t.rt==n?w.push(new i(c)):w.push(c.subarray(0,t.rt))),u+=t.rt,r&&t.nt>0&&t.nt!=a&&(r(t.nt),a=t.nt)}while(t.We>0||0===t.tt);return w.length>1?(f=new i(u),w.forEach((e=>{f.set(e,l),l+=e.length}))):f=w[0]?new i(w[0]):new i,f}},this.flush=()=>{let e,r,o=0,f=0;const a=[];do{if(t.rt=0,t.tt=n,e=t.Ye(4),1!=e&&0!=e)throw new s("deflating: "+t.Le);n-t.tt>0&&a.push(c.slice(0,t.rt)),f+=t.rt}while(t.We>0||0===t.tt);return t.Qe(),r=new i(f),a.forEach((e=>{r.set(e,o),o+=e.length})),r}}tt.prototype={He(e,t){const n=this;return n.Fe=new et,t||(t=15),n.Fe.He(n,e,t)},Ye(e){const t=this;return t.Fe?t.Fe.Ye(t,e):Oe},Qe(){const e=this;if(!e.Fe)return Oe;const t=e.Fe.Qe();return e.Fe=null,t},Xe(e,t){const n=this;return n.Fe?n.Fe.Xe(n,e,t):Oe},Ze(e,t){const n=this;return n.Fe?n.Fe.Ze(n,e,t):Oe},je(e,t,n){const r=this;let s=r.We;return s>n&&(s=n),0===s?0:(r.We-=s,e.set(r.et.subarray(r.nt,r.nt+s),t),r.nt+=s,r.qe+=s,s)},Te(){const e=this;let t=e.Fe.pending;t>e.tt&&(t=e.tt),0!==t&&(e.$e.set(e.Fe.Ke.subarray(e.Fe.Je,e.Fe.Je+t),e.rt),e.rt+=t,e.Fe.Je+=t,e.Ge+=t,e.tt-=t,e.Fe.pending-=t,0===e.Fe.pending&&(e.Fe.Je=0))}};const rt=-2,st=-3,it=-5,ot=[0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535],ct=[96,7,256,0,8,80,0,8,16,84,8,115,82,7,31,0,8,112,0,8,48,0,9,192,80,7,10,0,8,96,0,8,32,0,9,160,0,8,0,0,8,128,0,8,64,0,9,224,80,7,6,0,8,88,0,8,24,0,9,144,83,7,59,0,8,120,0,8,56,0,9,208,81,7,17,0,8,104,0,8,40,0,9,176,0,8,8,0,8,136,0,8,72,0,9,240,80,7,4,0,8,84,0,8,20,85,8,227,83,7,43,0,8,116,0,8,52,0,9,200,81,7,13,0,8,100,0,8,36,0,9,168,0,8,4,0,8,132,0,8,68,0,9,232,80,7,8,0,8,92,0,8,28,0,9,152,84,7,83,0,8,124,0,8,60,0,9,216,82,7,23,0,8,108,0,8,44,0,9,184,0,8,12,0,8,140,0,8,76,0,9,248,80,7,3,0,8,82,0,8,18,85,8,163,83,7,35,0,8,114,0,8,50,0,9,196,81,7,11,0,8,98,0,8,34,0,9,164,0,8,2,0,8,130,0,8,66,0,9,228,80,7,7,0,8,90,0,8,26,0,9,148,84,7,67,0,8,122,0,8,58,0,9,212,82,7,19,0,8,106,0,8,42,0,9,180,0,8,10,0,8,138,0,8,74,0,9,244,80,7,5,0,8,86,0,8,22,192,8,0,83,7,51,0,8,118,0,8,54,0,9,204,81,7,15,0,8,102,0,8,38,0,9,172,0,8,6,0,8,134,0,8,70,0,9,236,80,7,9,0,8,94,0,8,30,0,9,156,84,7,99,0,8,126,0,8,62,0,9,220,82,7,27,0,8,110,0,8,46,0,9,188,0,8,14,0,8,142,0,8,78,0,9,252,96,7,256,0,8,81,0,8,17,85,8,131,82,7,31,0,8,113,0,8,49,0,9,194,80,7,10,0,8,97,0,8,33,0,9,162,0,8,1,0,8,129,0,8,65,0,9,226,80,7,6,0,8,89,0,8,25,0,9,146,83,7,59,0,8,121,0,8,57,0,9,210,81,7,17,0,8,105,0,8,41,0,9,178,0,8,9,0,8,137,0,8,73,0,9,242,80,7,4,0,8,85,0,8,21,80,8,258,83,7,43,0,8,117,0,8,53,0,9,202,81,7,13,0,8,101,0,8,37,0,9,170,0,8,5,0,8,133,0,8,69,0,9,234,80,7,8,0,8,93,0,8,29,0,9,154,84,7,83,0,8,125,0,8,61,0,9,218,82,7,23,0,8,109,0,8,45,0,9,186,0,8,13,0,8,141,0,8,77,0,9,250,80,7,3,0,8,83,0,8,19,85,8,195,83,7,35,0,8,115,0,8,51,0,9,198,81,7,11,0,8,99,0,8,35,0,9,166,0,8,3,0,8,131,0,8,67,0,9,230,80,7,7,0,8,91,0,8,27,0,9,150,84,7,67,0,8,123,0,8,59,0,9,214,82,7,19,0,8,107,0,8,43,0,9,182,0,8,11,0,8,139,0,8,75,0,9,246,80,7,5,0,8,87,0,8,23,192,8,0,83,7,51,0,8,119,0,8,55,0,9,206,81,7,15,0,8,103,0,8,39,0,9,174,0,8,7,0,8,135,0,8,71,0,9,238,80,7,9,0,8,95,0,8,31,0,9,158,84,7,99,0,8,127,0,8,63,0,9,222,82,7,27,0,8,111,0,8,47,0,9,190,0,8,15,0,8,143,0,8,79,0,9,254,96,7,256,0,8,80,0,8,16,84,8,115,82,7,31,0,8,112,0,8,48,0,9,193,80,7,10,0,8,96,0,8,32,0,9,161,0,8,0,0,8,128,0,8,64,0,9,225,80,7,6,0,8,88,0,8,24,0,9,145,83,7,59,0,8,120,0,8,56,0,9,209,81,7,17,0,8,104,0,8,40,0,9,177,0,8,8,0,8,136,0,8,72,0,9,241,80,7,4,0,8,84,0,8,20,85,8,227,83,7,43,0,8,116,0,8,52,0,9,201,81,7,13,0,8,100,0,8,36,0,9,169,0,8,4,0,8,132,0,8,68,0,9,233,80,7,8,0,8,92,0,8,28,0,9,153,84,7,83,0,8,124,0,8,60,0,9,217,82,7,23,0,8,108,0,8,44,0,9,185,0,8,12,0,8,140,0,8,76,0,9,249,80,7,3,0,8,82,0,8,18,85,8,163,83,7,35,0,8,114,0,8,50,0,9,197,81,7,11,0,8,98,0,8,34,0,9,165,0,8,2,0,8,130,0,8,66,0,9,229,80,7,7,0,8,90,0,8,26,0,9,149,84,7,67,0,8,122,0,8,58,0,9,213,82,7,19,0,8,106,0,8,42,0,9,181,0,8,10,0,8,138,0,8,74,0,9,245,80,7,5,0,8,86,0,8,22,192,8,0,83,7,51,0,8,118,0,8,54,0,9,205,81,7,15,0,8,102,0,8,38,0,9,173,0,8,6,0,8,134,0,8,70,0,9,237,80,7,9,0,8,94,0,8,30,0,9,157,84,7,99,0,8,126,0,8,62,0,9,221,82,7,27,0,8,110,0,8,46,0,9,189,0,8,14,0,8,142,0,8,78,0,9,253,96,7,256,0,8,81,0,8,17,85,8,131,82,7,31,0,8,113,0,8,49,0,9,195,80,7,10,0,8,97,0,8,33,0,9,163,0,8,1,0,8,129,0,8,65,0,9,227,80,7,6,0,8,89,0,8,25,0,9,147,83,7,59,0,8,121,0,8,57,0,9,211,81,7,17,0,8,105,0,8,41,0,9,179,0,8,9,0,8,137,0,8,73,0,9,243,80,7,4,0,8,85,0,8,21,80,8,258,83,7,43,0,8,117,0,8,53,0,9,203,81,7,13,0,8,101,0,8,37,0,9,171,0,8,5,0,8,133,0,8,69,0,9,235,80,7,8,0,8,93,0,8,29,0,9,155,84,7,83,0,8,125,0,8,61,0,9,219,82,7,23,0,8,109,0,8,45,0,9,187,0,8,13,0,8,141,0,8,77,0,9,251,80,7,3,0,8,83,0,8,19,85,8,195,83,7,35,0,8,115,0,8,51,0,9,199,81,7,11,0,8,99,0,8,35,0,9,167,0,8,3,0,8,131,0,8,67,0,9,231,80,7,7,0,8,91,0,8,27,0,9,151,84,7,67,0,8,123,0,8,59,0,9,215,82,7,19,0,8,107,0,8,43,0,9,183,0,8,11,0,8,139,0,8,75,0,9,247,80,7,5,0,8,87,0,8,23,192,8,0,83,7,51,0,8,119,0,8,55,0,9,207,81,7,15,0,8,103,0,8,39,0,9,175,0,8,7,0,8,135,0,8,71,0,9,239,80,7,9,0,8,95,0,8,31,0,9,159,84,7,99,0,8,127,0,8,63,0,9,223,82,7,27,0,8,111,0,8,47,0,9,191,0,8,15,0,8,143,0,8,79,0,9,255],ft=[80,5,1,87,5,257,83,5,17,91,5,4097,81,5,5,89,5,1025,85,5,65,93,5,16385,80,5,3,88,5,513,84,5,33,92,5,8193,82,5,9,90,5,2049,86,5,129,192,5,24577,80,5,2,87,5,385,83,5,25,91,5,6145,81,5,7,89,5,1537,85,5,97,93,5,24577,80,5,4,88,5,769,84,5,49,92,5,12289,82,5,13,90,5,3073,86,5,193,192,5,24577],at=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258,0,0],lt=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,112,112],ut=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],wt=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];function ht(){let e,t,n,r,s,i;function o(e,t,o,c,f,a,l,u,w,h,d){let p,y,m,b,g,k,v,S,z,C,x,A,_,I,P;C=0,g=o;do{n[e[t+C]]++,C++,g--}while(0!==g);if(n[0]==o)return l[0]=-1,u[0]=0,0;for(S=u[0],k=1;15>=k&&0===n[k];k++);for(v=k,k>S&&(S=k),g=15;0!==g&&0===n[g];g--);for(m=g,S>g&&(S=g),u[0]=S,I=1<<k;g>k;k++,I<<=1)if(0>(I-=n[k]))return st;if(0>(I-=n[g]))return st;for(n[g]+=I,i[1]=k=0,C=1,_=2;0!=--g;)i[_]=k+=n[C],_++,C++;g=0,C=0;do{0!==(k=e[t+C])&&(d[i[k]++]=g),C++}while(++g<o);for(o=i[m],i[0]=g=0,C=0,b=-1,A=-S,s[0]=0,x=0,P=0;m>=v;v++)for(p=n[v];0!=p--;){for(;v>A+S;){if(b++,A+=S,P=m-A,P=P>S?S:P,(y=1<<(k=v-A))>p+1&&(y-=p+1,_=v,P>k))for(;++k<P&&(y<<=1)>n[++_];)y-=n[_];if(P=1<<k,h[0]+P>1440)return st;s[b]=x=h[0],h[0]+=P,0!==b?(i[b]=g,r[0]=k,r[1]=S,k=g>>>A-S,r[2]=x-s[b-1]-k,w.set(r,3*(s[b-1]+k))):l[0]=x}for(r[1]=v-A,o>C?d[C]<c?(r[0]=256>d[C]?0:96,r[2]=d[C++]):(r[0]=a[d[C]-c]+16+64,r[2]=f[d[C++]-c]):r[0]=192,y=1<<v-A,k=g>>>A;P>k;k+=y)w.set(r,3*(x+k));for(k=1<<v-1;0!=(g&k);k>>>=1)g^=k;for(g^=k,z=(1<<A)-1;(g&z)!=i[b];)b--,A-=S,z=(1<<A)-1}return 0!==I&&1!=m?it:0}function c(o){let c;for(e||(e=[],t=[],n=new f(16),r=[],s=new f(15),i=new f(16)),t.length<o&&(t=[]),c=0;o>c;c++)t[c]=0;for(c=0;16>c;c++)n[c]=0;for(c=0;3>c;c++)r[c]=0;s.set(n.subarray(0,15),0),i.set(n.subarray(0,16),0)}this.st=(n,r,s,i,f)=>{let a;return c(19),e[0]=0,a=o(n,0,19,19,null,null,s,r,i,e,t),a==st?f.Le="oversubscribed dynamic bit lengths tree":a!=it&&0!==r[0]||(f.Le="incomplete dynamic bit lengths tree",a=st),a},this.it=(n,r,s,i,f,a,l,u,w)=>{let h;return c(288),e[0]=0,h=o(s,0,n,257,at,lt,a,i,u,e,t),0!=h||0===i[0]?(h==st?w.Le="oversubscribed literal/length tree":-4!=h&&(w.Le="incomplete literal/length tree",h=st),h):(c(288),h=o(s,n,r,0,ut,wt,l,f,u,e,t),0!=h||0===f[0]&&n>257?(h==st?w.Le="oversubscribed distance tree":h==it?(w.Le="incomplete distance tree",h=st):-4!=h&&(w.Le="empty distance tree with lengths",h=st),h):0)}}function dt(){const e=this;let t,n,r,s,i=0,o=0,c=0,f=0,a=0,l=0,u=0,w=0,h=0,d=0;function p(e,t,n,r,s,i,o,c){let f,a,l,u,w,h,d,p,y,m,b,g,k,v,S,z;d=c.nt,p=c.We,w=o.ot,h=o.ct,y=o.write,m=y<o.read?o.read-y-1:o.end-y,b=ot[e],g=ot[t];do{for(;20>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;if(f=w&b,a=n,l=r,z=3*(l+f),0!==(u=a[z]))for(;;){if(w>>=a[z+1],h-=a[z+1],0!=(16&u)){for(u&=15,k=a[z+2]+(w&ot[u]),w>>=u,h-=u;15>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;for(f=w&g,a=s,l=i,z=3*(l+f),u=a[z];;){if(w>>=a[z+1],h-=a[z+1],0!=(16&u)){for(u&=15;u>h;)p--,w|=(255&c.ft(d++))<<h,h+=8;if(v=a[z+2]+(w&ot[u]),w>>=u,h-=u,m-=k,v>y){S=y-v;do{S+=o.end}while(0>S);if(u=o.end-S,k>u){if(k-=u,y-S>0&&u>y-S)do{o.lt[y++]=o.lt[S++]}while(0!=--u);else o.lt.set(o.lt.subarray(S,S+u),y),y+=u,S+=u,u=0;S=0}}else S=y-v,y-S>0&&2>y-S?(o.lt[y++]=o.lt[S++],o.lt[y++]=o.lt[S++],k-=2):(o.lt.set(o.lt.subarray(S,S+2),y),y+=2,S+=2,k-=2);if(y-S>0&&k>y-S)do{o.lt[y++]=o.lt[S++]}while(0!=--k);else o.lt.set(o.lt.subarray(S,S+k),y),y+=k,S+=k,k=0;break}if(0!=(64&u))return c.Le="invalid distance code",k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,st;f+=a[z+2],f+=w&ot[u],z=3*(l+f),u=a[z]}break}if(0!=(64&u))return 0!=(32&u)?(k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,1):(c.Le="invalid literal/length code",k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,st);if(f+=a[z+2],f+=w&ot[u],z=3*(l+f),0===(u=a[z])){w>>=a[z+1],h-=a[z+1],o.lt[y++]=a[z+2],m--;break}}else w>>=a[z+1],h-=a[z+1],o.lt[y++]=a[z+2],m--}while(m>=258&&p>=10);return k=c.We-p,k=k>h>>3?h>>3:k,p+=k,d-=k,h-=k<<3,o.ot=w,o.ct=h,c.We=p,c.qe+=d-c.nt,c.nt=d,o.write=y,0}e.init=(e,i,o,c,f,a)=>{t=0,u=e,w=i,r=o,h=c,s=f,d=a,n=null},e.ut=(e,y,m)=>{let b,g,k,v,S,z,C,x=0,A=0,_=0;for(_=y.nt,v=y.We,x=e.ot,A=e.ct,S=e.write,z=S<e.read?e.read-S-1:e.end-S;;)switch(t){case 0:if(z>=258&&v>=10&&(e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,m=p(u,w,r,h,s,d,e,y),_=y.nt,v=y.We,x=e.ot,A=e.ct,S=e.write,z=S<e.read?e.read-S-1:e.end-S,0!=m)){t=1==m?7:9;break}c=u,n=r,o=h,t=1;case 1:for(b=c;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}if(g=3*(o+(x&ot[b])),x>>>=n[g+1],A-=n[g+1],k=n[g],0===k){f=n[g+2],t=6;break}if(0!=(16&k)){a=15&k,i=n[g+2],t=2;break}if(0==(64&k)){c=k,o=g/3+n[g+2];break}if(0!=(32&k)){t=7;break}return t=9,y.Le="invalid literal/length code",m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 2:for(b=a;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}i+=x&ot[b],x>>=b,A-=b,c=w,n=s,o=d,t=3;case 3:for(b=c;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}if(g=3*(o+(x&ot[b])),x>>=n[g+1],A-=n[g+1],k=n[g],0!=(16&k)){a=15&k,l=n[g+2],t=4;break}if(0==(64&k)){c=k,o=g/3+n[g+2];break}return t=9,y.Le="invalid distance code",m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 4:for(b=a;b>A;){if(0===v)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,v--,x|=(255&y.ft(_++))<<A,A+=8}l+=x&ot[b],x>>=b,A-=b,t=5;case 5:for(C=S-l;0>C;)C+=e.end;for(;0!==i;){if(0===z&&(S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z&&(e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z)))return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);e.lt[S++]=e.lt[C++],z--,C==e.end&&(C=0),i--}t=0;break;case 6:if(0===z&&(S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z&&(e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,S==e.end&&0!==e.read&&(S=0,z=S<e.read?e.read-S-1:e.end-S),0===z)))return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);m=0,e.lt[S++]=f,z--,t=0;break;case 7:if(A>7&&(A-=8,v++,_--),e.write=S,m=e.wt(y,m),S=e.write,z=S<e.read?e.read-S-1:e.end-S,e.read!=e.write)return e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);t=8;case 8:return m=1,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);case 9:return m=st,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m);default:return m=rt,e.ot=x,e.ct=A,y.We=v,y.qe+=_-y.nt,y.nt=_,e.write=S,e.wt(y,m)}},e.ht=()=>{}}ht.dt=(e,t,n,r)=>(e[0]=9,t[0]=5,n[0]=ct,r[0]=ft,0);const pt=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];function yt(e,t){const n=this;let r,s=0,o=0,c=0,a=0;const l=[0],u=[0],w=new dt;let h=0,d=new f(4320);const p=new ht;n.ct=0,n.ot=0,n.lt=new i(t),n.end=t,n.read=0,n.write=0,n.reset=(e,t)=>{t&&(t[0]=0),6==s&&w.ht(e),s=0,n.ct=0,n.ot=0,n.read=n.write=0},n.reset(e,null),n.wt=(e,t)=>{let r,s,i;return s=e.rt,i=n.read,r=(i>n.write?n.end:n.write)-i,r>e.tt&&(r=e.tt),0!==r&&t==it&&(t=0),e.tt-=r,e.Ge+=r,e.$e.set(n.lt.subarray(i,i+r),s),s+=r,i+=r,i==n.end&&(i=0,n.write==n.end&&(n.write=0),r=n.write-i,r>e.tt&&(r=e.tt),0!==r&&t==it&&(t=0),e.tt-=r,e.Ge+=r,e.$e.set(n.lt.subarray(i,i+r),s),s+=r,i+=r),e.rt=s,n.read=i,t},n.ut=(e,t)=>{let i,f,y,m,b,g,k,v;for(m=e.nt,b=e.We,f=n.ot,y=n.ct,g=n.write,k=g<n.read?n.read-g-1:n.end-g;;){let S,z,C,x,A,_,I,P;switch(s){case 0:for(;3>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}switch(i=7&f,h=1&i,i>>>1){case 0:f>>>=3,y-=3,i=7&y,f>>>=i,y-=i,s=1;break;case 1:S=[],z=[],C=[[]],x=[[]],ht.dt(S,z,C,x),w.init(S[0],z[0],C[0],0,x[0],0),f>>>=3,y-=3,s=6;break;case 2:f>>>=3,y-=3,s=3;break;case 3:return f>>>=3,y-=3,s=9,e.Le="invalid block type",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t)}break;case 1:for(;32>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if((~f>>>16&65535)!=(65535&f))return s=9,e.Le="invalid stored block lengths",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);o=65535&f,f=y=0,s=0!==o?2:0!==h?7:0;break;case 2:if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(0===k&&(g==n.end&&0!==n.read&&(g=0,k=g<n.read?n.read-g-1:n.end-g),0===k&&(n.write=g,t=n.wt(e,t),g=n.write,k=g<n.read?n.read-g-1:n.end-g,g==n.end&&0!==n.read&&(g=0,k=g<n.read?n.read-g-1:n.end-g),0===k)))return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(t=0,i=o,i>b&&(i=b),i>k&&(i=k),n.lt.set(e.je(m,i),g),m+=i,b-=i,g+=i,k-=i,0!=(o-=i))break;s=0!==h?7:0;break;case 3:for(;14>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(c=i=16383&f,(31&i)>29||(i>>5&31)>29)return s=9,e.Le="too many length or distance symbols",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);if(i=258+(31&i)+(i>>5&31),!r||r.length<i)r=[];else for(v=0;i>v;v++)r[v]=0;f>>>=14,y-=14,a=0,s=4;case 4:for(;4+(c>>>10)>a;){for(;3>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}r[pt[a++]]=7&f,f>>>=3,y-=3}for(;19>a;)r[pt[a++]]=0;if(l[0]=7,i=p.st(r,l,u,d,e),0!=i)return(t=i)==st&&(r=null,s=9),n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);a=0,s=5;case 5:for(;i=c,258+(31&i)+(i>>5&31)>a;){let o,w;for(i=l[0];i>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(i=d[3*(u[0]+(f&ot[i]))+1],w=d[3*(u[0]+(f&ot[i]))+2],16>w)f>>>=i,y-=i,r[a++]=w;else{for(v=18==w?7:w-14,o=18==w?11:3;i+v>y;){if(0===b)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);t=0,b--,f|=(255&e.ft(m++))<<y,y+=8}if(f>>>=i,y-=i,o+=f&ot[v],f>>>=v,y-=v,v=a,i=c,v+o>258+(31&i)+(i>>5&31)||16==w&&1>v)return r=null,s=9,e.Le="invalid bit length repeat",t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);w=16==w?r[v-1]:0;do{r[v++]=w}while(0!=--o);a=v}}if(u[0]=-1,A=[],_=[],I=[],P=[],A[0]=9,_[0]=6,i=c,i=p.it(257+(31&i),1+(i>>5&31),r,A,_,I,P,d,e),0!=i)return i==st&&(r=null,s=9),t=i,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);w.init(A[0],_[0],d,I[0],d,P[0]),s=6;case 6:if(n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,1!=(t=w.ut(n,e,t)))return n.wt(e,t);if(t=0,w.ht(e),m=e.nt,b=e.We,f=n.ot,y=n.ct,g=n.write,k=g<n.read?n.read-g-1:n.end-g,0===h){s=0;break}s=7;case 7:if(n.write=g,t=n.wt(e,t),g=n.write,k=g<n.read?n.read-g-1:n.end-g,n.read!=n.write)return n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);s=8;case 8:return t=1,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);case 9:return t=st,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t);default:return t=rt,n.ot=f,n.ct=y,e.We=b,e.qe+=m-e.nt,e.nt=m,n.write=g,n.wt(e,t)}}},n.ht=e=>{n.reset(e,null),n.lt=null,d=null},n.yt=(e,t,r)=>{n.lt.set(e.subarray(t,t+r),0),n.read=n.write=r},n.bt=()=>1==s?1:0}const mt=13,bt=[0,0,255,255];function gt(){const e=this;function t(e){return e&&e.gt?(e.qe=e.Ge=0,e.Le=null,e.gt.mode=7,e.gt.kt.reset(e,null),0):rt}e.mode=0,e.method=0,e.vt=[0],e.St=0,e.marker=0,e.zt=0,e.Ct=t=>(e.kt&&e.kt.ht(t),e.kt=null,0),e.xt=(n,r)=>(n.Le=null,e.kt=null,8>r||r>15?(e.Ct(n),rt):(e.zt=r,n.gt.kt=new yt(n,1<<r),t(n),0)),e.At=(e,t)=>{let n,r;if(!e||!e.gt||!e.et)return rt;const s=e.gt;for(t=4==t?it:0,n=it;;)switch(s.mode){case 0:if(0===e.We)return n;if(n=t,e.We--,e.qe++,8!=(15&(s.method=e.ft(e.nt++)))){s.mode=mt,e.Le="unknown compression method",s.marker=5;break}if(8+(s.method>>4)>s.zt){s.mode=mt,e.Le="invalid win size",s.marker=5;break}s.mode=1;case 1:if(0===e.We)return n;if(n=t,e.We--,e.qe++,r=255&e.ft(e.nt++),((s.method<<8)+r)%31!=0){s.mode=mt,e.Le="incorrect header check",s.marker=5;break}if(0==(32&r)){s.mode=7;break}s.mode=2;case 2:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St=(255&e.ft(e.nt++))<<24&4278190080,s.mode=3;case 3:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St+=(255&e.ft(e.nt++))<<16&16711680,s.mode=4;case 4:if(0===e.We)return n;n=t,e.We--,e.qe++,s.St+=(255&e.ft(e.nt++))<<8&65280,s.mode=5;case 5:return 0===e.We?n:(n=t,e.We--,e.qe++,s.St+=255&e.ft(e.nt++),s.mode=6,2);case 6:return s.mode=mt,e.Le="need dictionary",s.marker=0,rt;case 7:if(n=s.kt.ut(e,n),n==st){s.mode=mt,s.marker=0;break}if(0==n&&(n=t),1!=n)return n;n=t,s.kt.reset(e,s.vt),s.mode=12;case 12:return e.We=0,1;case mt:return st;default:return rt}},e._t=(e,t,n)=>{let r=0,s=n;if(!e||!e.gt||6!=e.gt.mode)return rt;const i=e.gt;return s<1<<i.zt||(s=(1<<i.zt)-1,r=n-s),i.kt.yt(t,r,s),i.mode=7,0},e.It=e=>{let n,r,s,i,o;if(!e||!e.gt)return rt;const c=e.gt;if(c.mode!=mt&&(c.mode=mt,c.marker=0),0===(n=e.We))return it;for(r=e.nt,s=c.marker;0!==n&&4>s;)e.ft(r)==bt[s]?s++:s=0!==e.ft(r)?0:4-s,r++,n--;return e.qe+=r-e.nt,e.nt=r,e.We=n,c.marker=s,4!=s?st:(i=e.qe,o=e.Ge,t(e),e.qe=i,e.Ge=o,c.mode=7,0)},e.Pt=e=>e&&e.gt&&e.gt.kt?e.gt.kt.bt():rt}function kt(){}function vt(e){const t=new kt,n=e&&e.chunkSize?r.floor(2*e.chunkSize):131072,o=new i(n);let c=!1;t.xt(),t.$e=o,this.append=(e,r)=>{const f=[];let a,l,u=0,w=0,h=0;if(0!==e.length){t.nt=0,t.et=e,t.We=e.length;do{if(t.rt=0,t.tt=n,0!==t.We||c||(t.nt=0,c=!0),a=t.At(0),c&&a===it){if(0!==t.We)throw new s("inflating: bad input")}else if(0!==a&&1!==a)throw new s("inflating: "+t.Le);if((c||1===a)&&t.We===e.length)throw new s("inflating: bad input");t.rt&&(t.rt===n?f.push(new i(o)):f.push(o.subarray(0,t.rt))),h+=t.rt,r&&t.nt>0&&t.nt!=u&&(r(t.nt),u=t.nt)}while(t.We>0||0===t.tt);return f.length>1?(l=new i(h),f.forEach((e=>{l.set(e,w),w+=e.length}))):l=f[0]?new i(f[0]):new i,l}},this.flush=()=>{t.Ct()}}kt.prototype={xt(e){const t=this;return t.gt=new gt,e||(e=15),t.gt.xt(t,e)},At(e){const t=this;return t.gt?t.gt.At(t,e):rt},Ct(){const e=this;if(!e.gt)return rt;const t=e.gt.Ct(e);return e.gt=null,t},It(){const e=this;return e.gt?e.gt.It(e):rt},_t(e,t){const n=this;return n.gt?n.gt._t(n,e,t):rt},ft(e){return this.et[e]},je(e,t){return this.et.subarray(e,e+t)}},self.initCodec=()=>{self.Deflate=nt,self.Inflate=vt};\n'],{type:"text/javascript"}));e({workerScripts:{inflate:[t],deflate:[t]}});}
 
 /*
  Copyright (c) 2022 Gildas Lormeau. All rights reserved.
@@ -65564,7 +68757,8 @@ class GlbSerializer
         const chunkBuffersData = buffers.map(buffer => {
             return this.getChunkFromBuffer(buffer);
         });
-
+        console.log('buffers', buffers);
+        console.log('chunkBuffersData', chunkBuffersData);
         const jsonChunk = this.getChunkFromJsonString(gltf);
 
         const totalSizeBytes = /*Header*/ 3 * 4 + jsonChunk.byteLength + chunkBuffersData.reduce((acc, curr) => acc + curr.byteLength, 0);
@@ -65606,21 +68800,25 @@ class GlbSerializer
         header[0] = alignedBufferSize * 4 ;// buffer.byteLength;
         header[1] = 0x004E4942; // BIN
         new Uint8Array(chunk, 8).set(buffer);    
+        
+        console.log('buffer', buffer);
+        console.log('buffer.byteLength', buffer.byteLength);
+        console.log('chunk', chunk);
+        console.log('chunk.byteLength', chunk.byteLength);
+
         return chunk;
     }
 }
 
-async function main()
-{
+var main = async () => {
     const canvas = document.getElementById("canvas");
     const context = canvas.getContext("webgl2", { alpha: false, antialias: true });
-    document.getElementById("app");
     const view = new GltfView(context);
     const resourceLoader = view.createResourceLoader();
     const state = view.createState();
     state.renderingParameters.useDirectionalLightsWithDisabledIBL = true;
 
-    const pathProvider = new gltfModelPathProvider('assets/models/2.0/model-index.json');
+    const pathProvider = new GltfModelPathProvider('assets/models/Models/model-index.json');
     await pathProvider.initialize();
     const environmentPaths = fillEnvironmentWithPaths({
         "footprint_court": "Footprint Court",
@@ -65638,26 +68836,60 @@ async function main()
 
     const uiModel = new UIModel(app, pathProvider, environmentPaths);
 
+    function resetMeshNodeTable()
+    {
+        if(document.getElementById("geometry_table"))
+            document.getElementById("geometry_table").innerHTML = "";
+    }
+
+    function resetMeshNodeTree()
+    {
+        function setChecked(name, value){
+            const e = document.getElementById(name);
+            if(e !== undefined && e !== null)
+                e.checked = value;
+        }
+
+        function resetNodeToTree (node) {
+            // Set value
+            setChecked('mesh_node_' + node.name, false);
+            // recurse into children
+            for(const j of node.children)
+                resetNodeToTree(state.gltf.nodes[j]);
+        }
+
+        var root_name = 'mesh_node_Root';
+        if(state.gltf){
+            state.gltf.nodes.forEach((node) => resetNodeToTree(node) );
+            root_name = state.gltf.scenes[state.sceneIndex].name === undefined ? root_name : 'mesh_node_' + state.gltf.scenes[state.sceneIndex].name;  
+        }
+
+        setChecked(root_name, false);
+    }
+
     // whenever a new model is selected, load it and when complete pass the loaded gltf
     // into a stream back into the UI
     const gltfLoadedSubject = new Subject();
     const gltfLoadedMulticast = uiModel.model.pipe(
         mergeMap( (model) =>
         {
+            resetMeshNodeTree();
+
+            resetMeshNodeTable();
+
         	uiModel.goToLoadingState();
 
             // Workaround for errors in ktx lib after loading an asset with ktx2 files for the second time:
             resourceLoader.initKtxLib();
 
-            return from(resourceLoader.loadGltf(model.mainFile, model.additionalFiles).then( (gltf) => {
+            return from(resourceLoader.loadGltf(model.mainFile, model.additionalFiles).then(gltf => {
                 state.gltf = gltf;
                 const defaultScene = state.gltf.scene;
                 state.sceneIndex = defaultScene === undefined ? 0 : defaultScene;
                 state.cameraIndex = undefined;
-                if (state.gltf.scenes.length != 0)
-                {
-                    if(state.sceneIndex > state.gltf.scenes.length - 1)
-                    {
+
+                if (state.gltf.scenes.length != 0) {
+                    if (state.sceneIndex > state.gltf.scenes.length - 1) {
                         state.sceneIndex = 0;
                     }
                     const scene = state.gltf.scenes[state.sceneIndex];
@@ -65667,53 +68899,43 @@ async function main()
 
                     // Try to start as many animations as possible without generating conficts.
                     state.animationIndices = [];
-                    for (let i = 0; i < gltf.animations.length; i++)
-                    {
-                        if (!gltf.nonDisjointAnimations(state.animationIndices).includes(i))
-                        {
+                    for (let i = 0; i < gltf.animations.length; i++) {
+                        if (!gltf.nonDisjointAnimations(state.animationIndices).includes(i)) {
                             state.animationIndices.push(i);
                         }
                     }
                     state.animationTimer.start();
                 }
 
+                // TODO: check if this is the best position
+                state.gltf.fillPrimitiveList();
+
                 uiModel.exitLoadingState();
 
                 return state;
-            })
-            );
+            }));
         }),
-        // transform gltf loaded observable to multicast observable to avoid multiple execution with multiple subscriptions
         multicast(gltfLoadedSubject)
     );
 
-    uiModel.disabledAnimations(uiModel.activeAnimations.pipe(map(animationIndices => {
-        // Disable all animations which are not disjoint to the current selection of animations.
-        return state.gltf.nonDisjointAnimations(animationIndices);
-    })));
+    // Disable all animations which are not disjoint to the current selection of animations.
+    uiModel.disabledAnimations(uiModel.activeAnimations.pipe(map(animationIndices => state.gltf.nonDisjointAnimations(animationIndices))));
 
-    const sceneChangedSubject = new Subject();
-    const sceneChangedObservable = uiModel.scene.pipe(map( newSceneIndex => {
-        state.sceneIndex = newSceneIndex;
-        state.cameraIndex = undefined;
-        const scene = state.gltf.scenes[state.sceneIndex];
-        if (scene !== undefined)
-        {
-            scene.applyTransformHierarchy(state.gltf);
-            state.userCamera.fitViewToScene(state.gltf, state.sceneIndex);
-        }
-    }),
-    multicast(sceneChangedSubject)
+    const sceneChangedObservable = uiModel.scene.pipe(
+        map(sceneIndex => {
+            state.sceneIndex = sceneIndex;
+            state.cameraIndex = undefined;
+            const scene = state.gltf.scenes[state.sceneIndex];
+            if (scene !== undefined)
+            {
+                scene.applyTransformHierarchy(state.gltf);
+                state.userCamera.fitViewToScene(state.gltf, state.sceneIndex);
+            }
+        }),
+        share()
     );
 
-    const statisticsUpdateObservableTemp = merge$1(
-        gltfLoadedMulticast,
-        sceneChangedObservable
-    );
-
-    const statisticsUpdateObservable = statisticsUpdateObservableTemp.pipe(
-        map( (_) => view.gatherStatistics(state) )
-    );
+    const statisticsUpdateObservable = merge$1(sceneChangedObservable, gltfLoadedMulticast).pipe(map(() => view.gatherStatistics(state)));
 
     const texturestatisticsUpdateObservableTemp = merge$1(
         gltfLoadedMulticast,
@@ -65747,20 +68969,29 @@ async function main()
         return window.btoa( binary );
     };
 
-    const downloadDataURL = (filename, dataURL) => {
-        var element = document.createElement('a');
-        element.setAttribute('href', dataURL);
-        element.setAttribute('download', filename);
+    const downloadBlob = (filename, blob) => {
+        const element = document.createElement('a');
+        element.setAttribute('href', URL.createObjectURL(blob));
+        element.setAttribute('download', 'file.zip');
 
         element.style.display = 'none';
+
         document.body.appendChild(element);
-
         element.click();
-
         document.body.removeChild(element);
     };
 
-    cameraExportChangedObservable.subscribe( cameraDesc => {
+    const downloadDataURL = (filename, dataURL) => {
+        const element = document.createElement('a');
+        element.setAttribute('href', dataURL);
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    };
+
+    cameraExportChangedObservable.subscribe(cameraDesc => {
         const gltf = JSON.stringify(cameraDesc, undefined, 4);
         const dataURL = 'data:text/plain;charset=utf-8,' +  encodeURIComponent(gltf);
         downloadDataURL("camera.gltf", dataURL);
@@ -65776,93 +69007,61 @@ async function main()
     let redraw = false;
     const listenForRedraw = stream => stream.subscribe(() => redraw = true);
     
-    uiModel.scene.pipe(filter$1(scene => scene === -1)).subscribe( () => {
-        state.sceneIndex = undefined;
-    });
-    uiModel.scene.pipe(filter$1(scene => scene !== -1)).subscribe( scene => {
-        state.sceneIndex = scene;
-    });
+    uiModel.scene.subscribe(scene => state.sceneIndex = scene !== -1 ? scene : undefined);
     listenForRedraw(uiModel.scene);
 
-    uiModel.camera.pipe(filter$1(camera => camera === -1)).subscribe( () => {
-        state.cameraIndex = undefined;
-    });
-    uiModel.camera.pipe(filter$1(camera => camera !== -1)).subscribe( camera => {
-        state.cameraIndex = camera;
-    });
+    uiModel.camera.subscribe(camera => state.cameraIndex = camera !== -1 ? camera : undefined);
     listenForRedraw(uiModel.camera);
 
-    uiModel.variant.subscribe( variant => {
-        state.variant = variant;
-    });
+    uiModel.variant.subscribe(variant => state.variant = variant);
     listenForRedraw(uiModel.variant);
 
-    uiModel.tonemap.subscribe( tonemap => {
-        state.renderingParameters.toneMap = tonemap;
-    });
+    uiModel.tonemap.subscribe(tonemap => state.renderingParameters.toneMap = tonemap);
     listenForRedraw(uiModel.tonemap);
 
-    uiModel.debugchannel.subscribe( debugchannel => {
-        state.renderingParameters.debugOutput = debugchannel;
-    });
+    uiModel.debugchannel.subscribe(debugchannel => state.renderingParameters.debugOutput = debugchannel);
     listenForRedraw(uiModel.debugchannel);
 
-    uiModel.skinningEnabled.subscribe( skinningEnabled => {
-        state.renderingParameters.skinning = skinningEnabled;
-    });
+    uiModel.skinningEnabled.subscribe(skinningEnabled => state.renderingParameters.skinning = skinningEnabled);
     listenForRedraw(uiModel.skinningEnabled);
 
-    uiModel.exposure.subscribe( exposure => {
-        state.renderingParameters.exposure = (1.0 / Math.pow(2.0, exposure));
-    });
+    uiModel.exposure.subscribe(exposure => state.renderingParameters.exposure = (1.0 / Math.pow(2.0, exposure)));
     listenForRedraw(uiModel.exposure);
 
-    uiModel.morphingEnabled.subscribe( morphingEnabled => {
-        state.renderingParameters.morphing = morphingEnabled;
-    });
+    uiModel.morphingEnabled.subscribe(morphingEnabled => state.renderingParameters.morphing = morphingEnabled);
     listenForRedraw(uiModel.morphingEnabled);
 
-    uiModel.clearcoatEnabled.subscribe( clearcoatEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_clearcoat = clearcoatEnabled;
-    });
-    uiModel.sheenEnabled.subscribe( sheenEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_sheen = sheenEnabled;
-    });
-    uiModel.transmissionEnabled.subscribe( transmissionEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_transmission = transmissionEnabled;
-    });
-    uiModel.volumeEnabled.subscribe( volumeEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_volume = volumeEnabled;
-    });
-    uiModel.iorEnabled.subscribe( iorEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_ior = iorEnabled;
-    });
-    uiModel.iridescenceEnabled.subscribe( iridescenceEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_iridescence = iridescenceEnabled;
-    });
-    uiModel.specularEnabled.subscribe( specularEnabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_specular = specularEnabled;
-    });
-    uiModel.emissiveStrengthEnabled.subscribe( enabled => {
-        state.renderingParameters.enabledExtensions.KHR_materials_emissive_strength = enabled;
-    });
+    uiModel.clearcoatEnabled.subscribe(clearcoatEnabled => state.renderingParameters.enabledExtensions.KHR_materials_clearcoat = clearcoatEnabled);
     listenForRedraw(uiModel.clearcoatEnabled);
+
+    uiModel.sheenEnabled.subscribe(sheenEnabled => state.renderingParameters.enabledExtensions.KHR_materials_sheen = sheenEnabled);
     listenForRedraw(uiModel.sheenEnabled);
+
+    uiModel.transmissionEnabled.subscribe(transmissionEnabled => state.renderingParameters.enabledExtensions.KHR_materials_transmission = transmissionEnabled);
     listenForRedraw(uiModel.transmissionEnabled);
+
+    uiModel.volumeEnabled.subscribe(volumeEnabled => state.renderingParameters.enabledExtensions.KHR_materials_volume = volumeEnabled);
     listenForRedraw(uiModel.volumeEnabled);
+
+    uiModel.iorEnabled.subscribe(iorEnabled => state.renderingParameters.enabledExtensions.KHR_materials_ior = iorEnabled);
     listenForRedraw(uiModel.iorEnabled);
+
+    uiModel.iridescenceEnabled.subscribe(iridescenceEnabled => state.renderingParameters.enabledExtensions.KHR_materials_iridescence = iridescenceEnabled);
     listenForRedraw(uiModel.specularEnabled);
+
+    uiModel.anisotropyEnabled.subscribe(anisotropyEnabled => state.renderingParameters.enabledExtensions.KHR_materials_anisotropy = anisotropyEnabled);
     listenForRedraw(uiModel.iridescenceEnabled);
+
+    uiModel.specularEnabled.subscribe(specularEnabled => state.renderingParameters.enabledExtensions.KHR_materials_specular = specularEnabled);
+    listenForRedraw(uiModel.anisotropyEnabled);
+
+    uiModel.emissiveStrengthEnabled.subscribe(enabled => state.renderingParameters.enabledExtensions.KHR_materials_emissive_strength = enabled);
     listenForRedraw(uiModel.emissiveStrengthEnabled);
 
-    uiModel.iblEnabled.subscribe( iblEnabled => {
-        state.renderingParameters.useIBL = iblEnabled;
-    });
+    uiModel.iblEnabled.subscribe(iblEnabled => state.renderingParameters.useIBL = iblEnabled);
     listenForRedraw(uiModel.iblEnabled);
 
-    uiModel.iblIntensity.subscribe( iblIntensity => {
-        state.renderingParameters.iblIntensity = Math.pow(10, iblIntensity);
-    });
+    uiModel.iblIntensity.subscribe(iblIntensity => state.renderingParameters.iblIntensity = Math.pow(10, iblIntensity));
     listenForRedraw(uiModel.iblIntensity);
 
     // GSV-KTX
@@ -65881,14 +69080,18 @@ async function main()
                 document.getElementById('image-' + i).checked = true;
         }
         uiModel.updateEncodingKTX(texturesSelectionType);
-        state.compressorParameters.compressionEncoding = (texturesSelectionType === "Color") ? "ETC1S" : "UASTC";
+        state.compressorParameters.compressionTextureEncoding = (texturesSelectionType === "Color") ? "ETC1S" : "UASTC";
     });
 
-    uiModel.compressionSelectionType.subscribe( compressionSelectionType => {
-        state.compressorParameters.compressionType = compressionSelectionType;
+    uiModel.compressionGeometrySelectionType.subscribe( compressionGeometrySelectionType => {
+        state.compressorParameters.compressionGeometryType = compressionGeometrySelectionType;
+    });
+
+    uiModel.compressionTextureSelectionType.subscribe( compressionTextureSelectionType => {
+        state.compressorParameters.compressionTextureType = compressionTextureSelectionType;
     });
     
-    uiModel.compressionResolutionDownscale.subscribe( downscale => {
+    uiModel.compressionTextureResolutionDownscale.subscribe( downscale => {
         state.compressorParameters.resolutionDownscale = downscale;
     });
 
@@ -65906,8 +69109,159 @@ async function main()
         state.compressorParameters.compressionUASTC_Rdo_Algorithm = compressionUASTC_Rdo_Algorithm;
     });
 
-    uiModel.compressionEncoding.subscribe( compressionEncoding => {
-        state.compressorParameters.compressionEncoding = compressionEncoding;
+    uiModel.compressionQuantizationPositionType.subscribe( compressionQuantizationPositionType => {
+        state.compressorParameters.compressionQuantizationPositionType = compressionQuantizationPositionType;
+    });
+
+    uiModel.compressionQuantizationNormalType.subscribe( compressionQuantizationNormalType => {
+        state.compressorParameters.compressionQuantizationNormalType = compressionQuantizationNormalType;
+    });
+
+    uiModel.compressionQuantizationTangentType.subscribe( compressionQuantizationTangentType => {
+        state.compressorParameters.compressionQuantizationTangentType = compressionQuantizationTangentType;
+    });
+
+    uiModel.compressionQuantizationTexCoords0Type.subscribe( compressionQuantizationTexCoords0Type => {
+        state.compressorParameters.compressionQuantizationTexCoords0Type = compressionQuantizationTexCoords0Type;
+    });
+
+    uiModel.compressionQuantizationTexCoords1Type.subscribe( compressionQuantizationTexCoords1Type => {
+        state.compressorParameters.compressionQuantizationTexCoords1Type = compressionQuantizationTexCoords1Type;
+    });
+
+    uiModel.compressionDracoEncodingMethod.subscribe( compressionDracoEncodingMethod => {
+        state.compressorParameters.compressionDracoEncodingMethod = compressionDracoEncodingMethod;
+    });
+
+    uiModel.compressionSpeedDraco.subscribe( compressionSpeedDraco => {
+        state.compressorParameters.compressionSpeedDraco = compressionSpeedDraco;
+    });
+
+    uiModel.decompressionSpeedDraco.subscribe( decompressionSpeedDraco => {
+        state.compressorParameters.decompressionSpeedDraco = decompressionSpeedDraco;
+    });
+
+    uiModel.compressionDracoQuantizationPositionQuantBits.subscribe( compressionDracoQuantizationPositionQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationPositionQuantBits = compressionDracoQuantizationPositionQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationNormalQuantBits.subscribe( compressionDracoQuantizationNormalQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationNormalQuantBits = compressionDracoQuantizationNormalQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationColorQuantBits.subscribe( compressionDracoQuantizationColorQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationColorQuantBits = compressionDracoQuantizationColorQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationTexcoordQuantBits.subscribe( compressionDracoQuantizationTexcoordQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationTexcoordQuantBits = compressionDracoQuantizationTexcoordQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationGenericQuantBits.subscribe( compressionDracoQuantizationGenericQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationGenericQuantBits = compressionDracoQuantizationGenericQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationTangentQuantBits.subscribe( compressionDracoQuantizationTangentQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationTangentQuantBits = compressionDracoQuantizationTangentQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationWeightQuantBits.subscribe( compressionDracoQuantizationWeightQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationWeightQuantBits = compressionDracoQuantizationWeightQuantBits;
+    });
+
+    uiModel.compressionDracoQuantizationJointQuantBits.subscribe( compressionDracoQuantizationJointQuantBits => {
+        state.compressorParameters.compressionDracoQuantizationJointQuantBits = compressionDracoQuantizationJointQuantBits;
+    });
+
+    uiModel.compressionMeshOptFilterMethod.subscribe( compressionMeshOptFilterMethod => {
+        state.compressorParameters.compressionMeshOptFilterMethod = compressionMeshOptFilterMethod;
+    });
+
+    uiModel.compressionMeshOptFilterMode.subscribe( compressionMeshOptFilterMode => {
+        state.compressorParameters.compressionMeshOptFilterMode = compressionMeshOptFilterMode;
+    });
+
+    uiModel.compressionMeshOptFilterQuantizationBits.subscribe( compressionMeshOptFilterQuantizationBits => {
+        state.compressorParameters.compressionMeshOptFilterQuantizationBits = compressionMeshOptFilterQuantizationBits;
+    });
+
+    uiModel.positionFilter.subscribe( positionFilter => {
+        console.log('positionFilter', positionFilter);
+        state.compressorParameters.positionFilter = positionFilter;
+    });
+    uiModel.positionFilterMode.subscribe( positionFilterMode => {
+        state.compressorParameters.positionFilterMode = positionFilterMode;
+    });
+    uiModel.positionFilterBits.subscribe( positionFilterBits => {
+        state.compressorParameters.positionFilterBits = positionFilterBits;
+    });
+
+    uiModel.tangentFilter.subscribe( tangentFilter => {
+        state.compressorParameters.tangentFilter = tangentFilter;
+    });
+    uiModel.tangentFilterMode.subscribe( tangentFilterMode => {
+        state.compressorParameters.tangentFilterMode = tangentFilterMode;
+    });
+    uiModel.tangentFilterBits.subscribe( tangentFilterBits => {
+        state.compressorParameters.tangentFilterBits = tangentFilterBits;
+    });
+
+    uiModel.normalFilter.subscribe( normalFilter => {
+        state.compressorParameters.normalFilter = normalFilter;
+    });
+    uiModel.normalFilterMode.subscribe( normalFilterMode => {
+        state.compressorParameters.normalFilterMode = normalFilterMode;
+    });
+    uiModel.normalFilterBits.subscribe( normalFilterBits => {
+        state.compressorParameters.normalFilterBits = normalFilterBits;
+    });
+
+    uiModel.tex0Filter.subscribe( tex0Filter => {
+        state.compressorParameters.tex0Filter = tex0Filter;
+    });
+    uiModel.tex0FilterMode.subscribe( tex0FilterMode => {
+        state.compressorParameters.tex0FilterMode = tex0FilterMode;
+    });
+    uiModel.tex0FilterBits.subscribe( tex0FilterBits => {
+        state.compressorParameters.tex0FilterBits = tex0FilterBits;
+    });
+
+    uiModel.tex1Filter.subscribe( tex1Filter => {
+        state.compressorParameters.tex1Filter = tex1Filter;
+    });
+    uiModel.tex1FilterMode.subscribe( tex1FilterMode => {
+        state.compressorParameters.tex1FilterMode = tex1FilterMode;
+    });
+    uiModel.tex1FilterBits.subscribe( tex1FilterBits => {
+        state.compressorParameters.tex1FilterBits = tex1FilterBits;
+    });
+
+    uiModel.compressionMeshOptReorder.subscribe( compressionMeshOptReorder => {
+        state.compressorParameters.compressionMeshOptReorder = compressionMeshOptReorder;
+    });
+
+    uiModel.compressionMOptQuantizationPosition.subscribe( compressionMOptQuantizationPosition => {
+        state.compressorParameters.compressionMOptQuantizationPosition = compressionMOptQuantizationPosition;
+    });
+
+    uiModel.compressionMOptQuantizationNormal.subscribe( compressionMOptQuantizationNormal => {
+        state.compressorParameters.compressionMOptQuantizationNormal = compressionMOptQuantizationNormal;
+    });
+
+    uiModel.compressionMOptQuantizationTangent.subscribe( compressionMOptQuantizationTangent => {
+        state.compressorParameters.compressionMOptQuantizationTangent = compressionMOptQuantizationTangent;
+    });
+
+    uiModel.compressionMOptQuantizationTexCoords0.subscribe( compressionMOptQuantizationTexCoords0 => {
+        state.compressorParameters.compressionMOptQuantizationTexCoords0 = compressionMOptQuantizationTexCoords0;
+    });
+
+    uiModel.compressionMOptQuantizationTexCoords1.subscribe( compressionMOptQuantizationTexCoords1 => {
+        state.compressorParameters.compressionMOptQuantizationTexCoords1 = compressionMOptQuantizationTexCoords1;
+    });
+
+    uiModel.compressionTextureEncoding.subscribe( compressionTextureEncoding => {
+        state.compressorParameters.compressionTextureEncoding = compressionTextureEncoding;
     });
 
     uiModel.compressionUASTC_Flags.subscribe( compressionUASTC_Flags => {
@@ -65993,7 +69347,20 @@ async function main()
     });
     listenForRedraw(uiModel.comparisonViewMode);
 
-    // Preview Compressed
+    // Set Highlight on selected meshes
+    uiModel.selectedGeometry.subscribe( selectedMeshes => {
+        for(const selectedMesh of selectedMeshes)
+            state.gltf.meshes[selectedMesh[0]].setHighlight(selectedMesh[1]);
+    });
+    listenForRedraw(uiModel.selectedGeometry);
+
+    // Enable Mesh Hightlighting
+    uiModel.enableMeshHighlighting.subscribe( value => {
+        state.compressorParameters.meshHighlighing = value;
+    });
+    listenForRedraw(uiModel.enableMeshHighlighting);
+
+    // Compressed Preview Mode
     uiModel.compressedPreviewMode.subscribe( compressedPreviewMode => {
         state.compressorParameters.sliderPosition = compressedPreviewMode? 0.0 : 1.0;
         uiModel.updateImageSlider(state.compressorParameters.sliderPosition);
@@ -66005,366 +69372,727 @@ async function main()
     });
     listenForRedraw(uiModel.previewImageSlider);
     // Compress textures
-    const compressTexturesSubject = new Subject();
-    const compressTexturesChangedObservable = uiModel.compressTextures.pipe( mergeMap(async _ => {
-        const libktx = state.gltf.ktxEncoder.libktx;
+    const compressSubject = new Subject();
+    const compressChangedObservable = uiModel.compressGeometry.pipe( mergeMap(async _ => {
+
+        // Geometry to be Compressed
+        state.compressorParameters.selectedMeshes = [];
+        for(let i=0; i<state.gltf.nodes.length; i++){
+            const node = state.gltf.nodes[i];
+            const name = node.name !== undefined ? node.name : "Node_" + i;
+            if(node.mesh !== undefined && document.getElementById('mesh_node_' + name).checked)
+                state.compressorParameters.selectedMeshes.push(i);
+        }
+
         // Images to be Compressed
         state.compressorParameters.selectedImages = [];
         for(let i=0; i<state.gltf.images.length; i++)
             if(state.gltf.images[i].mimeType !== ImageMimeType.GLTEXTURE && document.getElementById('image-' + i).checked)
                 state.compressorParameters.selectedImages.push(i);
 
-        if(state.compressorParameters.selectedImages.length === 0)
+        if(state.compressorParameters.selectedMeshes.length === 0 && state.compressorParameters.selectedImages.length === 0)
             return false;
 
-        // Set resolution downscale scale
-        const scale  = parseInt(state.compressorParameters.resolutionDownscale.replace(/\D/g, ""));
-        let targetMimeType;
-      
-        const options = {};
-        if(state.compressorParameters.compressionType === "KTX2"){
-            targetMimeType = ImageMimeType.KTX2;
-            const targetKTX2_encoding = state.compressorParameters.compressionEncoding;
-            const targetKTX2_UASTC_flags = state.compressorParameters.compressionUASTC_Flags;
-            const targetKTX2_UASTC_RDO = state.compressorParameters.compressionUASTC_Rdo;
-            const targetKTX2_UASTC_RDO_algorithm = state.compressorParameters.compressionUASTC_Rdo_Algorithm;
-            const targetKTX2_UASTC_RDO_level = state.compressorParameters.compressionUASTC_Rdo_Level; 
-            const targetKTX2_UASTC_RDO_quality = state.compressorParameters.compressionUASTC_Rdo_QualityScalar;
-            const targetKTX2_UASTC_RDO_dictionarySize = state.compressorParameters.compressionUASTC_Rdo_DictionarySize;
-            const targetKTX2_UASTC_RDO_maxSmoothBlockErrorScale = state.compressorParameters.compressionUASTC_Rdo_MaxSmoothBlockErrorScale;
-            const targetKTX2_UASTC_RDO_maxSmoothBlockStandardDeviation = state.compressorParameters.compressionUASTC_Rdo_MaxSmoothBlockStandardDeviation;
-            const targetKTX2_UASTC_RDO_donotFavorSimplerModes = state.compressorParameters.compressionUASTC_Rdo_DonotFavorSimplerModes;
-
-            const targetKTX2_ETC1S_compressionLevel = state.compressorParameters.compressionETC1S_CompressionLevel;
-            const targetKTX2_ETC1S_qualityLevel = state.compressorParameters.compressionETC1S_QualityLevel;
-            const targetKTX2_ETC1S_maxEndPoints = state.compressorParameters.compressionETC1S_MaxEndPoints;
-            const targetKTX2_ETC1S_endpointRdoThreshold = state.compressorParameters.compressionETC1S_EndpointRdoThreshold;
-            const targetKTX2_ETC1S_maxSelectors = state.compressorParameters.compressionETC1S_MaxSelectors;
-            const targetKTX2_ETC1S_SelectorRdoThreshold = state.compressorParameters.compressionETC1S_SelectorRdoThreshold;
-            const targetKTX2_ETC1S_normalMap = false;
-            const targetKTX2_ETC1S_noEndpointRdo = state.compressorParameters.compressionETC1S_NoEndpointRdo;
-            const targetKTX2_ETC1S_noSelectorRdo = state.compressorParameters.compressionETC1S_NoSelectorRdo;
+        if(state.compressorParameters.selectedMeshes.length > 0){  
             
-            const basisu_options = new libktx.ktxBasisParams();
-            basisu_options.uastc = targetKTX2_encoding === 'UASTC';
-            basisu_options.noSSE = true;
-            basisu_options.verbose = false;
-            basisu_options.compressionLevel = targetKTX2_ETC1S_compressionLevel;
-            basisu_options.qualityLevel = targetKTX2_ETC1S_qualityLevel;
-            basisu_options.maxEndpoints = targetKTX2_ETC1S_maxEndPoints;
-            basisu_options.endpointRDOThreshold = targetKTX2_ETC1S_endpointRdoThreshold;
-            basisu_options.maxSelectors = targetKTX2_ETC1S_maxSelectors;
-            basisu_options.selectorRDOThreshold = targetKTX2_ETC1S_SelectorRdoThreshold;
-            basisu_options.normalMap = targetKTX2_ETC1S_normalMap;
-            basisu_options.preSwizzle = false;
-            basisu_options.noEndpointRDO = targetKTX2_ETC1S_noEndpointRdo;
-            basisu_options.noSelectorRDO = targetKTX2_ETC1S_noSelectorRdo;
+            // Update Compression Format
+            for(let index = 0; index < state.compressorParameters.selectedMeshes.length; index++)
+                state.gltf.meshes[state.gltf.nodes[state.compressorParameters.selectedMeshes[index]].mesh].compressionFormatAfter = state.compressorParameters.compressionGeometryType;
 
-            basisu_options.uastcFlags = state.gltf.ktxEncoder.stringToUastcFlags(targetKTX2_UASTC_flags);
-            basisu_options.uastcRDO = targetKTX2_UASTC_RDO;
-            basisu_options.uastcRDOQualityScalar = targetKTX2_UASTC_RDO_quality;
-            basisu_options.uastcRDODictSize = targetKTX2_UASTC_RDO_dictionarySize;
-            basisu_options.uastcRDOMaxSmoothBlockErrorScale = targetKTX2_UASTC_RDO_maxSmoothBlockErrorScale;
-            basisu_options.uastcRDOMaxSmoothBlockStdDev = targetKTX2_UASTC_RDO_maxSmoothBlockStandardDeviation;
-            basisu_options.uastcRDODontFavorSimplerModes = targetKTX2_UASTC_RDO_donotFavorSimplerModes;
+            let type = state.compressorParameters.compressionGeometryType;
             
-            if (basisu_options.uastc && targetKTX2_UASTC_RDO) {
-                options.supercmp_scheme = state.gltf.ktxEncoder.stringToSupercmpScheme(targetKTX2_UASTC_RDO_algorithm);
-                options.compression_level = targetKTX2_UASTC_RDO_level;
+            var compress_options;
+            if(type === GEOMETRY_COMPRESSION_TYPE.QUANTIZATION){
+                compress_options = new GeometryQuantizationOptions();
+                compress_options.positionCompression = getComponentDataType(state.compressorParameters.compressionQuantizationPositionType);
+                compress_options.positionCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationPositionType);
+                compress_options.normalsCompression = getComponentDataType(state.compressorParameters.compressionQuantizationNormalType);
+                compress_options.normalsCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationNormalType);
+                compress_options.texcoord0Compression = getComponentDataType(state.compressorParameters.compressionQuantizationTexCoords0Type);
+                compress_options.texcoord0CompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationTexCoords0Type);
+                compress_options.texcoord1Compression = getComponentDataType(state.compressorParameters.compressionQuantizationTexCoords1Type);
+                compress_options.texcoord1CompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationTexCoords1Type);
+                compress_options.tangentsCompression = getComponentDataType(state.compressorParameters.compressionQuantizationTangentType);
+                compress_options.tangentsCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationTangentType);
+            }
+            else if(type === GEOMETRY_COMPRESSION_TYPE.DRACO){
+                compress_options = new GeometryDracoOptions();
+                compress_options.encodingMethod = state.compressorParameters.compressionDracoEncodingMethod; 
+                compress_options.compressionSpeed = state.compressorParameters.compressionSpeedDraco;
+                compress_options.decompressionSpeed = state.compressorParameters.decompressionSpeedDraco;
+                compress_options.positionCompressionQuantizationBits = state.compressorParameters.compressionDracoQuantizationPositionQuantBits;
+                compress_options.normalCompressionQuantizationBits = state.compressorParameters.compressionDracoQuantizationNormalQuantBits;
+                compress_options.colorCompressionQuantizationBits = state.compressorParameters.compressionDracoQuantizationColorQuantBits;
+                compress_options.texcoordCompressionQuantizationBits = state.compressorParameters.compressionDracoQuantizationTexcoordQuantBits;
+                compress_options.genericQuantizationBits = state.compressorParameters.compressionDracoQuantizationGenericQuantBits;
+                compress_options.tangentQuantizationBits = state.compressorParameters.compressionDracoQuantizationTangentQuantBits;
+                compress_options.weightQuantizationBits = state.compressorParameters.compressionDracoQuantizationWeightQuantBits;
+                compress_options.jointQuantizationBits = state.compressorParameters.compressionDracoQuantizationJointQuantBits;
+            }
+            else if(type === GEOMETRY_COMPRESSION_TYPE.MESHOPT)
+            {
+                compress_options = new GeometryMeshOptOptions();
+                compress_options.reorder = state.compressorParameters.compressionMeshOptReorder;
+                compress_options.positionCompressionQuantizationBits = state.compressorParameters.compressionMeshOptQuantizationPositionQuantBits;
+                compress_options.normalCompressionQuantizationBits = state.compressorParameters.compressionMeshOptQuantizationNormalQuantBits;
+                compress_options.colorCompressionQuantizationBits = state.compressorParameters.compressionMeshOptQuantizationColorQuantBits;
+                compress_options.texcoordCompressionQuantizationBits = state.compressorParameters.compressionMeshOptQuantizationTexcoordQuantBits;
+                compress_options.compressionMOptQuantizationPosition = state.compressorParameters.compressionMOptQuantizationPosition;
+                compress_options.compressionMOptQuantizationNormal = state.compressorParameters.compressionMOptQuantizationNormal;
+                compress_options.compressionMOptQuantizationTangent = state.compressorParameters.compressionMOptQuantizationTangent;
+                compress_options.compressionMOptQuantizationTexCoords0 = state.compressorParameters.compressionMOptQuantizationTexCoords0;
+                compress_options.compressionMOptQuantizationTexCoords1 = state.compressorParameters.compressionMOptQuantizationTexCoords1;
+                compress_options.positionCompression = getComponentDataType(state.compressorParameters.compressionMOptQuantizationPosition);
+                compress_options.positionCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionMOptQuantizationPosition);
+                compress_options.positionFilter = state.compressorParameters.positionFilter;
+                compress_options.positionFilterMode = state.compressorParameters.positionFilterMode;
+                compress_options.positionFilterBits = state.compressorParameters.positionFilterBits;
+                compress_options.normalsCompression = getComponentDataType(state.compressorParameters.compressionMOptQuantizationNormal);
+                compress_options.normalsCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionMOptQuantizationNormal);
+                compress_options.normalFilter = state.compressorParameters.normalFilter;
+                compress_options.normalFilterMode = state.compressorParameters.normalFilterMode;
+                compress_options.normalFilterBits = state.compressorParameters.normalFilterBits;
+                compress_options.tangentCompression = getComponentDataType(state.compressorParameters.compressionMOptQuantizationTangent);
+                compress_options.tangentCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionMOptQuantizationTangent);
+                compress_options.tangentFilter = state.compressorParameters.tangentFilter;
+                compress_options.tangentFilterMode = state.compressorParameters.tangentFilterMode;
+                compress_options.tangentFilterBits = state.compressorParameters.tangentFilterBits;
+                compress_options.tangentFilter = state.compressorParameters.tangentFilter;
+                compress_options.texcoord0Compression = getComponentDataType(state.compressorParameters.compressionMOptQuantizationTexCoords0);
+                compress_options.texcoord0CompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionMOptQuantizationTexCoords0);
+                compress_options.tex0Filter = state.compressorParameters.tex0Filter;
+                compress_options.tex0FilterMode = state.compressorParameters.tex0FilterMode;
+                compress_options.tex0FilterBits = state.compressorParameters.tex0FilterBits;
+                compress_options.texcoord1Compression = getComponentDataType(state.compressorParameters.compressionMOptQuantizationTexCoords1);
+                compress_options.texcoord1CompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionMOptQuantizationTexCoords1);
+                compress_options.tex1Filter = state.compressorParameters.tex1Filter;
+                compress_options.tex1FilterMode = state.compressorParameters.tex1FilterMode;
+                compress_options.tex1FilterBits = state.compressorParameters.tex1FilterBits;
+            } else {
+                compress_options = new GeometryQuantizationOptions();
+                type = GEOMETRY_COMPRESSION_TYPE.QUANTIZATION;
+                compress_options.positionCompression = getComponentDataType('FLOAT');
+                compress_options.normalsCompression = getComponentDataType('FLOAT');
+                compress_options.texcoord0Compression = getComponentDataType('FLOAT');
+                compress_options.texcoord1Compression = getComponentDataType('FLOAT');
+                compress_options.tangentsCompression = getComponentDataType('FLOAT');
+                compress_options.positionCompressionNormalized = false;
+                compress_options.normalsCompressionNormalized = false;
+                compress_options.texcoord0CompressionNormalized = false;
+                compress_options.texcoord1CompressionNormalized = false;
+                compress_options.tangentsCompressionNormalized = false;
+            }
+            console.log('compress_options', compress_options);
+
+            state.gltf.compressionVersion++;
+            // Compress all selected nodes
+            const meshNodeMap = new Map();
+            state.compressorParameters.selectedMeshes.forEach(i => {meshNodeMap.set(state.gltf.nodes[i].mesh, i);}); 
+            // find the nodes that have the meshes in order to be updated
+            uiModel.updateCompressionButton(0, state.compressorParameters.selectedMeshes.length, "Geometry");
+            for(let index of meshNodeMap.values())
+            {
+                state.gltf.nodes[index].compressGeometry(type, compress_options, state.gltf);
+                uiModel.updateCompressionButton(index+1, state.compressorParameters.selectedMeshes.length, "Geometry");
+            }
+            //state.gltf.nodes.forEach((n,i, arr) => {arr[i].a1 = i;}); 
+            state.compressorParameters.selectedMeshes.forEach(i => {
+                const nodeID = meshNodeMap.get(state.gltf.nodes[i].mesh);
+                if(nodeID !== i)
+                {
+                    const target = state.gltf.nodes[i];
+                    const origin = state.gltf.nodes[nodeID];
+                                    
+                    // create a compression node
+                    const node = new gltfNode();
+                    node.isCompressedHelperNode = true;
+                    node.compressedMesh = origin.compressedNode.compressedMesh;
+                    node.compressedMesh.isCompressed = true;
+                    node.matrix = origin.compressedNode.matrix;
+                    node.rotation = new Float32Array(origin.compressedNode.rotation);
+                    node.scale = new Float32Array(origin.compressedNode.scale);
+                    node.translation = new Float32Array(origin.compressedNode.translation);
+                    node.name = origin.compressedNode.name;
+
+                    target.compressedNode = node;
+                    target.children.push(state.gltf.nodes.length);
+                    state.gltf.nodes.push(node);
+                }
+            });
+            state.compressorParameters.processedMeshes = state.compressorParameters.processedMeshes.concat(state.compressorParameters.selectedMeshes.filter((item) => state.compressorParameters.processedMeshes.indexOf(item) < 0));
+
+            // force to update
+            view.renderer.preparedScene = null;
+        }
+
+        if(state.compressorParameters.selectedImages.length > 0)
+        {    
+            // Set resolution downscale scale
+            const scale  = parseInt(state.compressorParameters.resolutionDownscale.replace(/\D/g, ""));
+            let targetMimeType;
+        
+            const options = {};
+            if(state.compressorParameters.compressionTextureType === "KTX2"){
+                targetMimeType = ImageMimeType.KTX2;
+                const targetKTX2_encoding = state.compressorParameters.compressionTextureEncoding;
+                const targetKTX2_UASTC_flags = state.compressorParameters.compressionUASTC_Flags;
+                const targetKTX2_UASTC_RDO = state.compressorParameters.compressionUASTC_Rdo;
+                const targetKTX2_UASTC_RDO_algorithm = state.compressorParameters.compressionUASTC_Rdo_Algorithm;
+                const targetKTX2_UASTC_RDO_level = state.compressorParameters.compressionUASTC_Rdo_Level; 
+                const targetKTX2_UASTC_RDO_quality = state.compressorParameters.compressionUASTC_Rdo_QualityScalar;
+                const targetKTX2_UASTC_RDO_dictionarySize = state.compressorParameters.compressionUASTC_Rdo_DictionarySize;
+                const targetKTX2_UASTC_RDO_maxSmoothBlockErrorScale = state.compressorParameters.compressionUASTC_Rdo_MaxSmoothBlockErrorScale;
+                const targetKTX2_UASTC_RDO_maxSmoothBlockStandardDeviation = state.compressorParameters.compressionUASTC_Rdo_MaxSmoothBlockStandardDeviation;
+                const targetKTX2_UASTC_RDO_donotFavorSimplerModes = state.compressorParameters.compressionUASTC_Rdo_DonotFavorSimplerModes;
+
+                const targetKTX2_ETC1S_compressionLevel = state.compressorParameters.compressionETC1S_CompressionLevel;
+                const targetKTX2_ETC1S_qualityLevel = state.compressorParameters.compressionETC1S_QualityLevel;
+                const targetKTX2_ETC1S_maxEndPoints = state.compressorParameters.compressionETC1S_MaxEndPoints;
+                const targetKTX2_ETC1S_endpointRdoThreshold = state.compressorParameters.compressionETC1S_EndpointRdoThreshold;
+                const targetKTX2_ETC1S_maxSelectors = state.compressorParameters.compressionETC1S_MaxSelectors;
+                const targetKTX2_ETC1S_SelectorRdoThreshold = state.compressorParameters.compressionETC1S_SelectorRdoThreshold;
+                const targetKTX2_ETC1S_normalMap = false;
+                const targetKTX2_ETC1S_noEndpointRdo = state.compressorParameters.compressionETC1S_NoEndpointRdo;
+                const targetKTX2_ETC1S_noSelectorRdo = state.compressorParameters.compressionETC1S_NoSelectorRdo;
+
+                const libktx = state.gltf.ktxEncoder.libktx;
+                const basisu_options = new libktx.ktxBasisParams();
+                basisu_options.uastc = targetKTX2_encoding === 'UASTC';
+                basisu_options.noSSE = true;
+                basisu_options.verbose = false;
+                basisu_options.compressionLevel = targetKTX2_ETC1S_compressionLevel;
+                basisu_options.qualityLevel = targetKTX2_ETC1S_qualityLevel;
+                basisu_options.maxEndpoints = targetKTX2_ETC1S_maxEndPoints;
+                basisu_options.endpointRDOThreshold = targetKTX2_ETC1S_endpointRdoThreshold;
+                basisu_options.maxSelectors = targetKTX2_ETC1S_maxSelectors;
+                basisu_options.selectorRDOThreshold = targetKTX2_ETC1S_SelectorRdoThreshold;
+                basisu_options.normalMap = targetKTX2_ETC1S_normalMap;
+                basisu_options.preSwizzle = false;
+                basisu_options.noEndpointRDO = targetKTX2_ETC1S_noEndpointRdo;
+                basisu_options.noSelectorRDO = targetKTX2_ETC1S_noSelectorRdo;
+
+                basisu_options.uastcFlags = state.gltf.ktxEncoder.stringToUastcFlags(targetKTX2_UASTC_flags);
+                basisu_options.uastcRDO = targetKTX2_UASTC_RDO;
+                basisu_options.uastcRDOQualityScalar = targetKTX2_UASTC_RDO_quality;
+                basisu_options.uastcRDODictSize = targetKTX2_UASTC_RDO_dictionarySize;
+                basisu_options.uastcRDOMaxSmoothBlockErrorScale = targetKTX2_UASTC_RDO_maxSmoothBlockErrorScale;
+                basisu_options.uastcRDOMaxSmoothBlockStdDev = targetKTX2_UASTC_RDO_maxSmoothBlockStandardDeviation;
+                basisu_options.uastcRDODontFavorSimplerModes = targetKTX2_UASTC_RDO_donotFavorSimplerModes;
+                
+                if (basisu_options.uastc && targetKTX2_UASTC_RDO) {
+                    options.supercmp_scheme = state.gltf.ktxEncoder.stringToSupercmpScheme(targetKTX2_UASTC_RDO_algorithm);
+                    options.compression_level = targetKTX2_UASTC_RDO_level;
+                }
+
+                options.basisu_options = basisu_options;
+            }
+            else if(state.compressorParameters.compressionTextureType === "JPEG"){
+                targetMimeType = ImageMimeType.JPEG;
+                options.quality = state.compressorParameters.compressionQualityJPEG;
+            }
+            else if(state.compressorParameters.compressionTextureType === "PNG"){
+                targetMimeType = ImageMimeType.PNG;
+                options.quality = state.compressorParameters.compressionQualityPNG;
+            }
+            else if(state.compressorParameters.compressionTextureType === "WEBP"){
+                targetMimeType = ImageMimeType.WEBP;
+                options.quality = state.compressorParameters.compressionQualityWEBP;
             }
 
-            options.basisu_options = basisu_options;
-        }
-        else if(state.compressorParameters.compressionType === "JPEG"){
-            targetMimeType = ImageMimeType.JPEG;
-            options.quality = state.compressorParameters.compressionQualityJPEG;
-        }
-        else if(state.compressorParameters.compressionType === "PNG"){
-            targetMimeType = ImageMimeType.PNG;
-            options.quality = state.compressorParameters.compressionQualityPNG;
-        }
-        else if(state.compressorParameters.compressionType === "WEBP"){
-            targetMimeType = ImageMimeType.WEBP;
-            options.quality = state.compressorParameters.compressionQualityWEBP;
-        }
-
-        uiModel.updateTextureCompressionButton(0, state.compressorParameters.selectedImages.length);
-        
-        // Free up the thread for 10ms in order to allow the UI to be updated
-        const small_delay = new Promise((res) => setTimeout(() => res("small_delay"), 10));
-        await small_delay;
-
-        for(let index = 0; index < state.compressorParameters.selectedImages.length; index++)
-        {
-            const i = state.compressorParameters.selectedImages[index];
-            const width = state.gltf.images[i].image.width;
-            const height = state.gltf.images[i].image.height;
+            uiModel.updateCompressionButton(0, state.compressorParameters.selectedImages.length, "Texture");
             
-            const scaled_width  = scale > 1? Math.max(width/scale, 1) : width;
-            const scaled_height = scale > 1? Math.max(height/scale, 1) : height;
+            // Free up the thread for 10ms in order to allow the UI to be updated
+            const small_delay = new Promise((res) => setTimeout(() => res("small_delay"), 10));
+            await small_delay;
 
-            await state.gltf.images[i].compressImage(targetMimeType, scaled_width, scaled_height, options, state.gltf, () => uiModel.updateTextureCompressionButton(index+1, state.compressorParameters.selectedImages.length));
+            for(let index = 0; index < state.compressorParameters.selectedImages.length; index++)
+            {
+                const i = state.compressorParameters.selectedImages[index];
+                const width = state.gltf.images[i].image.width;
+                const height = state.gltf.images[i].image.height;
+                
+                const scaled_width  = scale > 1? Math.max(width/scale, 1) : width;
+                const scaled_height = scale > 1? Math.max(height/scale, 1) : height;
+
+                await state.gltf.images[i].compressImage(targetMimeType, scaled_width, scaled_height, options, state.gltf, () => uiModel.updateCompressionButton(index+1, state.compressorParameters.selectedImages.length, "Texture"));
+            }
+
+            state.compressorParameters.processedImages = state.compressorParameters.processedImages.concat(state.compressorParameters.selectedImages.filter((item) => state.compressorParameters.processedImages.indexOf(item) < 0));
         }
-        const done = true;
-        
-        state.compressorParameters.processedImages = state.compressorParameters.processedImages.concat(state.compressorParameters.selectedImages.filter((item) => state.compressorParameters.processedImages.indexOf(item) < 0));
 
-        /*state.compressorParameters.processedImages = state.compressorParameters.selectedImages.map((i, index) => {
-            const width = state.gltf.images[i].image.width;
-            const height = state.gltf.images[i].image.height;
-            
-            const scaled_width  = scale > 1? width/scale : undefined;
-            const scaled_height = scale > 1? height/scale : undefined;
+        return true;
+    }), multicast(compressSubject));
 
-            return state.gltf.images[i].compressImage(targetMimeType, width, height, {quality: targetQuality, scaled_width: scaled_width, scaled_height: scaled_height}, state.gltf, () => uiModel.updateTextureCompressionButton(index+1, state.compressorParameters.selectedImages.length));
-        }
-        );
-        const done = Promise.allSettled(state.compressorParameters.processedImages);*/
-        
-        return done;
-    }), multicast(compressTexturesSubject));
-
-    compressTexturesChangedObservable.subscribe(async compressDesc => {
+    compressChangedObservable.subscribe(async compressDesc => {
         await compressDesc;
-        console.warn(state.compressorParameters.selectedImages.length > 0 ? "Compression Complete" : "Please select any texture in order to proceed");
+        console.warn(
+            state.compressorParameters.selectedMeshes.length > 0 || state.compressorParameters.selectedImages.length > 0 ? 
+                "Compression Complete" : "Please select any geometry or texture in order to proceed");
         redraw = true;
     });
-    //listenForRedraw(compressTexturesChangedObservable);
+    //listenForRedraw(compressChangedObservable);
 
-    const textureCompressionstatisticsUpdateObservableTemp = merge$1(
-        compressTexturesChangedObservable,
+    const compressionStatisticsUpdateObservableTemp = merge$1(
+        compressChangedObservable,
     );
 
-    const textureCompressionstatisticsUpdateObservable = textureCompressionstatisticsUpdateObservableTemp.pipe(
-        map( (_) => view.gatherTextureCompressionStatistics(state) )
+    const compressionStatisticsUpdateObservable = compressionStatisticsUpdateObservableTemp.pipe(
+        map( (_) => view.gatherCompressionStatistics(state) )
     );
 
-    uiModel.updateTextureCompressionStatistics(textureCompressionstatisticsUpdateObservable);    
+    uiModel.updateCompressionStatistics(compressionStatisticsUpdateObservable);    
 
     const gltfExportChangedObservable = uiModel.gltfFilesExport.pipe( map(_ => {
         
         const gltf = state.gltf;
+        const og_gltf = gltf.og_gltf;
         const gltfJSON = {...gltf.originalJSON}; // no need for deeper cloning
+        const toExt = (type) => type == ImageMimeType.JPEG? ".jpg" : type == ImageMimeType.PNG? ".png" : type == ImageMimeType.WEBP? ".webp" : ".ktx2";
+        const align4Bytes = (num) => 4 * Math.floor((num - 1) / 4) + 4;
+        const gltfJSONNew = {...gltf.originalJSON}; // no need for deeper cloning
 
-        // clear uris from "./" paths ()
-        gltfJSON.buffers = gltfJSON.buffers.map(buffer => {return {...buffer, uri: buffer.uri === undefined? undefined : buffer.uri.startsWith("./")? buffer.uri.slice(2): buffer.uri};});
-        gltfJSON.images = gltfJSON.images.map(img => {return {...img, uri: img.uri === undefined? undefined : img.uri.startsWith("./")? img.uri.slice(2): img.uri};});
+        gltfJSONNew.images = [];
+        gltfJSONNew.bufferViews = [];
+        gltfJSONNew.buffers = [];
+        gltfJSONNew.extensionsRequired = gltfJSON.extensionsRequired || [];
+        gltfJSONNew.extensionsUsed = gltfJSON.extensionsUsed || [];
 
-        // check if we have WEBP or KTX2 extensions used for the images
+        // delete unsused meshes, accessors, bufferviews and buffers
+        const meshes = Array.from({length: gltfJSONNew.meshes.length}, () => null);
+        // store the final nodes
+        gltfJSONNew.nodes = gltf.nodes.map(node => {
+            const ret = {};
+
+            if (node.camera !== undefined) ret.camera = node.camera;
+            if (node.children !== undefined) ret.children = node.children;
+            if (node.skin !== undefined) ret.skin = node.skin;
+            if (node.matrix !== undefined) ret.matrix = Array.from(node.matrix);
+            if (node.rotation !== undefined) ret.rotation = Array.from(node.rotation);
+            if (node.scale !== undefined) ret.scale = Array.from(node.scale);
+            if (node.translation !== undefined) ret.translation = Array.from(node.translation);
+            if (node.weights !== undefined) ret.weights = Array.from(node.weights);
+            if (node.name !== undefined) ret.name = node.name;
+            if (node.extensions !== undefined) ret.extensions = node.extensions;
+            if (node.extras !== undefined) ret.extras = node.extras;
+            
+            if (!node.compressedNode && node.mesh !== undefined) { 
+                ret.mesh = node.mesh;
+                meshes[node.mesh] = gltf.meshes[node.mesh];
+            } else if (node.compressedMesh) {
+                ret.mesh = node.compressedMesh.original_mesh;
+                meshes[node.compressedMesh.original_mesh] = gltf.meshes[node.compressedMesh.mesh];
+            }
+            
+            return ret;
+        });
+
+        const mem_buffers = [];
+        const bufferViews = [];
+        const uri_images = [];
+
+        og_gltf.buffers.forEach((buffer) => {
+            mem_buffers.push({...buffer, byteLength: 0, data: new Uint8Array(), embedded: (buffer.uri || "").startsWith("data:")});
+        });
+
+        const concat = (a, b) => {
+            const c = new Uint8Array(align4Bytes(a.byteLength) + align4Bytes(b.byteLength));
+            c.set(new Uint8Array(a));
+            c.set(new Uint8Array(b), align4Bytes(a.byteLength));
+            return new Uint8Array(c);
+        };
+
+        const bufferViewDict = [];
+        let usesQuantization = false;
+        let usesMeshopt = false;
+        let usesDraco = false;
+        const isQuantizedCb = (attribute, accessor) => {
+            const ct = accessor.componentType;
+            if ('POSITION' == attribute) 
+                return (ct == GL.BYTE || ct == GL.UNSIGNED_BYTE || ct == GL.SHORT || ct == GL.UNSIGNED_SHORT);
+            else if ('NORMAL' == attribute || 'TANGENT' == attribute) 
+                return ((ct == GL.BYTE || ct == GL.SHORT) && accessor.normalized);
+            else if ('TEXCOORD_0' == attribute || 'TEXCOORD_1' == attribute) 
+                return (ct != GL.FLOAT && !accessor.normalized);
+        };
+
+        const containing_folder = getContainingFolder(gltf.path);
+        gltf.images.filter(img => img.mimeType !== ImageMimeType.GLTEXTURE).forEach((image) => {
+            const image_new = {};
+            if (image.uri !== undefined) {
+                const embedded = image.uri.startsWith("data:");
+                const filename = (!embedded) ? image.uri.replace(containing_folder, "").replace(path.extname(image.uri), "") : "data:";
+                const filename_ext = (!embedded) ? toExt(image.compressedMimeType) : image.compressedMimeType + ";base64," + base64(image.compressedImageTypedArrayBuffer);
+                const data = (!embedded) ? ((image.originalImageTypedArrayBuffer) ? image.originalImageTypedArrayBuffer : image.compressedImageTypedArrayBuffer) : undefined;
+                image_new.uri = filename + filename_ext;
+                image_new.mimeType = image.compressedMimeType;
+                uri_images.push({...image_new, data: data});
+            } else {
+                const bufferView = gltf.bufferViews[image.bufferView];
+                const og_bufferView = bufferView;
+                const mem_buffer = mem_buffers[og_bufferView.buffer];
+                image_new.bufferView = bufferViews.length;
+                image_new.mimeType = image.compressedMimeType;
+                image_new.name = image.name;
+                bufferViews.push({ buffer: og_bufferView.buffer, byteOffset: mem_buffer.byteLength, byteLength: image.compressedImageTypedArrayBuffer.byteLength });
+                mem_buffer.data = concat(mem_buffer.data, image.compressedImageTypedArrayBuffer);
+                mem_buffer.byteLength = mem_buffer.data.byteLength;
+            }
+            gltfJSONNew.images.push(image_new);
+        });
+        // Add KTX/WEBP required extension objects to JSON
+        gltfJSONNew.images.forEach((image, index) => {
+            const isWebP = ImageMimeType.WEBP === image.mimeType;
+            const isKTX = ImageMimeType.KTX2 === image.mimeType;
+            if (!isWebP && !isKTX) return;
+            gltfJSONNew.textures.forEach((texture) => {
+                if(texture.source !== index) return;
+                texture.extensions = (isWebP) 
+                    ? { EXT_texture_webp:   { source: texture.source } }
+                    : { KHR_texture_basisu: { source: texture.source } };
+                texture.source = undefined;
+            });
+        });
+        meshes.forEach((mesh, index) => {
+            const og_mesh = (mesh.original_mesh === undefined) ? mesh : gltf.meshes[mesh.original_mesh];
+            const out_mesh = gltfJSONNew.meshes[index];
+            mesh.primitives.forEach((prim, prim_index) => {
+                const og_prim = og_mesh.primitives[prim_index];
+                const og_accessor = (og_prim.indices) ? og_gltf.accessors[og_prim.indices] : undefined;
+                const og_bufferView = (og_accessor) ? og_gltf.bufferViews[og_accessor.bufferView] : undefined;
+                if (prim.extensions && prim.extensions.KHR_draco_mesh_compression) {
+                    const draco = prim.extensions.KHR_draco_mesh_compression;
+                    const accessor = gltf.accessors[prim.indices];
+                    const bufferView = gltf.bufferViews[draco.bufferView];
+                    const buffer = gltf.buffers[bufferView.buffer];
+                    const out_prim = out_mesh.primitives[prim_index];
+                    // If the mesh contained index information, we reuse the previous accessor
+                    // If there was no index information we create an accessor at position 'prim.indices'
+                    if (!og_prim.indices && prim.indices >= gltfJSONNew.accessors.length) 
+                        gltfJSONNew.accessors[prim.indices] = { componentType: accessor.componentType, count: accessor.count, type: accessor.type };
+                    const out_accessor = gltfJSONNew.accessors[(og_prim.indices) ? og_prim.indices : prim.indices];
+                    usesDraco = true;
+                    console.log('prim.indices', prim.indices);
+                    console.log('accessor', accessor);
+                    console.log('out_accessor', out_accessor);
+                    console.log('og_prim', og_prim);
+                    out_prim.indices = (og_prim.indices) ? og_prim.indices : prim.indices;
+                    out_prim.material = og_prim.material;
+                    out_prim.mode = (og_prim.mode) ? og_prim.mode : 4;   
+                    out_prim.extensions = {
+                        KHR_draco_mesh_compression: {
+                            attributes: draco.attributes,
+                            bufferView: bufferViews.length
+                        }
+                    };
+                    out_accessor.bufferView = undefined;
+
+                    Object.entries(prim.attributes).forEach(([key, value]) => {
+                        const og_attribute = og_prim.attributes[key];
+                        const attribute = prim.attributes[key];
+                        const accessor = gltf.accessors[attribute];
+                        const out_accessor = gltfJSONNew.accessors[og_attribute];
+
+                        out_accessor.bufferView = undefined;
+                        out_accessor.count = accessor.count;
+                        out_accessor.byteOffset = undefined;
+                    });
+
+                    const mem_buffer_index = (og_bufferView) ? og_bufferView.buffer : 0;
+                    const mem_buffer = mem_buffers[mem_buffer_index];
+                    bufferViews.push({ buffer: mem_buffer_index, byteOffset: mem_buffer.byteLength, byteLength: buffer.buffer.byteLength });
+                    
+                    mem_buffer.data = concat(mem_buffer.data, buffer.buffer);
+                    mem_buffer.byteLength = mem_buffer.data.byteLength;
+                } else {
+                    const accessor = gltf.accessors[prim.indices];
+                    const bufferView = gltf.bufferViews[accessor.bufferView];
+                    const isMoptCompressed = bufferView.extensions && bufferView.extensions.EXT_meshopt_compression;
+                    const buffer = (isMoptCompressed) ? gltf.buffers[bufferView.extensions.EXT_meshopt_compression.buffer] : gltf.buffers[bufferView.buffer];
+                    const out_prim = out_mesh.primitives[prim_index];
+                    const out_accessor = gltfJSONNew.accessors[og_prim.indices];
+                    const mem_buffer_index = (og_bufferView.buffer < og_gltf.buffers.length) ? og_bufferView.buffer : 0;
+                    const mem_buffer = mem_buffers[mem_buffer_index];
+                    
+                    const componentSize = accessor.getComponentSize(accessor.componentType);
+                    const componentCount = accessor.getComponentCount(accessor.type);
+                    const byteOffset = accessor.byteOffset + bufferView.byteOffset;
+                    let stride = bufferView.byteStride !== 0 ? bufferView.byteStride : componentCount * componentSize;
+                    out_prim.indices = og_prim.indices;
+                    out_prim.material = og_prim.material;
+                    out_prim.extensions = undefined; // clean any pre existing extensions (e.g. DRACO)
+                    const out_bufferView = {
+                        buffer: mem_buffer_index,
+                        byteOffset: mem_buffer.byteLength,
+                        byteLength: accessor.count * stride,
+                        target: og_bufferView.target
+                    };
+                    if (isMoptCompressed) {
+                        usesMeshopt = true;
+                        // Switch back to old values (A compliant loader should disregard those)
+                        out_bufferView.byteOffset = og_bufferView.byteOffset;
+                        out_bufferView.buffer = og_gltf.buffers.length;
+                        out_bufferView.extensions = {
+                            EXT_meshopt_compression: {
+                                buffer: mem_buffer_index,
+                                byteOffset: mem_buffer.byteLength,
+                                byteLength: bufferView.extensions.EXT_meshopt_compression.byteLength,
+                                byteStride: bufferView.byteStride,
+                                mode: bufferView.extensions.EXT_meshopt_compression.mode,
+                                filter: bufferView.extensions.EXT_meshopt_compression.filter,
+                                count: bufferView.extensions.EXT_meshopt_compression.count
+                            }
+                        };   
+                    }
+
+                    out_accessor.bufferView = bufferViews.length;
+                    out_accessor.byteOffset = undefined;
+                    bufferViewDict[accessor.bufferView] = bufferViews.length;
+                    bufferViews.push(out_bufferView);
+                    // Handle the case where the original is DRACO encoded
+                    let index_buffer = buffer.buffer;
+                    if (ArrayBuffer.isView(buffer.buffer) && !isMoptCompressed) {
+                        if (accessor.componentType == GL.UNSIGNED_INT) index_buffer =  (new Uint32Array(buffer.buffer)).buffer;
+                        if (accessor.componentType == GL.UNSIGNED_SHORT) index_buffer =  (new Uint16Array(buffer.buffer)).buffer;
+                        if (accessor.componentType == GL.UNSIGNED_BYTE) index_buffer =  (new Uint8Array(buffer.buffer)).buffer;
+                    }
+                    const dataLength = (isMoptCompressed) ? bufferView.extensions.EXT_meshopt_compression.byteLength : accessor.count * stride;
+                    mem_buffer.data = concat(mem_buffer.data, index_buffer.slice(byteOffset, byteOffset + dataLength));
+                    mem_buffer.byteLength = mem_buffer.data.byteLength;
+                    Object.entries(prim.attributes).forEach(([key, value]) => {
+                        const attribute = prim.attributes[key];
+                        const og_attribute = og_prim.attributes[key];
+                        const og_accessor = og_gltf.accessors[og_attribute];
+                        const og_bufferView = og_gltf.bufferViews[og_accessor.bufferView];
+                        const accessor = gltf.accessors[attribute];
+                        const bufferView = gltf.bufferViews[accessor.bufferView];
+                        const isMoptCompressed = bufferView.extensions && bufferView.extensions.EXT_meshopt_compression;
+                        const isQuantized = isQuantizedCb(key, accessor);
+                        const buffer = (isMoptCompressed) ? gltf.buffers[bufferView.extensions.EXT_meshopt_compression.buffer] : gltf.buffers[bufferView.buffer];
+                        const out_accessor = gltfJSONNew.accessors[og_attribute];
+
+                        const componentSize = accessor.getComponentSize(accessor.componentType);
+                        const componentCount = accessor.getComponentCount(accessor.type);
+                        const byteOffset = accessor.byteOffset + bufferView.byteOffset;
+                        let stride = bufferView.byteStride !== 0 ? bufferView.byteStride : componentCount * componentSize;
+
+                        const out_bufferView = {
+                            buffer: mem_buffer_index,
+                            byteOffset: mem_buffer.byteLength,
+                            byteLength: accessor.count * stride,
+                            target: og_bufferView.target
+                        };
+                        if (isMoptCompressed) {
+                            // Switch back to old values (A compliant loader should disregard those)
+                            out_bufferView.byteOffset = og_bufferView.byteOffset;
+                            out_bufferView.buffer = og_gltf.buffers.length;
+                            out_bufferView.extensions = {
+                                EXT_meshopt_compression: {
+                                    buffer: mem_buffer_index,
+                                    byteOffset: mem_buffer.byteLength,
+                                    byteLength: bufferView.extensions.EXT_meshopt_compression.byteLength,
+                                    byteStride: bufferView.byteStride,
+                                    mode: bufferView.extensions.EXT_meshopt_compression.mode,
+                                    filter: bufferView.extensions.EXT_meshopt_compression.filter,
+                                    count: bufferView.extensions.EXT_meshopt_compression.count
+                                }
+                            };   
+                        } else if (isQuantized) {
+                            usesQuantization = true;
+                            out_bufferView.buffer = mem_buffer_index;
+                            out_bufferView.byteOffset = mem_buffer.byteLength;
+                            out_bufferView.byteStride = bufferView.byteStride;
+                            out_accessor.normalized = accessor.normalized;
+                            out_accessor.componentType = accessor.componentType;
+                            out_accessor.max = accessor.max;
+                            out_accessor.min = accessor.min;
+                        }
+                        out_accessor.bufferView = bufferViews.length;
+                        out_accessor.byteOffset = undefined;
+                        bufferViewDict[accessor.bufferView] = bufferViews.length;
+                        bufferViews.push(out_bufferView);
+                        const dataLength = (isMoptCompressed) ? bufferView.extensions.EXT_meshopt_compression.byteLength : accessor.count * stride;
+                        mem_buffer.data = concat(mem_buffer.data, buffer.buffer.slice(byteOffset, byteOffset + dataLength));
+                        mem_buffer.byteLength = mem_buffer.data.byteLength;
+                    });
+                }
+            });
+        });
+
+        if (gltfJSONNew.animations) {
+            const animBufferViews = [];
+            gltfJSONNew.animations.forEach((animation) => {
+                animation.samplers.forEach((sampler) => {
+                    const i_accessor = gltf.accessors[sampler.input];
+                    const i_bufferView = gltf.bufferViews[i_accessor.bufferView];
+                    const o_accessor = gltf.accessors[sampler.output];
+                    const o_bufferView = gltf.bufferViews[o_accessor.bufferView];
+                    
+                    animBufferViews[i_accessor.bufferView] = i_bufferView;
+                    animBufferViews[o_accessor.bufferView] = o_bufferView;
+                    animBufferViews[i_accessor.bufferView].accessors = [];
+                    animBufferViews[o_accessor.bufferView].accessors = [];
+                });
+            });
+
+            gltfJSONNew.animations.forEach((animation) => {
+                animation.samplers.forEach((sampler) => {
+                    const i_accessor = gltf.accessors[sampler.input];
+                    const o_accessor = gltf.accessors[sampler.output];
+                    
+                    animBufferViews[i_accessor.bufferView].accessors.push(gltfJSONNew.accessors[sampler.input]);
+                    animBufferViews[o_accessor.bufferView].accessors.push(gltfJSONNew.accessors[sampler.output]);
+                });
+            });
+            animBufferViews.forEach((bufferView) => {
+                const buffer = gltf.buffers[bufferView.buffer];
+                const mem_buffer = mem_buffers[bufferView.buffer];
+                const out_bufferView = {
+                    buffer: bufferView.buffer,
+                    byteOffset: mem_buffer.byteLength,
+                    byteLength: bufferView.byteLength,
+                    target: bufferView.target
+                };
+                bufferView.accessors.forEach((accessor) => {
+                    accessor.bufferView = bufferViews.length;
+                });
+                    
+                bufferViews.push(out_bufferView);
+                mem_buffer.data = concat(mem_buffer.data, buffer.buffer.slice(bufferView.byteOffset, bufferView.byteOffset + bufferView.byteLength));
+                mem_buffer.byteLength = mem_buffer.data.byteLength;
+            });
+        }
+
+        if (gltfJSONNew.skins) {
+            const skinBufferViews = [];
+            
+            gltfJSONNew.skins.forEach((skin) => {
+                if (!skin.inverseBindMatrices) return;
+                const accessor = gltf.accessors[skin.inverseBindMatrices];
+                const bufferView = gltf.bufferViews[accessor.bufferView];
+                skinBufferViews[accessor.bufferView] = bufferView;
+                skinBufferViews[accessor.bufferView].accessors = [];
+            });
+            gltfJSONNew.skins.forEach((skin) => {
+                if (!skin.inverseBindMatrices) return;
+                const accessor = gltf.accessors[skin.inverseBindMatrices];
+                skinBufferViews[accessor.bufferView].accessors.push(gltfJSONNew.accessors[skin.inverseBindMatrices]);
+            });
+            skinBufferViews.forEach((bufferView) => {
+                const buffer = gltf.buffers[bufferView.buffer];
+                const mem_buffer = mem_buffers[bufferView.buffer];
+                const out_bufferView = {
+                    buffer: bufferView.buffer,
+                    byteOffset: mem_buffer.byteLength,
+                    byteLength: bufferView.byteLength,
+                    target: bufferView.target
+                };
+                bufferView.accessors.forEach((accessor) => {
+                    accessor.bufferView = bufferViews.length;
+                });
+                    
+                bufferViews.push(out_bufferView);
+                mem_buffer.data = concat(mem_buffer.data, buffer.buffer.slice(bufferView.byteOffset, bufferView.byteOffset + bufferView.byteLength));
+                mem_buffer.byteLength = mem_buffer.data.byteLength;
+            });
+        }
+
+        mem_buffers.forEach((buffer) => {
+            buffer.uri = (!buffer.embedded) ? buffer.uri : "data:application/octet-stream;base64," + base64( buffer.data );
+            gltfJSONNew.buffers.push({uri: buffer.uri, byteLength: buffer.data.byteLength, name: buffer.name});
+            buffer.data = (!buffer.embedded) ? buffer.data : undefined;
+        });
+        gltfJSONNew.bufferViews = bufferViews;
+
+        const removeStringFromArray = (array, targetString) => {
+            const index = array.indexOf(targetString);
+            if (index !== -1) array.splice(index, 1);
+        };
+
+        removeStringFromArray(gltfJSONNew.extensionsRequired, "KHR_draco_mesh_compression");
+        removeStringFromArray(gltfJSONNew.extensionsRequired, "EXT_meshopt_compression");
+        removeStringFromArray(gltfJSONNew.extensionsRequired, "KHR_mesh_quantization");
+        removeStringFromArray(gltfJSONNew.extensionsUsed, "KHR_draco_mesh_compression");
+        removeStringFromArray(gltfJSONNew.extensionsUsed, "EXT_meshopt_compression");
+        removeStringFromArray(gltfJSONNew.extensionsUsed, "KHR_mesh_quantization");
+
+        gltfJSONNew.bufferViews.forEach((bufferView) => {
+            if (bufferView.extensions && bufferView.extensions.EXT_meshopt_compression) usesMeshopt = true;
+        });
+
+        gltfJSONNew.meshes.forEach((mesh) => {
+            mesh.primitives.forEach((prim) => {
+                if (prim.extensions && prim.extensions.KHR_draco_mesh_compression) usesDraco = true;
+                Object.entries(prim.attributes).forEach(([key, value]) => {
+                    const attribute = prim.attributes[key];
+                    const accessor = gltfJSONNew.accessors[attribute];
+                    if (isQuantizedCb(attribute, accessor)) usesQuantization = true;
+                });
+            });
+        });
+           
+        const dracoGeometryExists = usesDraco;
+        const moptGeometryExists = usesMeshopt;
+        const quantizedGeometryExists = usesQuantization;
         const webpImagesExists = gltf.images.some(img => img.compressedMimeType === ImageMimeType.WEBP);
         const ktxImagesExists = gltf.images.some(img => img.compressedMimeType === ImageMimeType.KTX2);
-        if(webpImagesExists || ktxImagesExists)
-        {
-            const imageExtensions = [];
-            if(webpImagesExists)
-                imageExtensions.push("EXT_texture_webp");
-            if(ktxImagesExists)
-                imageExtensions.push("KHR_texture_basisu");
-            gltfJSON.extensionsUsed = (gltfJSON.extensionsUsed === undefined)? imageExtensions : [...gltfJSON.extensionsUsed, ...imageExtensions];
-            gltfJSON.extensionsRequired = (gltfJSON.extensionsRequired === undefined)? imageExtensions : [...gltfJSON.extensionsRequired, ...imageExtensions];
-        }
-
-        // update image bufferViews with new image data. 
-        gltf.images.forEach((img, index) => {
-            if(img.bufferView === undefined || img.compressedImageTypedArrayBuffer === undefined)
-                return;
-            gltf.bufferViews[img.bufferView].blob = img.compressedImageTypedArrayBuffer;
-            gltf.bufferViews[img.bufferView].byteLength = img.compressedImageTypedArrayBuffer.byteLength;
-            gltfJSON.bufferViews[img.bufferView].byteLength = img.compressedImageTypedArrayBuffer.byteLength;
-            gltfJSON.images[index].mimeType = img.compressedMimeType;
-        });
-
-        // Update textures with the appropriate extensions for WebP and KTX2
-        gltfJSON.textures = gltfJSON.textures.map(texture => {
-            // if an extension was used by the original model
-            let imageSourceIndex = -1;
-            if(texture.source === undefined)
-            {
-                if(texture.extensions)
-                {
-                    if(texture.extensions.EXT_texture_webp)
-                    {
-                        imageSourceIndex = texture.extensions.EXT_texture_webp.source;
-                    }
-                    else if(texture.extensions.KHR_texture_basisu)
-                    {
-                        imageSourceIndex = texture.extensions.KHR_texture_basisu.source;
-                    }
-                }
-            }
-            else
-            {
-                imageSourceIndex = texture.source;
-            }
-            if(imageSourceIndex === -1)
-            {
-                console.error("No image source found on texture: ", texture);
-                return texture;
-            }
-            const imageSource = gltf.images[imageSourceIndex];
-            // if we have a webp
-            if(imageSource.compressedMimeType == ImageMimeType.WEBP)
-            {
-                const EXT_texture_webp = { source: imageSourceIndex };
-                const extensions = texture.extensions? {...texture.extensions, EXT_texture_webp} : {EXT_texture_webp};
-                return {
-                    ...texture,
-                    source: undefined, // remove the uncompressed source
-                    extensions
-                };
-            }
-            // if we have a ktx2
-            else if(imageSource.compressedMimeType == ImageMimeType.KTX2)
-            {
-                const KHR_texture_basisu = { source: imageSourceIndex };
-                const extensions = texture.extensions? {...texture.extensions, KHR_texture_basisu} : {KHR_texture_basisu};
-                return {
-                    ...texture,
-                    source: undefined, // remove the uncompressed source
-                    extensions
-                };
-            }
-            else 
-            {
-                return {
-                    ...texture,
-                    source: imageSourceIndex // in the case that the original was defined by an extension
-                };
-            }
-        });
-
-        // update images mime (required only for buffer views)
-        /*gltf.images.forEach((img, index) => {
-            if(img.bufferView === undefined || img.compressedImageTypedArrayBuffer === undefined)
-                return;
-            gltfJSON.images[index].mimeType = img.compressedMimeType;
-        });*/
-
-        const align4Bytes = (num) => 4 * Math.floor((num - 1) / 4) + 4;
-
-        // check if compressed images are stored in buffers, so we can update them
-        const areBuffersAltered = !gltfJSON.images.some(img => img.bufferView === undefined);
-        if(areBuffersAltered)
-        {
-            // create new buffers
-            const buffers = gltf.buffers.map(buffer => {return {buffer: null, byteLength: 0};});
-            gltf.bufferViews.forEach(view => {
-                buffers[view.buffer].byteLength += align4Bytes(view.byteLength);
-            });
-            buffers.forEach(buffer => {
-                buffer.buffer = new ArrayBuffer(buffer.byteLength);
-                buffer.typedBuffer = new Uint8Array(buffer.buffer);
-                buffer.byteOffset = 0;
-            });
-            // fill buffers
-            gltfJSON.bufferViews = gltfJSON.bufferViews.map((view, index) => {
-                const byteOffset = buffers[view.buffer].byteOffset;
-                let byteLength = 0;
-                const compressedImageBlob = gltf.bufferViews[index].blob;
-                if(compressedImageBlob === undefined)
-                {
-                    const typedArray = new Uint8Array(gltf.buffers[view.buffer].buffer, view.byteOffset, view.byteLength);
-                    buffers[view.buffer].typedBuffer.set(typedArray, byteOffset);
-                    byteLength = view.byteLength;
-                }
-                else
-                {
-                    const blobArrayBuffer = new Uint8Array(compressedImageBlob);
-                    buffers[view.buffer].typedBuffer.set(blobArrayBuffer, byteOffset);
-                    byteLength = compressedImageBlob.byteLength;
-                }
-                buffers[view.buffer].byteOffset += align4Bytes(byteLength);
-                return {
-                    ...view,
-                    byteOffset,
-                    byteLength
-                };
-            });
-            // merge buffers
-            gltfJSON.buffers = gltfJSON.buffers.map((buffer, index) => {return {...buffer, buffer: buffers[index].buffer, byteLength: buffers[index].byteLength}; });
-        }
-        else
-        {
-            gltfJSON.buffers = gltfJSON.buffers.map((buffer, index) => {return {...buffer, buffer: gltf.buffers[index].buffer}; });
-        }
-
-        // uri means that buffer is external (or embeded)
-        const externalBuffers = gltfJSON.buffers
-        .filter(b => b.uri != undefined && !b.uri.startsWith("data:application/octet-stream;base64"))
-        .map(b => { return {uri: b.uri, data: new Uint8Array(b.buffer) };});
-        const internalBuffers = gltfJSON.buffers
-        .filter(b => b.uri === undefined)
-        .map(b => { return new Uint8Array(b.buffer); });
-        // fix embeded buffers
-        gltfJSON.buffers.forEach(b => {
-            if(b.uri != undefined && b.uri.startsWith("data:application/octet-stream;base64,"))
-            {
-                // convert to base64 string
-                let binary = '';
-                const bytes = new Uint8Array( b.buffer );
-                for (let i = 0; i < bytes.byteLength; i++) {
-                    binary += String.fromCharCode( bytes[i] );
-                }
-                b.uri = "data:application/octet-stream;base64," + window.btoa( binary );
-            }
-        });
         
-        const toExt = (type) => type == ImageMimeType.JPEG? ".jpg" : type == ImageMimeType.PNG? ".png" : type == ImageMimeType.WEBP? ".webp" : ".ktx2";
-        // update gltf mime types and file types
-        gltfJSON.images = gltfJSON.images.map((img, index) => {
-            return {
-                ...img,
-                mimeType: gltf.images[index].compressedMimeType,
-            };            
-        })
-        .map(img => {
-            if(img.bufferView === undefined)
-            {
-                const currentExt = path.extname(img.uri);
-                const newExt = toExt(img.mimeType);
-                const uri = img.uri.replace(currentExt, newExt);
-                return {...img, uri};
-            }
-            return img;
-        });
+        if(webpImagesExists)        gltfJSONNew.extensionsRequired.push("EXT_texture_webp");
+        if(ktxImagesExists)         gltfJSONNew.extensionsRequired.push("KHR_texture_basisu");
+        if(dracoGeometryExists)     gltfJSONNew.extensionsRequired.push("KHR_draco_mesh_compression");
+        if(moptGeometryExists)      gltfJSONNew.extensionsRequired.push("EXT_meshopt_compression");
+        if(quantizedGeometryExists) gltfJSONNew.extensionsRequired.push("KHR_mesh_quantization");
 
-        // find if we have external images
-        const externalImages = gltfJSON.images
-        .map((img, index) => {return {...gltf.images[index], ...img};})
-        .filter(img => img.bufferView === undefined)
-        .map(img => {
-            return {uri: img.uri, data: img.compressedImageTypedArrayBuffer};
-        });
+        if(webpImagesExists)        gltfJSONNew.extensionsUsed.push("EXT_texture_webp");
+        if(ktxImagesExists)         gltfJSONNew.extensionsUsed.push("KHR_texture_basisu");
+        if(dracoGeometryExists)     gltfJSONNew.extensionsUsed.push("KHR_draco_mesh_compression");
+        if(moptGeometryExists)      gltfJSONNew.extensionsUsed.push("EXT_meshopt_compression");
+        if(quantizedGeometryExists) gltfJSONNew.extensionsUsed.push("KHR_mesh_quantization");
 
-        // remove {buffer: ... } property from buffers
-        gltfJSON.buffers = gltfJSON.buffers.map(buffer => {delete buffer.buffer; return buffer; });
+        if(moptGeometryExists) {
+            // Add a placeholder buffer as required by spec
+            gltfJSONNew.buffers.push({
+                byteLength: og_gltf.buffers.reduce((partialSum, buffer) => partialSum + buffer.byteLength, 0),
+                extensions: {
+                    EXT_meshopt_compression: {
+                        fallback: false
+                    }
+                }
+            });
+        }
 
-        return {gltfDesc: {uri: path.basename(gltf.path), data: gltfJSON}, externalFiles: [...externalBuffers, ...externalImages], internalBuffers};
+        console.log('gltfJSONNew', gltfJSONNew);
+        return {gltfDesc: {uri: path.basename(gltf.path), data: gltfJSONNew}, images: uri_images, buffers: mem_buffers};
     }));
-    gltfExportChangedObservable.subscribe( async ({gltfDesc, externalFiles, internalBuffers}) => {
+    gltfExportChangedObservable.subscribe( async ({gltfDesc, images, buffers}) => {
         const gltf = JSON.stringify(gltfDesc.data, undefined, 4);
 
-        if(externalFiles.length > 0)
+        const raw_buffers = buffers.map((buffer) => { return buffer.data; });
+
+        if(!getIsGlb(gltfDesc.uri))
         {
             const zipWriter = new ZipWriter(new BlobWriter("application/zip"));
             const json_file = zipWriter.add(gltfDesc.uri, new TextReader(gltf));
-            const external_files = externalFiles.map((file, index) => {
-                //console.log("Zipping ", file);
+            const external_images = images.filter(img => img.data).map((file) => {
                 return zipWriter.add(file.uri, file.data instanceof Blob? new BlobReader(file.data) : new Uint8ArrayReader(file.data));
             });
-            await Promise.all([ json_file, ...external_files ]);
+            const external_buffers = buffers.filter(buffer => buffer.data).map((file) => {
+                return zipWriter.add(file.uri, file.data instanceof Blob? new BlobReader(file.data) : new Uint8ArrayReader(file.data));
+            });
+            await Promise.all([ json_file, ...external_buffers, ...external_images ]);
             zipWriter.close();
             const zipFileBlob = await zipWriter.writer.blob;
             const zipFileArrayBuffer = await zipFileBlob.arrayBuffer();
-            const dataURL = 'data:application/octet-stream;base64,' + base64(zipFileArrayBuffer);
-            downloadDataURL("file.zip", dataURL);
+            'data:application/octet-stream;base64,' + base64(zipFileArrayBuffer);
+            //downloadDataURL("file.zip", dataURL);
+            downloadBlob("file.zip", zipFileBlob);
         }
         else
         {
             if(getIsGlb(gltfDesc.uri))
             {
                 const glbSerializer = new GlbSerializer();
-                const glb = glbSerializer.serializeGLBData(gltf, internalBuffers);
+                const glb = glbSerializer.serializeGLBData(gltf, raw_buffers);
+                console.log('glb', glb);
                 const dataURL = 'data:application/octet-stream;base64,' + base64(glb);
                 downloadDataURL(gltfDesc.uri, dataURL);
             }
@@ -66396,8 +70124,8 @@ async function main()
             command += 'toktx';
             command += ' --t2';
             command += ' --2d';
-            command += ' --encode ' + (params.compressionEncoding === 'UASTC' ? 'uastc' : 'etc1s');
-            if (params.compressionEncoding === 'UASTC') {
+            command += ' --encode ' + (params.compressionTextureEncoding === 'UASTC' ? 'uastc' : 'etc1s');
+            if (params.compressionTextureEncoding === 'UASTC') {
                 command += ' --uastc_quality ' + ktx.stringToUastcFlags(params.compressionUASTC_Flags);
                 if (params.compressionUASTC_Rdo) {
                     command += ' --uastc_rdo_l ' + params.compressionUASTC_Rdo_QualityScalar;
@@ -66443,7 +70171,7 @@ async function main()
         state.compressorParameters.compressionQualityPNG = 8;
         state.compressorParameters.compressionQualityWEBP = 80.0;
 
-        state.compressorParameters.compressionEncoding = "UASTC";
+        state.compressorParameters.compressionTextureEncoding = "UASTC";
         state.compressorParameters.compressionUASTC_Rdo_Algorithm = "Zstd";
 
         state.compressorParameters.compressionUASTC_Flags = "DEFAULT";
@@ -66464,8 +70192,50 @@ async function main()
         state.compressorParameters.compressionETC1S_NoEndpointRdo = false;
         state.compressorParameters.compressionETC1S_NoSelectorRdo = false;
 
-        state.compressorParameters.compressionType = "KTX2";
+        state.compressorParameters.compressionTextureType = "KTX2";
         state.compressorParameters.processedImages = [];
+        state.compressorParameters.compressionGeometryType = "Draco";
+        state.compressorParameters.processedMeshes = [];
+        state.compressorParameters.compressionQuantizationPositionType = "NONE";
+        state.compressorParameters.compressionQuantizationNormalType = "NONE";
+        state.compressorParameters.compressionQuantizationTangentType = "NONE";
+        state.compressorParameters.compressionQuantizationTexCoords0Type = "NONE";
+        state.compressorParameters.compressionQuantizationTexCoords1Type = "NONE";
+
+        state.compressorParameters.compressionDracoEncodingMethod = "EDGEBREAKER";
+        state.compressorParameters.compressionSpeedDraco = 7;
+        state.compressorParameters.decompressionSpeedDraco = 7;
+        state.compressorParameters.compressionDracoQuantizationPositionQuantBits = 16;
+        state.compressorParameters.compressionDracoQuantizationNormalQuantBits = 10;
+        state.compressorParameters.compressionDracoQuantizationColorQuantBits = 16;
+        state.compressorParameters.compressionDracoQuantizationTexcoordQuantBits = 11;
+        state.compressorParameters.compressionDracoQuantizationGenericQuantBits = 16;
+
+        state.compressorParameters.compressionMeshOptFilterMethod = "NONE";
+        state.compressorParameters.compressionMeshOptFilterMode = "Separate";
+        state.compressorParameters.compressionMeshOptFilterQuantizationBits = 16;
+        state.compressorParameters.compressionMeshOptReorder = false;
+        state.compressorParameters.compressionMOptQuantizationPosition = "NONE";
+        state.compressorParameters.compressionMOptQuantizationNormal = "NONE";
+        state.compressorParameters.compressionMOptQuantizationTangent = "NONE";
+        state.compressorParameters.compressionMOptQuantizationTexCoords0 = "NONE";
+        state.compressorParameters.compressionMOptQuantizationTexCoords1 = "NONE";
+        state.compressorParameters.positionFilter = "NONE";
+        state.compressorParameters.positionFilterMode = "Separate";
+        state.compressorParameters.positionFilterBits = 16;
+        state.compressorParameters.normalFilter = "NONE";
+        state.compressorParameters.normalFilterMode = "Separate";
+        state.compressorParameters.normalFilterBits = 16;
+        state.compressorParameters.tangentFilter = "NONE";
+        state.compressorParameters.tangentFilterMode = "Separate";
+        state.compressorParameters.tangentFilterBits = 16;
+        state.compressorParameters.tex0Filter = "NONE";
+        state.compressorParameters.tex0FilterMode = "Separate";
+        state.compressorParameters.tex0FilterBits = 16;
+        state.compressorParameters.tex1Filter = "NONE";
+        state.compressorParameters.tex1FilterMode = "Separate";
+        state.compressorParameters.tex1FilterBits = 16;
+        
     });
 
     // End GSV-KTX
@@ -66477,16 +70247,15 @@ async function main()
         state.renderingParameters.blurEnvironmentMap = blurEnvEnabled;
     });
     listenForRedraw(uiModel.renderEnvEnabled);
+    
+    uiModel.blurEnvEnabled.subscribe(blurEnvEnabled => state.renderingParameters.blurEnvironmentMap = blurEnvEnabled);
     listenForRedraw(uiModel.blurEnvEnabled);
 
-    uiModel.punctualLightsEnabled.subscribe( punctualLightsEnabled => {
-        state.renderingParameters.usePunctual = punctualLightsEnabled;
-    });
+    uiModel.punctualLightsEnabled.subscribe(punctualLightsEnabled => state.renderingParameters.usePunctual = punctualLightsEnabled);
     listenForRedraw(uiModel.punctualLightsEnabled);
 
-    uiModel.environmentRotation.subscribe( environmentRotation => {
-        switch (environmentRotation)
-        {
+    uiModel.environmentRotation.subscribe(environmentRotation => {
+        switch (environmentRotation) {
         case "+Z":
             state.renderingParameters.environmentRotation = 90.0;
             break;
@@ -66504,28 +70273,22 @@ async function main()
     listenForRedraw(uiModel.environmentRotation);
 
 
-    uiModel.clearColor.subscribe( clearColor => {
-        state.renderingParameters.clearColor = clearColor;
-    });
+    uiModel.clearColor.subscribe(clearColor => state.renderingParameters.clearColor = clearColor);
     listenForRedraw(uiModel.clearColor);
 
-    uiModel.animationPlay.subscribe( animationPlay => {
-        if(animationPlay)
-        {
+    uiModel.animationPlay.subscribe(animationPlay => {
+        if(animationPlay) {
             state.animationTimer.unpause();
         }
-        else
-        {
+        else {
             state.animationTimer.pause();
         }
     });
 
-    uiModel.activeAnimations.subscribe( animations => {
-        state.animationIndices = animations;
-    });
+    uiModel.activeAnimations.subscribe(animations => state.animationIndices = animations);
     listenForRedraw(uiModel.activeAnimations);
 
-    uiModel.hdr.subscribe( hdrFile => {
+    uiModel.hdr.subscribe(hdrFile => {
         resourceLoader.loadEnvironment(hdrFile).then( (environment) => {
             state.environment = environment;
             //We neeed to wait until the environment is loaded to redraw
@@ -66540,11 +70303,10 @@ async function main()
     const sceneChangedStateObservable = uiModel.scene.pipe(map( newSceneIndex => state));
     uiModel.attachCameraChangeObservable(sceneChangedStateObservable);
     gltfLoadedMulticast.connect();
-    compressTexturesChangedObservable.connect();
+    compressChangedObservable.connect();
 
     uiModel.orbit.subscribe( orbit => {
-        if (state.cameraIndex === undefined)
-        {
+        if (state.cameraIndex === undefined) {
             state.userCamera.orbit(orbit.deltaPhi, orbit.deltaTheta);
         }
     });
@@ -66631,8 +70393,7 @@ async function main()
 
     // configure the animation loop
     const past = {};
-    const update = () =>
-    {
+    const update = () => {
         const devicePixelRatio = window.devicePixelRatio || 1;
 
         // set the size of the drawingBuffer based on the size it's displayed.
@@ -66646,8 +70407,10 @@ async function main()
         if (redraw) {
 
             const imageSlider = document.getElementById('imageSlider');
-            if(imageSlider !== null)
+            if(imageSlider !== null){
                 imageSlider.firstChild.childNodes[5].firstChild.childNodes[1].firstChild.style.height = canvas.height + "px";
+                imageSlider.firstChild.childNodes[5].firstChild.childNodes[1].firstChild.appendChild(document.getElementById('custom-slider'));
+            }
             view.renderFrame(state, canvas.width, canvas.height);
             redraw = false;
         }
@@ -66657,7 +70420,7 @@ async function main()
 
     // After this start executing animation loop.
     window.requestAnimationFrame(update);
-}
+};
 
-export { main };
+export { main as default };
 //# sourceMappingURL=GltfSVApp.js.map
