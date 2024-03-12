@@ -609,7 +609,9 @@ export default async () => {
             let type = state.compressorParameters.compressionGeometryType;
             
             var compress_options;
-            if(type === GEOMETRY_COMPRESSION_TYPE.QUANTIZATION){
+            if(type === GEOMETRY_COMPRESSION_TYPE.NONE){
+                console.log("SKIPPED VRM IS TOO COOL FOR THIS");
+            } else if(type === GEOMETRY_COMPRESSION_TYPE.QUANTIZATION){
                 compress_options = new GeometryQuantizationOptions();
                 compress_options.positionCompression = getComponentDataType(state.compressorParameters.compressionQuantizationPositionType);
                 compress_options.positionCompressionNormalized = isComponentDataTypeNormalized(state.compressorParameters.compressionQuantizationPositionType);

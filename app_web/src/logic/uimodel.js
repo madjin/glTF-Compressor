@@ -238,6 +238,10 @@ class UIModel
 
                 app.flavours = [fileExtension];
                 app.selectedFlavour = fileExtension;
+		if(fileExtension === "vrm"){
+                    this.app.selectedFlavour = "vrm";
+                    this.app.selectedCompressionGeometryType = "NONE";
+                }
             });
 
         this.orbit = inputObservables.orbit;
@@ -502,11 +506,18 @@ const getInputObservables = (inputElement, app) => {
     // Partition files into a .gltf or .glb and additional files like buffers and textures
     observables.droppedGltf = droppedFiles.pipe(
         map(files => ({
-            mainFile: files.find(([path]) => path.endsWith(".glb") || path.endsWith(".gltf")),
-            additionalFiles: files.filter(file => !file[0].endsWith(".glb") && !file[0].endsWith(".gltf"))
+            mainFile: files.find(([path]) => path.endsWith(".glb") || path.endsWith(".gltf") || path.endsWith(".vrm")),
+            additionalFiles: files.filter(file => !file[0].endsWith(".glb") && !file[0].endsWith(".gltf") && !file[0].endsWith(".vrm"))
         })),
         filter(files => files.mainFile !== undefined),
     );
+    //observables.droppedGltf = droppedFiles.pipe(
+    //    map(files => ({
+    //        mainFile: files.find(([path]) => path.endsWith(".glb") || path.endsWith(".gltf") || path.endsWith(".vrm")),
+    //        additionalFiles: files.filter(file => !file[0].endsWith(".glb") && !file[0].endsWith(".gltf") && !file[0].endsWith(".vrm"))
+    //    })),
+    //    filter(files => files.mainFile !== undefined),
+    //);
 
     observables.droppedHdr = droppedFiles.pipe(
         map(files => files.find(([path]) => path.endsWith(".hdr"))),

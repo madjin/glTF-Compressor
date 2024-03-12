@@ -93,8 +93,14 @@ function clamp(number, min, max) {
     return Math.min(Math.max(number, min), max);
 }
 
+//function getIsGlb(filename) {
+//    return getExtension(filename) == "glb";
+//}
+
 function getIsGlb(filename) {
-    return getExtension(filename) == "glb";
+    console.log("filename: " + filename);
+    console.log("getExtension(filename): " + getExtension(filename));
+    return getExtension(filename) == "glb" || getExtension(filename) == "vrm";
 }
 
 function getIsGltf(filename) {

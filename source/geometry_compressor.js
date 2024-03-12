@@ -7,7 +7,8 @@ import { DracoDecoder } from './ResourceLoader/draco.js';
 export const GEOMETRY_COMPRESSION_TYPE = {
     QUANTIZATION: "MeshQuantization",
     DRACO: "Draco",
-    MESHOPT: "MeshOpt"
+    MESHOPT: "MeshOpt",
+    NONE: "None"
 };
 
 export class GeometryQuantizationOptions {

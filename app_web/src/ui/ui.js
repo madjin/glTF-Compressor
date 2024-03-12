@@ -296,7 +296,7 @@ export const app = new Vue({
             fullheight: true,
             right: true,
             models: ["DamagedHelmet"],
-            flavours: ["glTF", "glTF-Binary", "glTF-Quantized", "glTF-Draco", "glTF-pbrSpecularGlossiness"],
+            flavours: ["glTF", "glTF-Binary", "glTF-Quantized", "glTF-Draco", "glTF-pbrSpecularGlossiness", "vrm"],
             scenes: [{title: "0"}, {title: "1"}],
             cameras: [{title: "User Camera", index: -1}],
             materialVariants: ["None"],
@@ -316,7 +316,7 @@ export const app = new Vue({
             geometryCompressedSize: 0,
             geometryStatistics: [],
             geometryCompressorDisplay: false,
-            textureCompressorDisplay: false,
+            textureCompressorDisplay: true,
             texturesStatistics: [],
             texturesUpdated: false,
 
@@ -388,9 +388,9 @@ export const app = new Vue({
             
             selectedCompressionGeometryType: "Draco",
 
-            compressedKTX: false,
+            compressedKTX: true,
             selectedCompressionTextureType: "KTX2",
-            selectedCompressionTextureEncoding: "UASTC",
+            selectedCompressionTextureEncoding: "ETC1S",
             selectedCompressionTextureResolution: "1x",
             compressionQualityJPEG: 80.0,
             compressionQualityPNG: 8,
